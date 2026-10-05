@@ -27,6 +27,7 @@ import { useCitizenAuth } from "@/hooks/useCitizenAuth";
 import { useCityLive } from "@/hooks/useCityLive";
 import { useEconomyStore } from "@/stores/economyStore";
 import { useResilienceStore } from "@/stores/resilienceStore";
+import { DISTRICT_WORLD, useRoamStore, type TransportId } from "@/stores/roamStore";
 import { useSocialStateStore } from "@/stores/socialStateStore";
 import { useWeatherStore } from "@/stores/weatherStore";
 import { useWorldStateStore } from "@/stores/worldStateStore";
@@ -137,6 +138,7 @@ const JOBS = [
     id: "j1",
     title: "Market stall helper",
     district: "Town Market",
+    districtId: "town-market",
     coins: 120,
     rep: 1,
     blurb: "Unload okra basins and mind the stall while Mama Ngo runs deliveries.",
@@ -145,6 +147,7 @@ const JOBS = [
     id: "j2",
     title: "Ferry deckhand",
     district: "Creekside",
+    districtId: "creekside",
     coins: 180,
     rep: 2,
     blurb: "Two crossings before dusk. Help passengers board and bail the deck.",
@@ -153,6 +156,7 @@ const JOBS = [
     id: "j3",
     title: "Port inventory clerk",
     district: "The Port",
+    districtId: "port",
     coins: 240,
     rep: 2,
     blurb: "Count crates against the manifest. Requires a steady hand and patience.",
@@ -319,6 +323,17 @@ export function AfroMetaverseGame() {
   const worldState = useWorldStateStore((state) => state.state);
   const resilienceStore = useResilienceStore((state) => state);
   const economyStore = useEconomyStore((state) => state.state);
+  const roamMode = useRoamStore((s) => s.mode);
+  const roamTransport = useRoamStore((s) => s.transport);
+  const nearDistrictId = useRoamStore((s) => s.nearDistrictId);
+  const activeMission = useRoamStore((s) => s.activeMission);
+  const missionLog = useRoamStore((s) => s.missionLog);
+  const setRoamMode = useRoamStore((s) => s.setMode);
+  const setTransport = useRoamStore((s) => s.setTransport);
+  const startMission = useRoamStore((s) => s.startMission);
+  const completeStep = useRoamStore((s) => s.completeStep);
+  const clearMission = useRoamStore((s) => s.clearMission);
+  const setRoamPosition = useRoamStore((s) => s.setPosition);
 
   const displayNameEarly = isAuthenticated ? progress.displayName : "Ekene Okoro";
   const {
@@ -440,9 +455,105 @@ export function AfroMetaverseGame() {
     setMobileNavOpen(false);
   }
 
+  function beginMission(jobId: string) {
+    const job = JOBS.find((j) => j.id === jobId);
+    if (!job || completedJobs.includes(jobId)) return;
+    if (activeMission) {
+      announce("Finish or cancel your current mission first.");
+      return;
+    }
+    startMission({
+      jobId: job.id,
+      title: job.title,
+      reward: job.coins,
+      rep: job.rep,
+      startedAt: Date.now(),
+      steps: [
+        {
+          id: "arrive",
+          label: `Travel to ${job.district}`,
+          districtId: job.districtId,
+          done: false,
+        },
+        {
+          id: "work",
+          label: "Complete the shift on site",
+          districtId: job.districtId,
+          done: false,
+        },
+      ],
+    });
+    const world = DISTRICT_WORLD[job.districtId];
+    if (world) {
+      // Spawn near map center; player walks/rides to the district
+      setRoamPosition([0, 0.6, 6]);
+    }
+    setSelectedDistrict(job.districtId);
+    setScreen("city");
+    setRoamMode("walk");
+    announce(`Mission: ${job.title}. Use WASD to reach ${job.district}.`);
+  }
+
+  function finishMissionOnSite() {
+    const mission = useRoamStore.getState().activeMission;
+    if (!mission) return;
+    const job = JOBS.find((j) => j.id === mission.jobId);
+    if (!job) return;
+
+    const arrive = mission.steps.find((s) => s.id === "arrive");
+    if (arrive && !arrive.done) {
+      if (nearDistrictId !== job.districtId) {
+        announce(`You are not at ${job.district} yet. Keep moving.`);
+        return;
+      }
+      completeStep("arrive");
+      announce(`Arrived at ${job.district}. Press Complete shift when ready.`);
+      return;
+    }
+
+    if (nearDistrictId !== job.districtId) {
+      announce(`Stay in ${job.district} to finish the shift.`);
+      return;
+    }
+
+    completeStep("work");
+
+    const nextDay = cityDay + 1;
+    useWeatherStore.getState().advanceDay();
+    useWorldStateStore.getState().updateWorldState(nextDay);
+
+    const nextJobs = [...completedJobs, job.id];
+    const coins = Math.round(
+      job.coins *
+        (economyStore[job.district.toLowerCase().replace(/ /g, "-") as keyof typeof economyStore]?.jobMultiplier ?? 1),
+    );
+    const nextBalance = balance + coins;
+    const nextRep = Math.min(99, reputation + job.rep);
+
+    setCompletedJobs(nextJobs);
+    setBalance(nextBalance);
+    setReputation(nextRep);
+    setCityDay(nextDay);
+    clearMission();
+    announce(`Shift done — ${job.coins} City Coins earned at ${job.district}.`);
+    persist({
+      completedJobs: nextJobs,
+      balance: nextBalance,
+      reputation: nextRep,
+      cityDay: nextDay,
+    });
+  }
+
+  /** Instant complete for guests who prefer the old one-click flow */
   function workJob(jobId: string) {
     const job = JOBS.find((j) => j.id === jobId);
     if (!job || completedJobs.includes(jobId)) return;
+
+    // Prefer mission roam if player is in free-walk mode or already on a path
+    if (roamMode !== "orbit") {
+      beginMission(jobId);
+      return;
+    }
 
     const nextDay = cityDay + 1;
     useWeatherStore.getState().advanceDay();
@@ -624,8 +735,71 @@ export function AfroMetaverseGame() {
             <section>
               <div className="am-screen-head">
                 <h1>Port Harcourt, Day {cityDay}</h1>
-                <p>Tap a marker to visit a district. Every street has something for a citizen on the move.</p>
+                <p>
+                  {roamMode === "orbit"
+                    ? "Tap a marker or enter Free roam to walk the streets — open-city exploration, civic jobs."
+                    : "WASD / arrows to move. Reach the glowing district to advance your mission."}
+                </p>
               </div>
+
+              <div className="am-roam-bar">
+                <button
+                  type="button"
+                  className={`am-btn ${roamMode === "orbit" ? "am-btn-ghost" : "am-btn-primary"}`}
+                  onClick={() => setRoamMode(roamMode === "orbit" ? "walk" : "orbit")}
+                >
+                  {roamMode === "orbit" ? "Enter free roam" : "Exit free roam"}
+                </button>
+                {(["foot", "okada", "taxi", "ferry"] as TransportId[]).map((t) => (
+                  <button
+                    key={t}
+                    type="button"
+                    className={`am-chip am-transport-chip ${roamTransport === t ? "am-transport-active" : ""}`}
+                    onClick={() => setTransport(t)}
+                    disabled={roamMode === "orbit"}
+                  >
+                    {t === "foot" ? "On foot" : t === "okada" ? "Okada" : t === "taxi" ? "Taxi" : "Ferry"}
+                  </button>
+                ))}
+                {nearDistrictId && (
+                  <span className="am-chip">Near {DISTRICT_WORLD[nearDistrictId]?.name ?? nearDistrictId}</span>
+                )}
+              </div>
+
+              {activeMission && (
+                <div className="am-mission-hud">
+                  <div className="am-mission-head">
+                    <strong>{activeMission.title}</strong>
+                    <span>
+                      +{activeMission.reward} coins · +{activeMission.rep} rep
+                    </span>
+                  </div>
+                  <ul className="am-mission-steps">
+                    {activeMission.steps.map((step) => (
+                      <li key={step.id} className={step.done ? "am-step-done" : ""}>
+                        {step.done ? "✓" : "○"} {step.label}
+                      </li>
+                    ))}
+                  </ul>
+                  <div className="am-panel-actions">
+                    <button type="button" className="am-btn am-btn-primary" onClick={finishMissionOnSite}>
+                      {activeMission.steps[0]?.done ? "Complete shift" : "Check arrival"}
+                    </button>
+                    <button
+                      type="button"
+                      className="am-btn am-btn-ghost"
+                      onClick={() => {
+                        clearMission();
+                        announce("Mission cancelled.");
+                      }}
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                  {missionLog[0] && <p className="am-panel-tip">{missionLog[0]}</p>}
+                </div>
+              )}
+
               <div
                 className="am-city-wrap am-city-canvas"
                 style={{
@@ -649,19 +823,26 @@ export function AfroMetaverseGame() {
                     dustIntensity: weatherStore.config.dustIntensity,
                   }}
                   selectedDistrict={selectedDistrict}
+                  onNearDistrict={(id) => {
+                    if (id) setSelectedDistrict(id);
+                  }}
                 />
-                {DISTRICTS.map((d) => (
-                  <button
-                    key={d.id}
-                    className={`am-marker ${selectedDistrict === d.id ? "am-marker-active" : ""}`}
-                    style={{ left: `${d.x}%`, top: `${d.y}%` }}
-                    onClick={() => setSelectedDistrict(d.id)}
-                    aria-label={`Visit ${d.name}`}
-                  >
-                    <MapPin size={16} />
-                    <span>{d.name}</span>
-                  </button>
-                ))}
+                {roamMode === "orbit" &&
+                  DISTRICTS.map((d) => (
+                    <button
+                      key={d.id}
+                      className={`am-marker ${selectedDistrict === d.id ? "am-marker-active" : ""}`}
+                      style={{ left: `${d.x}%`, top: `${d.y}%` }}
+                      onClick={() => setSelectedDistrict(d.id)}
+                      aria-label={`Visit ${d.name}`}
+                    >
+                      <MapPin size={16} />
+                      <span>{d.name}</span>
+                    </button>
+                  ))}
+                {roamMode !== "orbit" && (
+                  <div className="am-roam-hint">WASD · third-person · click canvas to focus</div>
+                )}
               </div>
 
               <div className="am-weather-panel">
@@ -728,7 +909,10 @@ export function AfroMetaverseGame() {
             <section>
               <div className="am-screen-head">
                 <h1>Work desk</h1>
-                <p>Three honest shifts are posted today. Each completed shift moves the city one day forward.</p>
+                <p>
+                  Shifts are missions: travel to the district in free roam, then complete the job on site.
+                  Quick-complete is still available for a fast day.
+                </p>
               </div>
               <div className="am-cards">
                 {JOBS.map((job) => {
@@ -743,19 +927,30 @@ export function AfroMetaverseGame() {
                       </div>
                       <h2>{job.title}</h2>
                       <p>{job.blurb}</p>
-                      <button
-                        className={`am-btn ${done ? "am-btn-ghost" : "am-btn-primary"}`}
-                        disabled={done}
-                        onClick={() => workJob(job.id)}
-                      >
-                        {done ? (
-                          <>
-                            <Check size={15} /> Shift completed
-                          </>
-                        ) : (
-                          "Take this shift"
+                      <div className="am-panel-actions">
+                        <button
+                          className={`am-btn ${done ? "am-btn-ghost" : "am-btn-primary"}`}
+                          disabled={done || !!activeMission}
+                          onClick={() => beginMission(job.id)}
+                        >
+                          {done ? (
+                            <>
+                              <Check size={15} /> Shift completed
+                            </>
+                          ) : (
+                            "Start mission"
+                          )}
+                        </button>
+                        {!done && (
+                          <button
+                            className="am-btn am-btn-secondary"
+                            disabled={!!activeMission}
+                            onClick={() => workJob(job.id)}
+                          >
+                            Quick complete
+                          </button>
                         )}
-                      </button>
+                      </div>
                     </article>
                   );
                 })}

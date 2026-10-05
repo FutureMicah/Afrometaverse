@@ -1,5 +1,9 @@
 # Roadmap — AfroMetaverse
 
+## Design note (Batch 4+)
+Open-city *feel* inspired by GTA-style free roam (third-person move, go-to-district missions, transport types).
+This is a **civic Port Harcourt sandbox**, not a crime/violence clone. No weapons or wanted-level violence.
+
 ## Batch 1 — Playable city-day prototype (complete)
 - [x] Review the Port Harcourt game brief
 - [x] Generate city artwork (src/assets/port-harcourt-city.jpg)
@@ -9,21 +13,20 @@
 - [x] Verify in the preview (build clean + Playwright walkthrough)
 
 ## Batch 2 — Persistent city (in progress)
-- [x] Schema: `citizens` table + RLS + signup trigger (drizzle/migrations/0001_citizens.sql)
-- [x] Typed Supabase client + drizzle schema for citizens
-- [x] useCitizenAuth hook (session, email/password, Google, load/save progress)
-- [x] AuthModal UI (email + Google) with am-* styles
-- [x] Game wires save on work / market / vote / learn / likes
-- [x] Debounced saves, last-saved time, editable display name
+- [x] Schema + auth + saves (code)
 - [ ] Run SQL migration in Lovable Cloud / Supabase
-- [ ] Enable Google provider in Supabase Auth settings
-- [ ] End-to-end test: sign up → play → reload → progress restored
+- [ ] Enable Google provider
+- [ ] E2E save test
 
 ## Batch 3 — A living city (in progress)
-- [x] Schema: town_posts, presence, city_events, vote_proposals, citizen_votes + RPCs
-- [x] useCityLive: realtime feed, presence heartbeats, events, vote tallies/outcomes
-- [x] Town Square shows live posts, presence count, scheduled city events
-- [x] Civic vote uses shared tallies; closes by day with pass/reject outcomes
-- [ ] Run SQL migration 0002_living_city.sql in Lovable Cloud
-- [ ] Enable Realtime on town_posts + presence tables
-- [ ] E2E: two browsers post/see each other; vote closes after day threshold
+- [x] Live feed, presence, events, vote outcomes (code)
+- [ ] Run 0002_living_city.sql + Realtime tables
+
+## Batch 4 — Free roam + missions (in progress)
+- [x] roamStore: walk mode, transport speeds, mission steps
+- [x] 3D player avatar + WASD + follow camera
+- [x] District proximity glow + transport chips (foot / okada / taxi / ferry)
+- [x] Jobs as missions: travel to district → complete shift on site
+- [x] Quick-complete still available for fast play
+- [ ] Polish collision / map bounds / minimap
+- [ ] Optional: NPC pedestrians on paths

@@ -1363,3 +1363,85 @@
 .am-card-passed {
   box-shadow: 0 0 0 2px var(--am-mint);
 }
+
+/* ---------- Batch 4: free roam + missions ---------- */
+
+.am-roam-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.am-transport-chip {
+  cursor: pointer;
+  border: 1px solid var(--am-line);
+  background: var(--am-paper);
+  color: var(--am-ink);
+}
+
+.am-transport-chip:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.am-transport-active {
+  background: var(--am-coral);
+  color: var(--am-paper);
+  border-color: var(--am-coral);
+}
+
+.am-mission-hud {
+  margin-bottom: 14px;
+  padding: 14px 16px;
+  border-radius: 16px;
+  border: 1px solid var(--am-line);
+  background: var(--am-paper);
+  box-shadow: var(--am-shadow);
+}
+
+.am-mission-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+  font-size: 13px;
+}
+
+.am-mission-head strong {
+  font-size: 16px;
+}
+
+.am-mission-steps {
+  margin: 0 0 12px;
+  padding-left: 0;
+  list-style: none;
+  font-size: 13px;
+  color: var(--am-ink-soft);
+}
+
+.am-mission-steps li {
+  margin-bottom: 4px;
+}
+
+.am-step-done {
+  color: oklch(0.42 0.1 155);
+  font-weight: 600;
+}
+
+.am-roam-hint {
+  position: absolute;
+  left: 12px;
+  bottom: 12px;
+  z-index: 2;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: oklch(0.2 0.03 65 / 0.75);
+  color: var(--am-forest-ink);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  pointer-events: none;
+}
