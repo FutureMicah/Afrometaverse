@@ -24,8 +24,11 @@ interface WeatherConfig {
   visibility: number;
   rainIntensity: number;
   dustIntensity: number;
+  summary: string;
   description: string;
-  skyColor: string;
+  sky: string;
+  glow: string;
+  risk: string;
   groundColor: string;
   fogColor: string;
   lightingMultiplier: number;
@@ -43,11 +46,10 @@ interface TimeConfig {
   skyGradientBottom: string;
 }
 
-// Port Harcourt weather seasonality
 export const WEATHER_CONFIG: Record<WeatherId, WeatherConfig> = {
   dry: {
     id: "dry",
-    label: "Dry Season",
+    label: "Dry",
     icon: "☀️",
     baseTemp: 31,
     tempVariance: 2,
@@ -56,15 +58,18 @@ export const WEATHER_CONFIG: Record<WeatherId, WeatherConfig> = {
     visibility: 85,
     rainIntensity: 0,
     dustIntensity: 0.3,
+    summary: "Warm and clear with bright streets and open views.",
     description: "Warm and clear with bright streets and open views.",
-    skyColor: "#FFD666",
+    sky: "linear-gradient(180deg, rgba(255,214,102,0.7), rgba(255,255,255,0.18))",
+    glow: "rgba(255, 190, 68, 0.18)",
+    risk: "Roads are clear and traffic feels lighter.",
     groundColor: "#D4A574",
     fogColor: "rgba(255, 214, 102, 0.1)",
     lightingMultiplier: 1.2,
   },
   rainy: {
     id: "rainy",
-    label: "Rainy Season",
+    label: "Rainy",
     icon: "🌧️",
     baseTemp: 27,
     tempVariance: 1,
@@ -73,8 +78,11 @@ export const WEATHER_CONFIG: Record<WeatherId, WeatherConfig> = {
     visibility: 50,
     rainIntensity: 0.8,
     dustIntensity: 0,
+    summary: "Short downpours sweep the city and slick the market roads.",
     description: "Short downpours sweep the city and slick the market roads.",
-    skyColor: "#3BD8F9",
+    sky: "linear-gradient(180deg, rgba(56,189,248,0.56), rgba(15,23,42,0.18))",
+    glow: "rgba(59, 130, 246, 0.14)",
+    risk: "Creekside and low-lying lanes carry the most splash and slip risk.",
     groundColor: "#8B7355",
     fogColor: "rgba(59, 130, 246, 0.2)",
     lightingMultiplier: 0.7,
@@ -90,8 +98,11 @@ export const WEATHER_CONFIG: Record<WeatherId, WeatherConfig> = {
     visibility: 40,
     rainIntensity: 0,
     dustIntensity: 0.9,
+    summary: "Dry winds and dusty haze settle over the city.",
     description: "Dry winds and dusty haze settle over the city.",
-    skyColor: "#CA8A04",
+    sky: "linear-gradient(180deg, rgba(168,85,247,0.5), rgba(15,23,42,0.18))",
+    glow: "rgba(202, 138, 4, 0.12)",
+    risk: "Air feels dry and visibility drops along the waterfront.",
     groundColor: "#A89968",
     fogColor: "rgba(202, 138, 4, 0.3)",
     lightingMultiplier: 0.9,
@@ -154,19 +165,16 @@ export const useWeatherStore = create<{
   getWeatherForDay: (day: number) => { weather: WeatherConfig; time: TimeConfig };
 }>((set, get) => {
   const getWeatherForDay = (day: number) => {
-    // Port Harcourt seasonal cycle (simplified)
-    // Days 1-60: Dry, 61-150: Rainy, 151-250: Harmattan, 251-365: Dry again
+    const normalizedDay = ((day - 1) % 365) + 1;
     let weatherId: WeatherId;
-    const dayInYear = day % 365;
 
-    if (dayInYear <= 60) weatherId = "dry";
-    else if (dayInYear <= 150) weatherId = "rainy";
-    else if (dayInYear <= 250) weatherId = "harmattan";
+    if (normalizedDay <= 60) weatherId = "dry";
+    else if (normalizedDay <= 150) weatherId = "rainy";
+    else if (normalizedDay <= 250) weatherId = "harmattan";
     else weatherId = "dry";
 
-    const timeId = ((day - 1) % 4) as unknown as TimeOfDay;
     const timeKeys: TimeOfDay[] = ["morning", "afternoon", "evening", "night"];
-    const time = timeKeys[(day - 1) % 4];
+    const time = timeKeys[(day - 1) % timeKeys.length];
 
     return {
       weather: WEATHER_CONFIG[weatherId],
@@ -208,5 +216,6 @@ export const useWeatherStore = create<{
       const currentDay = get().state.day;
       get().setDay(currentDay + 1);
     },
+    getWeatherForDay,
   };
 });
