@@ -1187,7 +1187,344 @@ function MicroDetails() {
   );
 }
 
+
+/** Low-poly fauna common in Port Harcourt streets, markets and creekside */
+function Goat({ position, rot = 0, scale = 1 }: { position: [number, number, number]; rot?: number; scale?: number }) {
+  return (
+    <group position={position} rotation={[0, rot, 0]} scale={scale}>
+      {/* Body */}
+      <mesh position={[0, 0.35, 0]} castShadow>
+        <boxGeometry args={[0.55, 0.32, 0.28]} />
+        <meshStandardMaterial color="#c4b59a" />
+      </mesh>
+      {/* Chest darker */}
+      <mesh position={[0.18, 0.32, 0]}>
+        <boxGeometry args={[0.2, 0.28, 0.26]} />
+        <meshStandardMaterial color="#a89968" />
+      </mesh>
+      {/* Head */}
+      <mesh position={[0.32, 0.48, 0]} castShadow>
+        <boxGeometry args={[0.22, 0.18, 0.16]} />
+        <meshStandardMaterial color="#d4c4a8" />
+      </mesh>
+      {/* Horns */}
+      <mesh position={[0.28, 0.62, -0.06]} rotation={[0.3, 0, -0.4]}>
+        <cylinderGeometry args={[0.02, 0.015, 0.14, 5]} />
+        <meshStandardMaterial color="#5c5346" />
+      </mesh>
+      <mesh position={[0.28, 0.62, 0.06]} rotation={[-0.3, 0, -0.4]}>
+        <cylinderGeometry args={[0.02, 0.015, 0.14, 5]} />
+        <meshStandardMaterial color="#5c5346" />
+      </mesh>
+      {/* Ears */}
+      <mesh position={[0.28, 0.52, -0.12]} rotation={[0.5, 0, 0]}>
+        <boxGeometry args={[0.06, 0.1, 0.04]} />
+        <meshStandardMaterial color="#b8956a" />
+      </mesh>
+      <mesh position={[0.28, 0.52, 0.12]} rotation={[-0.5, 0, 0]}>
+        <boxGeometry args={[0.06, 0.1, 0.04]} />
+        <meshStandardMaterial color="#b8956a" />
+      </mesh>
+      {/* Legs */}
+      {[[-0.18, -0.08], [-0.18, 0.08], [0.15, -0.08], [0.15, 0.08]].map(([lx, lz], i) => (
+        <mesh key={i} position={[lx, 0.12, lz]}>
+          <boxGeometry args={[0.06, 0.24, 0.06]} />
+          <meshStandardMaterial color="#8b7355" />
+        </mesh>
+      ))}
+      {/* Tail */}
+      <mesh position={[-0.3, 0.4, 0]} rotation={[0, 0, 0.5]}>
+        <boxGeometry args={[0.12, 0.06, 0.05]} />
+        <meshStandardMaterial color="#a89968" />
+      </mesh>
+    </group>
+  );
+}
+
+function Chicken({
+  position,
+  rot = 0,
+  rooster = false,
+}: {
+  position: [number, number, number];
+  rot?: number;
+  rooster?: boolean;
+}) {
+  const body = rooster ? "#c45c26" : "#efe2c8"
+  const comb = rooster ? "#dc2626" : "#e11d48"
+  return (
+    <group position={position} rotation={[0, rot, 0]} scale={rooster ? 1.05 : 0.9}>
+      <mesh position={[0, 0.22, 0]} castShadow>
+        <sphereGeometry args={[0.12, 6, 6]} />
+        <meshStandardMaterial color={body} />
+      </mesh>
+      <mesh position={[0.12, 0.3, 0]}>
+        <sphereGeometry args={[0.07, 6, 6]} />
+        <meshStandardMaterial color={body} />
+      </mesh>
+      {/* Beak */}
+      <mesh position={[0.2, 0.28, 0]} rotation={[0, 0, -0.4]}>
+        <coneGeometry args={[0.025, 0.08, 5]} />
+        <meshStandardMaterial color="#e8a54b" />
+      </mesh>
+      {/* Comb */}
+      <mesh position={[0.1, 0.4, 0]}>
+        <boxGeometry args={[0.06, 0.08, 0.03]} />
+        <meshStandardMaterial color={comb} />
+      </mesh>
+      {/* Tail feathers */}
+      <mesh position={[-0.12, 0.28, 0]} rotation={[0, 0, 0.6]}>
+        <boxGeometry args={[0.1, 0.12, 0.04]} />
+        <meshStandardMaterial color={rooster ? "#7c2d12" : "#d4c4a8"} />
+      </mesh>
+      {/* Legs */}
+      <mesh position={[0.02, 0.08, -0.04]}>
+        <boxGeometry args={[0.02, 0.12, 0.02]} />
+        <meshStandardMaterial color="#e8a54b" />
+      </mesh>
+      <mesh position={[0.02, 0.08, 0.04]}>
+        <boxGeometry args={[0.02, 0.12, 0.02]} />
+        <meshStandardMaterial color="#e8a54b" />
+      </mesh>
+    </group>
+  );
+}
+
+function StreetDog({ position, rot = 0 }: { position: [number, number, number]; rot?: number }) {
+  return (
+    <group position={position} rotation={[0, rot, 0]}>
+      <mesh position={[0, 0.28, 0]} castShadow>
+        <boxGeometry args={[0.45, 0.22, 0.22]} />
+        <meshStandardMaterial color="#8b7355" />
+      </mesh>
+      <mesh position={[0.25, 0.38, 0]} castShadow>
+        <boxGeometry args={[0.16, 0.16, 0.14]} />
+        <meshStandardMaterial color="#a89968" />
+      </mesh>
+      {/* Snout */}
+      <mesh position={[0.36, 0.34, 0]}>
+        <boxGeometry args={[0.1, 0.08, 0.1]} />
+        <meshStandardMaterial color="#6b5344" />
+      </mesh>
+      {/* Ears floppy */}
+      <mesh position={[0.22, 0.48, -0.08]} rotation={[0.3, 0, 0.2]}>
+        <boxGeometry args={[0.05, 0.1, 0.04]} />
+        <meshStandardMaterial color="#6b5344" />
+      </mesh>
+      <mesh position={[0.22, 0.48, 0.08]} rotation={[-0.3, 0, -0.2]}>
+        <boxGeometry args={[0.05, 0.1, 0.04]} />
+        <meshStandardMaterial color="#6b5344" />
+      </mesh>
+      {[[-0.15, -0.07], [-0.15, 0.07], [0.12, -0.07], [0.12, 0.07]].map(([lx, lz], i) => (
+        <mesh key={i} position={[lx, 0.1, lz]}>
+          <boxGeometry args={[0.05, 0.2, 0.05]} />
+          <meshStandardMaterial color="#5c5346" />
+        </mesh>
+      ))}
+      {/* Tail up-curve suggestion */}
+      <mesh position={[-0.26, 0.36, 0]} rotation={[0, 0, 0.8]}>
+        <boxGeometry args={[0.14, 0.05, 0.05]} />
+        <meshStandardMaterial color="#8b7355" />
+      </mesh>
+    </group>
+  );
+}
+
+function StreetCat({ position, rot = 0 }: { position: [number, number, number]; rot?: number }) {
+  return (
+    <group position={position} rotation={[0, rot, 0]} scale={0.85}>
+      <mesh position={[0, 0.2, 0]} castShadow>
+        <boxGeometry args={[0.32, 0.16, 0.16]} />
+        <meshStandardMaterial color="#4a5568" />
+      </mesh>
+      <mesh position={[0.18, 0.28, 0]}>
+        <sphereGeometry args={[0.08, 6, 6]} />
+        <meshStandardMaterial color="#64748b" />
+      </mesh>
+      {/* Pointed ears */}
+      <mesh position={[0.14, 0.4, -0.05]} rotation={[0, 0, 0.2]}>
+        <coneGeometry args={[0.03, 0.08, 4]} />
+        <meshStandardMaterial color="#4a5568" />
+      </mesh>
+      <mesh position={[0.14, 0.4, 0.05]} rotation={[0, 0, -0.2]}>
+        <coneGeometry args={[0.03, 0.08, 4]} />
+        <meshStandardMaterial color="#4a5568" />
+      </mesh>
+      {[[-0.1, -0.05], [-0.1, 0.05], [0.08, -0.05], [0.08, 0.05]].map(([lx, lz], i) => (
+        <mesh key={i} position={[lx, 0.08, lz]}>
+          <boxGeometry args={[0.03, 0.14, 0.03]} />
+          <meshStandardMaterial color="#374151" />
+        </mesh>
+      ))}
+      <mesh position={[-0.2, 0.22, 0]} rotation={[0, 0, -0.3]}>
+        <boxGeometry args={[0.16, 0.04, 0.04]} />
+        <meshStandardMaterial color="#4a5568" />
+      </mesh>
+    </group>
+  );
+}
+
+function AgamaLizard({ position, rot = 0 }: { position: [number, number, number]; rot?: number }) {
+  return (
+    <group position={position} rotation={[0, rot, 0]} scale={0.7}>
+      {/* Body — male agama orange head vibe */}
+      <mesh position={[0, 0.06, 0]} castShadow>
+        <boxGeometry args={[0.22, 0.06, 0.1]} />
+        <meshStandardMaterial color="#3d6b3a" />
+      </mesh>
+      <mesh position={[0.12, 0.08, 0]}>
+        <boxGeometry args={[0.1, 0.07, 0.09]} />
+        <meshStandardMaterial color="#c45c26" />
+      </mesh>
+      {/* Long tail */}
+      <mesh position={[-0.18, 0.05, 0]} rotation={[0, 0, 0.15]}>
+        <boxGeometry args={[0.2, 0.03, 0.04]} />
+        <meshStandardMaterial color="#4a7c45" />
+      </mesh>
+      {/* Tiny legs */}
+      {[[0.05, -0.06], [0.05, 0.06], [-0.05, -0.06], [-0.05, 0.06]].map(([lx, lz], i) => (
+        <mesh key={i} position={[lx, 0.03, lz]}>
+          <boxGeometry args={[0.04, 0.02, 0.02]} />
+          <meshStandardMaterial color="#2d4a2a" />
+        </mesh>
+      ))}
+    </group>
+  );
+}
+
+function Bird({
+  position,
+  rot = 0,
+  kind = "pigeon",
+}: {
+  position: [number, number, number];
+  rot?: number;
+  kind?: "pigeon" | "egret" | "crow" | "weaver";
+}) {
+  const colors = {
+    pigeon: { body: "#94a3b8", wing: "#64748b", leg: "#e8a54b" },
+    egret: { body: "#f8fafc", wing: "#e2e8f0", leg: "#1e293b" },
+    crow: { body: "#1f2937", wing: "#111827", leg: "#1f2937" },
+    weaver: { body: "#e8a54b", wing: "#c45c26", leg: "#5c5346" },
+  }[kind]
+  const tall = kind === "egret"
+  return (
+    <group position={position} rotation={[0, rot, 0]} scale={kind === "egret" ? 1.15 : 0.85}>
+      <mesh position={[0, tall ? 0.25 : 0.12, 0]} castShadow>
+        <sphereGeometry args={[0.07, 6, 6]} />
+        <meshStandardMaterial color={colors.body} />
+      </mesh>
+      <mesh position={[0.08, tall ? 0.3 : 0.16, 0]}>
+        <sphereGeometry args={[0.045, 5, 5]} />
+        <meshStandardMaterial color={colors.body} />
+      </mesh>
+      <mesh position={[0.14, tall ? 0.28 : 0.14, 0]} rotation={[0, 0, -0.5]}>
+        <coneGeometry args={[0.015, 0.06, 4]} />
+        <meshStandardMaterial color="#1e293b" />
+      </mesh>
+      {/* Wings folded */}
+      <mesh position={[-0.02, tall ? 0.25 : 0.12, 0.06]} rotation={[0.3, 0, 0]}>
+        <boxGeometry args={[0.1, 0.03, 0.06]} />
+        <meshStandardMaterial color={colors.wing} />
+      </mesh>
+      <mesh position={[-0.02, tall ? 0.25 : 0.12, -0.06]} rotation={[-0.3, 0, 0]}>
+        <boxGeometry args={[0.1, 0.03, 0.06]} />
+        <meshStandardMaterial color={colors.wing} />
+      </mesh>
+      {tall && (
+        <>
+          <mesh position={[0.02, 0.1, -0.03]}>
+            <boxGeometry args={[0.02, 0.2, 0.02]} />
+            <meshStandardMaterial color={colors.leg} />
+          </mesh>
+          <mesh position={[0.02, 0.1, 0.03]}>
+            <boxGeometry args={[0.02, 0.2, 0.02]} />
+            <meshStandardMaterial color={colors.leg} />
+          </mesh>
+        </>
+      )}
+    </group>
+  );
+}
+
+function Duck({ position, rot = 0 }: { position: [number, number, number]; rot?: number }) {
+  return (
+    <group position={position} rotation={[0, rot, 0]}>
+      <mesh position={[0, 0.12, 0]} castShadow>
+        <sphereGeometry args={[0.12, 6, 6]} />
+        <meshStandardMaterial color="#5c5346" />
+      </mesh>
+      <mesh position={[0.12, 0.2, 0]}>
+        <sphereGeometry args={[0.07, 6, 6]} />
+        <meshStandardMaterial color="#3f3a36" />
+      </mesh>
+      <mesh position={[0.2, 0.18, 0]} rotation={[0, 0, -0.3]}>
+        <coneGeometry args={[0.03, 0.08, 5]} />
+        <meshStandardMaterial color="#e8a54b" />
+      </mesh>
+    </group>
+  );
+}
+
+function PortHarcourtAnimals() {
+  return (
+    <group>
+      {/* Goats grazing empty lots and roadsides — very PH */}
+      <Goat position={[1.6, 0, 3.6]} rot={0.8} />
+      <Goat position={[0.9, 0, 3.9]} rot={-0.4} scale={0.85} />
+      <Goat position={[-7.0, 0, 1.4]} rot={2.2} />
+      <Goat position={[8.0, 0, -1.8]} rot={-1.2} scale={0.9} />
+
+      {/* Chickens scratching near market stalls */}
+      <Chicken position={[-3.8, 0, 3.3]} rot={0.5} />
+      <Chicken position={[-3.4, 0, 3.5]} rot={-1.0} />
+      <Chicken position={[-2.7, 0, 2.9]} rot={2.0} rooster />
+      <Chicken position={[-4.4, 0, 2.6]} rot={0.2} />
+
+      {/* Street dogs */}
+      <StreetDog position={[2.5, 0, 0.9]} rot={-0.6} />
+      <StreetDog position={[-1.0, 0, 5.0]} rot={1.4} />
+      <StreetDog position={[6.0, 0, 3.2]} rot={3.0} />
+
+      {/* Cats — walls, shade, near civic */}
+      <StreetCat position={[2.0, 1.55, -0.3]} rot={0.3} />
+      <StreetCat position={[-5.1, 0, 1.6]} rot={-0.8} />
+      <StreetCat position={[4.0, 0.08, 3.7]} rot={1.1} />
+
+      {/* Agama lizards on sunny walls and concrete */}
+      <AgamaLizard position={[-4.55, 0.5, 1.5]} rot={1.5} />
+      <AgamaLizard position={[6.35, 0.4, 0.35]} rot={-0.5} />
+      <AgamaLizard position={[0.2, 0.15, 0.5]} rot={0.9} />
+      <AgamaLizard position={[3.5, 0.35, -3.3]} rot={2.5} />
+
+      {/* Pigeons on road and wires area */}
+      <Bird position={[-0.5, 0.08, 0.5]} rot={0.4} kind="pigeon" />
+      <Bird position={[0.8, 0.08, 0.0]} rot={-1.2} kind="pigeon" />
+      <Bird position={[-2.5, 3.95, 2.0]} rot={0.2} kind="pigeon" />
+      <Bird position={[2.0, 3.95, 2.2]} rot={1.0} kind="pigeon" />
+
+      {/* Pied crow-like on rooftop */}
+      <Bird position={[-1.2, 2.5, 1.5]} rot={-0.5} kind="crow" />
+      <Bird position={[4.2, 2.7, 4.0]} rot={0.7} kind="crow" />
+
+      {/* Village weaver yellow near green patches */}
+      <Bird position={[-8.5, 0.15, 4.3]} rot={0.3} kind="weaver" />
+      <Bird position={[9.0, 0.15, -3.8]} rot={-0.9} kind="weaver" />
+
+      {/* Cattle egrets near creek / drainage — classic PH wetland edge */}
+      <Bird position={[-6.2, 0.05, -4.0]} rot={0.6} kind="egret" />
+      <Bird position={[-4.8, 0.05, -4.5]} rot={-0.3} kind="egret" />
+      <Bird position={[-5.5, 0.05, -3.5]} rot={1.2} kind="egret" />
+
+      {/* Ducks on water edge */}
+      <Duck position={[-5.0, 0.08, -5.0]} rot={0.5} />
+      <Duck position={[-4.4, 0.08, -5.3]} rot={-0.8} />
+    </group>
+  );
+}
+
 function AtmosphereEffects({
+
 
 
 
@@ -1437,6 +1774,7 @@ export function AfroMetaverseScene({
         <DebrisAndProps />
         <StreetLife />
         <MicroDetails />
+        <PortHarcourtAnimals />
 
         {Object.entries(DISTRICT_LAYOUT).map(([districtId, info]) => (
           <DistrictHub
