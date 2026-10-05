@@ -948,7 +948,247 @@ function StreetLife() {
   );
 }
 
+
+function MicroDetails() {
+  return (
+    <group>
+      {/* Manhole covers */}
+      {[[-1.5, 0.5], [3.0, 0.3], [-4.0, -1.2], [5.5, 1.8], [0.5, 4.4]].map(([x, z], i) => (
+        <mesh key={`mh${i}`} position={[x, 0.05, z]} rotation={[-Math.PI / 2, 0, 0.2 * i]}>
+          <circleGeometry args={[0.18, 10]} />
+          <meshStandardMaterial color="#3f3a36" />
+        </mesh>
+      ))}
+
+      {/* Potholes */}
+      {[[1.8, 0.15], [-2.2, 4.5], [4.5, -2.6]].map(([x, z], i) => (
+        <mesh key={`ph${i}`} position={[x, 0.04, z]} rotation={[-Math.PI / 2, 0, 0]}>
+          <circleGeometry args={[0.22 + i * 0.05, 8]} />
+          <meshStandardMaterial color="#3d3429" />
+        </mesh>
+      ))}
+
+      {/* Bollards */}
+      {[
+        [-0.8, 1.0],
+        [0.8, 1.0],
+        [-3.0, 2.8],
+        [-2.4, 2.8],
+        [5.0, 2.2],
+      ].map(([x, z], i) => (
+        <mesh key={`bol${i}`} position={[x, 0.25, z]} castShadow>
+          <cylinderGeometry args={[0.06, 0.07, 0.5, 6]} />
+          <meshStandardMaterial color={i % 2 ? "#c45c26" : "#efe2c8"} />
+        </mesh>
+      ))}
+
+      {/* Plastic chairs at market */}
+      {[
+        [-3.9, 3.4],
+        [-3.5, 3.5],
+        [-2.9, 3.3],
+      ].map(([x, z], i) => (
+        <group key={`ch${i}`} position={[x, 0, z]}>
+          <mesh position={[0, 0.28, 0]} castShadow>
+            <boxGeometry args={[0.28, 0.04, 0.28]} />
+            <meshStandardMaterial color={["#e8a54b", "#5f9e8f", "#c97b63"][i]} />
+          </mesh>
+          <mesh position={[0, 0.14, 0]}>
+            <boxGeometry args={[0.22, 0.28, 0.04]} />
+            <meshStandardMaterial color={["#e8a54b", "#5f9e8f", "#c97b63"][i]} />
+          </mesh>
+        </group>
+      ))}
+
+      {/* Cooler box */}
+      <mesh position={[-4.3, 0.22, 3.0]} castShadow>
+        <boxGeometry args={[0.4, 0.35, 0.3]} />
+        <meshStandardMaterial color="#1d4ed8" />
+      </mesh>
+      <mesh position={[-4.3, 0.42, 3.0]}>
+        <boxGeometry args={[0.42, 0.06, 0.32]} />
+        <meshStandardMaterial color="#93c5fd" />
+      </mesh>
+
+      {/* Umbrella poles + discs */}
+      {[
+        [-3.3, 2.55],
+        [-2.4, 2.85],
+      ].map(([x, z], i) => (
+        <group key={`um${i}`} position={[x, 0, z]}>
+          <mesh position={[0, 0.9, 0]}>
+            <cylinderGeometry args={[0.03, 0.03, 1.8, 5]} />
+            <meshStandardMaterial color="#5c5346" />
+          </mesh>
+          <mesh position={[0, 1.75, 0]}>
+            <coneGeometry args={[0.55, 0.2, 8]} />
+            <meshStandardMaterial color={i ? "#c45c26" : "#e8a54b"} />
+          </mesh>
+        </group>
+      ))}
+
+      {/* Flower pots / tyre planters */}
+      {[
+        [1.9, -2.0],
+        [2.3, -2.1],
+        [-1.4, -1.3],
+        [0.3, -1.6],
+      ].map(([x, z], i) => (
+        <group key={`pot${i}`} position={[x, 0, z]}>
+          <mesh position={[0, 0.15, 0]}>
+            <cylinderGeometry args={[0.12, 0.14, 0.25, 8]} />
+            <meshStandardMaterial color={i % 2 ? "#1f2937" : "#7c2d12"} />
+          </mesh>
+          <mesh position={[0, 0.32, 0]}>
+            <sphereGeometry args={[0.14, 6, 6]} />
+            <meshStandardMaterial color="#4a7c45" />
+          </mesh>
+        </group>
+      ))}
+
+      {/* Door steps on a few buildings */}
+      {[
+        [-4.2, 3.8 + 0.65],
+        [1.8, -2.4 + 0.75],
+        [3.5, 1.0 + 0.6],
+      ].map(([x, z], i) => (
+        <mesh key={`st${i}`} position={[x, 0.08, z]} castShadow>
+          <boxGeometry args={[0.5, 0.12, 0.25]} />
+          <meshStandardMaterial color="#9a958c" />
+        </mesh>
+      ))}
+
+      {/* Security bars on select facades (thin lattice) */}
+      {[
+        { x: -2.0, z: 4.0 + 0.66, y: 1.0 },
+        { x: 1.8, z: -2.4 + 0.71, y: 1.3 },
+      ].map((p, i) => (
+        <group key={`bar${i}`} position={[p.x, p.y, p.z]}>
+          {[-0.2, 0, 0.2].map((ox, j) => (
+            <mesh key={j} position={[ox, 0, 0]}>
+              <boxGeometry args={[0.03, 0.45, 0.03]} />
+              <meshStandardMaterial color="#1e293b" />
+            </mesh>
+          ))}
+          <mesh position={[0, 0.15, 0]}>
+            <boxGeometry args={[0.5, 0.03, 0.03]} />
+            <meshStandardMaterial color="#1e293b" />
+          </mesh>
+        </group>
+      ))}
+
+      {/* Satellite dish already on towers; small rooftop rails */}
+      {[
+        { x: -1.2, z: 1.5, h: 2.2 },
+        { x: 4.2, z: 4.0, h: 2.4 },
+      ].map((b, i) => (
+        <mesh key={`rail${i}`} position={[b.x, b.h + 0.35, b.z + 0.4]}>
+          <boxGeometry args={[0.8, 0.04, 0.04]} />
+          <meshStandardMaterial color="#64748b" />
+        </mesh>
+      ))}
+
+      {/* Gutter strips along main road edge */}
+      <mesh position={[0, 0.04, 0.75]} rotation={[-Math.PI / 2, 0, 0]}>
+        <planeGeometry args={[18, 0.12]} />
+        <meshStandardMaterial color="#4a5568" opacity={0.5} transparent />
+      </mesh>
+      <mesh position={[0, 0.04, -0.35]} rotation={[-Math.PI / 2, 0, 0]}>
+        <planeGeometry args={[16, 0.12]} />
+        <meshStandardMaterial color="#4a5568" opacity={0.45} transparent />
+      </mesh>
+
+      {/* Firewood / stick pile */}
+      {[-0.1, 0, 0.1].map((ox, i) => (
+        <mesh key={`wood${i}`} position={[-7.3 + ox, 0.1, -2.0]} rotation={[0.2, 0.5 * i, 0.4]}>
+          <cylinderGeometry args={[0.04, 0.04, 0.7, 5]} />
+          <meshStandardMaterial color="#6b5344" />
+        </mesh>
+      ))}
+
+      {/* Painted tyre rings as road edge markers */}
+      {[
+        [-5.5, 0.4],
+        [5.5, 0.5],
+        [-3.5, 4.7],
+      ].map(([x, z], i) => (
+        <mesh key={`tyre${i}`} position={[x, 0.12, z]} rotation={[Math.PI / 2, 0, 0]}>
+          <torusGeometry args={[0.16, 0.05, 6, 10]} />
+          <meshStandardMaterial color={i === 1 ? "#c45c26" : "#1f2937"} />
+        </mesh>
+      ))}
+
+      {/* Small street name plate posts */}
+      {[
+        { x: -3.0, z: 0.6, rot: 0 },
+        { x: 2.6, z: 0.6, rot: 0.1 },
+        { x: 0.3, z: -2.5, rot: 1.4 },
+      ].map((s, i) => (
+        <group key={`sign${i}`} position={[s.x, 0, s.z]} rotation={[0, s.rot, 0]}>
+          <mesh position={[0, 0.7, 0]}>
+            <cylinderGeometry args={[0.03, 0.04, 1.4, 5]} />
+            <meshStandardMaterial color="#5c5346" />
+          </mesh>
+          <mesh position={[0.25, 1.25, 0]}>
+            <boxGeometry args={[0.7, 0.22, 0.04]} />
+            <meshStandardMaterial color="#efe2c8" />
+          </mesh>
+          <mesh position={[0.25, 1.25, 0.03]}>
+            <boxGeometry args={[0.55, 0.12, 0.02]} />
+            <meshStandardMaterial color="#1e3a5f" />
+          </mesh>
+        </group>
+      ))}
+
+      {/* Plastic bottles / micro clutter */}
+      {[
+        [-3.7, 2.5],
+        [-2.5, 3.4],
+        [5.2, 1.5],
+        [0.4, 5.0],
+      ].map(([x, z], i) => (
+        <mesh key={`bot${i}`} position={[x, 0.1, z]}>
+          <cylinderGeometry args={[0.04, 0.04, 0.16, 5]} />
+          <meshStandardMaterial color={i % 2 ? "#22c55e" : "#38bdf8"} />
+        </mesh>
+      ))}
+
+      {/* Cardboard boxes near stalls */}
+      {[
+        [-4.5, 3.2],
+        [-3.1, 3.6],
+      ].map(([x, z], i) => (
+        <mesh key={`box${i}`} position={[x, 0.12, z]} castShadow>
+          <boxGeometry args={[0.3, 0.2, 0.25]} />
+          <meshStandardMaterial color="#a89968" />
+        </mesh>
+      ))}
+
+      {/* Roof TV antenna thin rods on civic neighbour */}
+      <group position={[1.8, 2.15, -2.4]}>
+        <mesh position={[0, 0.4, 0]}>
+          <cylinderGeometry args={[0.02, 0.02, 0.8, 4]} />
+          <meshStandardMaterial color="#64748b" />
+        </mesh>
+        <mesh position={[0.15, 0.55, 0]} rotation={[0, 0, 0.5]}>
+          <boxGeometry args={[0.4, 0.02, 0.02]} />
+          <meshStandardMaterial color="#64748b" />
+        </mesh>
+      </group>
+
+      {/* Chain barrier on one empty lot edge */}
+      {Array.from({ length: 5 }).map((_, i) => (
+        <mesh key={`chain${i}`} position={[1.2 - 1.0 + i * 0.5, 0.45, 3.2 + 1.0]}>
+          <sphereGeometry args={[0.05, 5, 5]} />
+          <meshStandardMaterial color="#78716c" />
+        </mesh>
+      ))}
+    </group>
+  );
+}
+
 function AtmosphereEffects({
+
 
 
   weather,
@@ -977,6 +1217,18 @@ function AtmosphereEffects({
     [],
   );
 
+  const puddles = useMemo(
+    () =>
+      [
+        [1.5, 0.3],
+        [-2.0, 4.3],
+        [-5.0, -3.0],
+        [4.0, 1.5],
+        [0.2, -2.5],
+      ] as [number, number][],
+    [],
+  );
+
   return (
     <>
       {weather.rainIntensity > 0.1 &&
@@ -991,6 +1243,13 @@ function AtmosphereEffects({
           <mesh key={dust.key} position={[dust.x, dust.y, dust.z]}>
             <sphereGeometry args={[0.07, 8, 8]} />
             <meshStandardMaterial color="#d6b77a" transparent opacity={0.35} />
+          </mesh>
+        ))}
+      {weather.rainIntensity > 0.1 &&
+        puddles.map(([x, z], i) => (
+          <mesh key={`puddle${i}`} position={[x, 0.05, z]} rotation={[-Math.PI / 2, 0, 0]}>
+            <circleGeometry args={[0.35 + (i % 3) * 0.1, 10]} />
+            <meshStandardMaterial color="#1e3a5f" transparent opacity={0.45} />
           </mesh>
         ))}
     </>
@@ -1177,6 +1436,7 @@ export function AfroMetaverseScene({
         <PowerPoles />
         <DebrisAndProps />
         <StreetLife />
+        <MicroDetails />
 
         {Object.entries(DISTRICT_LAYOUT).map(([districtId, info]) => (
           <DistrictHub
