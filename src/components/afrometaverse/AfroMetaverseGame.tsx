@@ -20,6 +20,12 @@ import {
   X,
 } from "lucide-react";
 import cityImage from "@/assets/port-harcourt-city.jpg";
+import AfroMetaverseScene from "@/components/afrometaverse/AfroMetaverseScene";
+import { useEconomyStore } from "@/stores/economyStore";
+import { useResilienceStore } from "@/stores/resilienceStore";
+import { useSocialStateStore } from "@/stores/socialStateStore";
+import { useWeatherStore } from "@/stores/weatherStore";
+import { useWorldStateStore } from "@/stores/worldStateStore";
 
 type ScreenId = "city" | "work" | "market" | "civic" | "social" | "learn";
 type WeatherId = "dry" | "rainy" | "harmattan";
@@ -177,7 +183,7 @@ const COURSES = [
     minutes: 8,
     reward: 40,
     lesson:
-      "Every stall keeps two columns: what came in, what went out. If the left column grows faster than the coins on the right, someone is eating the profit. Practice by copying one day of Mama Ngo's ledger before lunch.",
+      "Every stall keeps two columns: what came in, what went out. If the left column grows faster than the coins on the right, someone is eating the profit. Practice by copying one day of Mama Ngo's ledger.",
   },
   {
     id: "c2",
@@ -193,7 +199,7 @@ const COURSES = [
     minutes: 15,
     reward: 80,
     lesson:
-      "A good proposal names one problem, one place, and one fix. \"Dark road\" becomes \"solar lamps on Creek Road between the jetty and the market gate\". Say who pays, who maintains, and how neighbours will know the change is working.",
+      "A good proposal names one problem, one place, and one fix. 'Dark road' becomes 'solar lamps on Creek Road between the jetty and the market gate.' Say who pays, who maintains, and how neighbours will benefit.",
   },
 ];
 
@@ -256,13 +262,28 @@ export function AfroMetaverseGame() {
   const [votedFor, setVotedFor] = useState<string | null>(null);
   const [doneCourses, setDoneCourses] = useState<string[]>([]);
   const [openCourse, setOpenCourse] = useState<string | null>(null);
-  const [selectedDistrict, setSelectedDistrict] = useState<string | null>(null);
+  const [selectedDistrict, setSelectedDistrict] = useState<string | null>("town-market");
   const [postDraft, setPostDraft] = useState("");
   const [posts, setPosts] = useState(STARTING_POSTS);
   const [likedPosts, setLikedPosts] = useState<string[]>([]);
   const [toast, setToast] = useState<{ id: number; text: string } | null>(null);
   const toastTimer = useRef<number | undefined>(undefined);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+
+  const weatherStore = useWeatherStore((state) => state);
+  const worldState = useWorldStateStore((state) => state.state);
+  const resilienceStore = useResilienceStore((state) => state);
+  const economyStore = useEconomyStore((state) => state.state);
+  const socialState = useSocialStateStore((state) => state.state);
+
+  useEffect(() => {
+    setCityDay(worldState.day);
+  }, [worldState.day]);
+
+  useEffect(() => {
+    useEconomyStore.getState().syncEconomy();
+    useSocialStateStore.getState().syncSocialState();
+  }, [worldState.day, worldState.currentDisaster, weatherStore.state.weatherId]);
 
   useEffect(() => {
     return () => window.clearTimeout(toastTimer.current);
@@ -278,10 +299,13 @@ export function AfroMetaverseGame() {
   const levelLabel = `Level ${String(level).padStart(2, "0")}`;
   const repPct = Math.min(100, (reputation % 10) * 10 || (reputation === 0 ? 0 : 100));
   const activeDistrict = DISTRICTS.find((d) => d.id === selectedDistrict) ?? null;
-  const timeOfDay = TIME_OF_DAY[(cityDay - 1) % TIME_OF_DAY.length];
-  const weather = WEATHER_STATES[(cityDay - 1) % WEATHER_STATES.length];
-  const districtWeatherNote = getDistrictWeatherNote(activeDistrict?.id, weather.id, timeOfDay.key);
-  const cityPulseText = `${timeOfDay.label} conditions: ${weather.summary} ${weather.risk}`;
+  const timeOfDay = TIME_OF_DAY.find((entry) => entry.key === weatherStore.state.timeOfDay) ?? TIME_OF_DAY[0];
+  const weather = WEATHER_STATES.find((entry) => entry.id === weatherStore.state.weatherId) ?? WEATHER_STATES[0];
+  const districtWeatherNote = getDistrictWeatherNote(activeDistrict?.id, weather.id as WeatherId, timeOfDay.key);
+  const cityPulseText =
+    worldState.globalEvents[0] ??
+    socialState.feed[0] ??
+    `${timeOfDay.label} conditions: ${weather.summary} ${weather.risk}`;
 
   function go(next: ScreenId) {
     setScreen(next);
@@ -291,10 +315,15 @@ export function AfroMetaverseGame() {
   function workJob(jobId: string) {
     const job = JOBS.find((j) => j.id === jobId);
     if (!job || completedJobs.includes(jobId)) return;
+
+    const nextDay = cityDay + 1;
+    useWeatherStore.getState().advanceDay();
+    useWorldStateStore.getState().updateWorldState(nextDay);
+
     setCompletedJobs((c) => [...c, jobId]);
-    setBalance((b) => b + job.coins);
+    setBalance((b) => b + Math.round(job.coins * (economyStore[job.district.toLowerCase().replace(/ /g, "-") as keyof typeof economyStore]?.jobMultiplier ?? 1)));
     setReputation((r) => Math.min(99, r + job.rep));
-    setCityDay((d) => d + 1);
+    setCityDay(nextDay);
     announce(`Shift done — ${job.coins} City Coins earned at ${job.district}.`);
   }
 
@@ -345,7 +374,6 @@ export function AfroMetaverseGame() {
 
   return (
     <div className="am-shell">
-      {/* ---------- Top bar ---------- */}
       <header className="am-topbar">
         <div className="am-brand">
           <span className="am-brand-mark">A.</span>
@@ -372,7 +400,6 @@ export function AfroMetaverseGame() {
       </header>
 
       <div className="am-body">
-        {/* ---------- Left rail ---------- */}
         <nav className={`am-rail ${mobileNavOpen ? "am-rail-open" : ""}`} aria-label="City navigation">
           {NAV.map((item) => {
             const Icon = item.icon;
@@ -388,12 +415,9 @@ export function AfroMetaverseGame() {
               </button>
             );
           })}
-          <p className="am-rail-note">
-            Season 01 · Day {cityDay}
-          </p>
+          <p className="am-rail-note">Season 01 · Day {cityDay}</p>
         </nav>
 
-        {/* ---------- Main ---------- */}
         <main className="am-main">
           {screen === "city" && (
             <section>
@@ -406,6 +430,8 @@ export function AfroMetaverseGame() {
                 style={{
                   background: weather.sky,
                   boxShadow: `inset 0 0 0 1px rgba(255,255,255,0.08), 0 24px 50px ${weather.glow}`,
+                  height: 520,
+                  overflow: "hidden",
                 }}
               >
                 <div
@@ -416,7 +442,17 @@ export function AfroMetaverseGame() {
                     pointerEvents: "none",
                   }}
                 />
-                <img src={cityImage} alt="Isometric illustration of Port Harcourt at midday" className="am-city-img" />
+                <AfroMetaverseScene
+                  weather={{
+                    id: weatherStore.state.weatherId,
+                    groundColor: weatherStore.config.groundColor,
+                    fogColor: weatherStore.config.fogColor,
+                    lightingMultiplier: weatherStore.config.lightingMultiplier,
+                    rainIntensity: weatherStore.config.rainIntensity,
+                    dustIntensity: weatherStore.config.dustIntensity,
+                  }}
+                  selectedDistrict={selectedDistrict}
+                />
                 {DISTRICTS.map((d) => (
                   <button
                     key={d.id}
@@ -450,15 +486,13 @@ export function AfroMetaverseGame() {
                 <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
                   <span aria-hidden="true" style={{ fontSize: 28 }}>{weather.icon}</span>
                   <div>
-                    <div style={{ fontSize: 12, textTransform: "uppercase", letterSpacing: 1.2, opacity: 0.75 }}>
-                      Weather
-                    </div>
+                    <div style={{ fontSize: 12, textTransform: "uppercase", letterSpacing: 1.2, opacity: 0.75 }}>Weather</div>
                     <strong style={{ fontSize: 18 }}>{weather.label}</strong>
                   </div>
                 </div>
                 <div style={{ textAlign: "right" }}>
                   <div style={{ fontSize: 12, opacity: 0.75 }}>{timeOfDay.label}</div>
-                  <strong style={{ fontSize: 24 }}>{weather.temp}°C</strong>
+                  <strong style={{ fontSize: 24 }}>{Math.round(weatherStore.state.temperature)}°C</strong>
                 </div>
               </div>
 
@@ -703,7 +737,6 @@ export function AfroMetaverseGame() {
           )}
         </main>
 
-        {/* ---------- Right citizen card ---------- */}
         <aside className="am-citizen" aria-label="Citizen card">
           <div className="am-citizen-head">
             <span className="am-citizen-avatar am-citizen-avatar-lg">EO</span>
@@ -763,7 +796,6 @@ export function AfroMetaverseGame() {
         </aside>
       </div>
 
-      {/* ---------- Mobile nav ---------- */}
       <nav className="am-nav-mobile" aria-label="City navigation, mobile">
         {NAV.slice(0, 5).map((item) => {
           const Icon = item.icon;
@@ -781,7 +813,6 @@ export function AfroMetaverseGame() {
         })}
       </nav>
 
-      {/* ---------- Toast ---------- */}
       {toast && (
         <div key={toast.id} className="am-toast" role="status">
           <Landmark size={15} /> {toast.text}
