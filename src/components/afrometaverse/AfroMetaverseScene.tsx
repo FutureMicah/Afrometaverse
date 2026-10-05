@@ -177,6 +177,24 @@ function RoadNetwork() {
           </mesh>
         </group>
       ))}
+      {/* Crosswalk bars */}
+      {[-1.2, -0.6, 0, 0.6, 1.2].map((ox, i) => (
+        <mesh key={`cw${i}`} position={[ox, 0.045, 0.2]} rotation={[-Math.PI / 2, 0, 0]}>
+          <planeGeometry args={[0.35, 1.0]} />
+          <meshStandardMaterial color="#e7e0d0" opacity={0.7} transparent />
+        </mesh>
+      ))}
+      {[-1.0, -0.4, 0.2, 0.8].map((oz, i) => (
+        <mesh key={`cw2${i}`} position={[-3.2, 0.045, oz]} rotation={[-Math.PI / 2, 0, Math.PI / 2]}>
+          <planeGeometry args={[0.3, 0.9]} />
+          <meshStandardMaterial color="#e7e0d0" opacity={0.65} transparent />
+        </mesh>
+      ))}
+      {/* Speed bump near market */}
+      <mesh position={[-2.5, 0.08, 2.5]} castShadow>
+        <boxGeometry args={[0.9, 0.1, 0.35]} />
+        <meshStandardMaterial color="#5c5346" />
+      </mesh>
     </group>
   );
 }
@@ -278,6 +296,37 @@ function CityBlock({ spec }: { spec: BuildingSpec }) {
           <meshStandardMaterial color="#94a3b8" />
         </mesh>
       )}
+      {/* Balcony on taller blocks */}
+      {spec.h > 1.7 && (
+        <mesh position={[0, y * 1.15, spec.d / 2 + 0.12]} castShadow>
+          <boxGeometry args={[spec.w * 0.55, 0.06, 0.28]} />
+          <meshStandardMaterial color="#9a958c" />
+        </mesh>
+      )}
+      {spec.h > 1.7 && (
+        <mesh position={[0, y * 1.28, spec.d / 2 + 0.24]}>
+          <boxGeometry args={[spec.w * 0.55, 0.22, 0.04]} />
+          <meshStandardMaterial color="#64748b" />
+        </mesh>
+      )}
+      {/* Satellite dish */}
+      {spec.kind === "tower" && (
+        <group position={[-spec.w * 0.2, spec.h + 0.55, 0]}>
+          <mesh rotation={[0.6, 0.3, 0]}>
+            <cylinderGeometry args={[0.22, 0.22, 0.04, 10]} />
+            <meshStandardMaterial color="#cbd5e1" />
+          </mesh>
+          <mesh position={[0, -0.15, 0]}>
+            <cylinderGeometry args={[0.03, 0.03, 0.3, 5]} />
+            <meshStandardMaterial color="#64748b" />
+          </mesh>
+        </group>
+      )}
+      {/* Painted base trim */}
+      <mesh position={[0, 0.08, 0]}>
+        <boxGeometry args={[spec.w * 1.02, 0.16, spec.d * 1.02]} />
+        <meshStandardMaterial color="#8b7355" />
+      </mesh>
     </group>
   );
 }
@@ -507,12 +556,26 @@ function Waterfront({ active }: { active: boolean }) {
         <meshStandardMaterial color="#5a4638" />
       </mesh>
       {/* Mangrove suggestion */}
-      {[-2.5, -1.5, 2.2].map((mx, i) => (
-        <mesh key={i} position={[mx, 0.5, -1.5]}>
-          <sphereGeometry args={[0.4, 6, 6]} />
+      {[-2.5, -1.5, 2.2, 1.0, -3.2].map((mx, i) => (
+        <mesh key={i} position={[mx, 0.5, -1.5 - (i % 2) * 0.4]}>
+          <sphereGeometry args={[0.35 + (i % 3) * 0.08, 6, 6]} />
           <meshStandardMaterial color={PALETTE.palm} />
         </mesh>
       ))}
+      {/* Moored canoe */}
+      <mesh position={[1.2, 0.2, 0.3]} rotation={[0, 0.4, 0]} castShadow>
+        <boxGeometry args={[1.4, 0.25, 0.4]} />
+        <meshStandardMaterial color="#6b5344" />
+      </mesh>
+      <mesh position={[1.2, 0.35, 0.3]} rotation={[0, 0.4, 0]}>
+        <boxGeometry args={[1.1, 0.12, 0.28]} />
+        <meshStandardMaterial color="#3f3a36" />
+      </mesh>
+      {/* Second small boat */}
+      <mesh position={[-1.5, 0.18, -0.5]} rotation={[0, -0.6, 0]} castShadow>
+        <boxGeometry args={[1.0, 0.2, 0.32]} />
+        <meshStandardMaterial color="#5c5346" />
+      </mesh>
     </group>
   );
 }
@@ -755,7 +818,138 @@ function Sidewalks() {
   );
 }
 
+
+function StreetLife() {
+  return (
+    <group>
+      {/* Bus / keke shelter near civic */}
+      <group position={[1.2, 0, -0.9]}>
+        <mesh position={[0, 1.1, 0]} castShadow>
+          <boxGeometry args={[1.6, 0.08, 0.7]} />
+          <meshStandardMaterial color="#4db6a0" />
+        </mesh>
+        <mesh position={[-0.7, 0.55, 0]}>
+          <boxGeometry args={[0.06, 1.1, 0.06]} />
+          <meshStandardMaterial color="#5c5346" />
+        </mesh>
+        <mesh position={[0.7, 0.55, 0]}>
+          <boxGeometry args={[0.06, 1.1, 0.06]} />
+          <meshStandardMaterial color="#5c5346" />
+        </mesh>
+        <mesh position={[0, 0.45, -0.3]} castShadow>
+          <boxGeometry args={[1.4, 0.08, 0.3]} />
+          <meshStandardMaterial color="#6b5344" />
+        </mesh>
+      </group>
+
+      {/* Trash bins */}
+      {[[-2.8, 1.2], [2.6, 0.6], [-5.2, -2.8], [5.8, 2.2]].map(([x, z], i) => (
+        <mesh key={`bin${i}`} position={[x, 0.28, z]} castShadow>
+          <cylinderGeometry args={[0.14, 0.16, 0.5, 8]} />
+          <meshStandardMaterial color={i % 2 ? "#166534" : "#1e3a5f"} />
+        </mesh>
+      ))}
+
+      {/* Wall mural slabs */}
+      <mesh position={[-4.8, 0.9, 1.4]} castShadow>
+        <boxGeometry args={[0.12, 1.6, 1.8]} />
+        <meshStandardMaterial color="#c45c26" />
+      </mesh>
+      <mesh position={[-4.72, 1.1, 1.4]}>
+        <boxGeometry args={[0.04, 0.9, 1.2]} />
+        <meshStandardMaterial color="#f0e6c8" />
+      </mesh>
+      <mesh position={[6.2, 0.85, 0.3]} castShadow>
+        <boxGeometry args={[0.12, 1.5, 1.5]} />
+        <meshStandardMaterial color="#1d6f8a" />
+      </mesh>
+
+      {/* Laundry lines between creekside sheds */}
+      <mesh position={[-6.5, 1.3, -3.5]} rotation={[0, 0.4, 0]}>
+        <boxGeometry args={[1.8, 0.02, 0.02]} />
+        <meshStandardMaterial color="#e7e0d0" />
+      </mesh>
+      {[-0.5, 0, 0.5].map((ox, i) => (
+        <mesh key={`laun${i}`} position={[-6.5 + ox * 0.3, 1.15, -3.5 + ox * 0.2]}>
+          <boxGeometry args={[0.25, 0.35, 0.04]} />
+          <meshStandardMaterial color={["#e8a54b", "#5f9e8f", "#c97b63"][i]} />
+        </mesh>
+      ))}
+
+      {/* Fuel / filling kiosk stub */}
+      <group position={[6.8, 0, 5.0]}>
+        <mesh position={[0, 0.6, 0]} castShadow>
+          <boxGeometry args={[1.0, 1.2, 0.8]} />
+          <meshStandardMaterial color="#efe2c8" />
+        </mesh>
+        <mesh position={[0, 1.3, 0]}>
+          <boxGeometry args={[1.1, 0.15, 0.9]} />
+          <meshStandardMaterial color="#dc2626" />
+        </mesh>
+        <mesh position={[0.6, 0.7, 0.2]}>
+          <cylinderGeometry args={[0.06, 0.06, 1.0, 6]} />
+          <meshStandardMaterial color="#374151" />
+        </mesh>
+      </group>
+
+      {/* Extra scrub vegetation */}
+      {[
+        [-9.5, 2.5],
+        [-8.8, 5.5],
+        [9.2, -3.5],
+        [10.2, 1.5],
+        [-1.5, 7.2],
+        [2.5, 6.8],
+      ].map(([x, z], i) => (
+        <group key={`veg${i}`} position={[x, 0, z]}>
+          <mesh position={[0, 0.35, 0]}>
+            <sphereGeometry args={[0.4 + (i % 3) * 0.08, 6, 6]} />
+            <meshStandardMaterial color={i % 2 ? "#4a7c45" : "#3d6b3a"} />
+          </mesh>
+          <mesh position={[0.3, 0.25, 0.2]}>
+            <sphereGeometry args={[0.25, 6, 6]} />
+            <meshStandardMaterial color="#5a7d4e" />
+          </mesh>
+        </group>
+      ))}
+
+      {/* Roundabout island centre */}
+      <mesh position={[0, 0.06, 0.2]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+        <circleGeometry args={[0.9, 16]} />
+        <meshStandardMaterial color="#5a7d4e" opacity={0.8} transparent />
+      </mesh>
+      <mesh position={[0, 0.55, 0.2]}>
+        <cylinderGeometry args={[0.08, 0.1, 1.0, 6]} />
+        <meshStandardMaterial color="#9a958c" />
+      </mesh>
+      <mesh position={[0, 1.15, 0.2]}>
+        <sphereGeometry args={[0.2, 8, 8]} />
+        <meshStandardMaterial color="#4db6a0" />
+      </mesh>
+
+      {/* Stacked cement bags at foundation site */}
+      {[0, 1, 2].map((i) => (
+        <mesh key={`cem${i}`} position={[3.2 + (i % 2) * 0.25, 0.12 + Math.floor(i / 2) * 0.18, -3.1]} castShadow>
+          <boxGeometry args={[0.35, 0.15, 0.25]} />
+          <meshStandardMaterial color="#d6d3d1" />
+        </mesh>
+      ))}
+
+      {/* Shipping container office at port edge */}
+      <mesh position={[9.2, 0.55, 0.5]} castShadow>
+        <boxGeometry args={[2.2, 1.1, 1.0]} />
+        <meshStandardMaterial color="#0f766e" />
+      </mesh>
+      <mesh position={[9.2, 0.7, 1.02]}>
+        <boxGeometry args={[0.5, 0.4, 0.05]} />
+        <meshStandardMaterial color="#1e293b" opacity={0.7} transparent />
+      </mesh>
+    </group>
+  );
+}
+
 function AtmosphereEffects({
+
 
   weather,
 }: {
@@ -982,6 +1176,7 @@ export function AfroMetaverseScene({
         <MarketStalls />
         <PowerPoles />
         <DebrisAndProps />
+        <StreetLife />
 
         {Object.entries(DISTRICT_LAYOUT).map(([districtId, info]) => (
           <DistrictHub
