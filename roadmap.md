@@ -1,12 +1,12 @@
 # Roadmap — AfroMetaverse
 
-## Batch 1 — Playable city-day prototype (in progress)
+## Batch 1 — Playable city-day prototype (complete)
 - [x] Review the Port Harcourt game brief
 - [x] Generate city artwork (src/assets/port-harcourt-city.jpg)
-- [ ] Build AfroMetaverseGame component (city map, work, market, civic vote, social feed, learn)
-- [ ] Wire the `/` route with proper head metadata
-- [ ] Write the warm Port Harcourt game theme in src/styles.css
-- [ ] Verify in the preview (build clean + Playwright walkthrough)
+- [x] Build AfroMetaverseGame component (city map, work, market, civic vote, social feed, learn)
+- [x] Wire the `/` route with proper head metadata
+- [x] Write the warm Port Harcourt game theme in src/styles.css
+- [x] Verify in the preview (build clean + Playwright walkthrough)
 
 ## Batch 2 — Persistent city (not started)
 - [ ] Lovable Cloud saves: citizens, wallet, city day

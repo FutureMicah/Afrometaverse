@@ -460,6 +460,71 @@
   border-color: var(--am-paper);
 }
 
+.am-city-canvas {
+  position: relative;
+  height: 520px;
+  overflow: hidden;
+}
+
+.am-city-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.am-weather-panel {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  margin-top: 16px;
+  border-radius: 18px;
+  background: oklch(0.22 0.03 250 / 0.78);
+  border: 1px solid oklch(0.7 0.02 240 / 0.22);
+  color: var(--am-forest-ink);
+  backdrop-filter: blur(8px);
+}
+
+.am-weather-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.am-weather-icon {
+  font-size: 28px;
+  line-height: 1;
+}
+
+.am-weather-meta {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+  opacity: 0.75;
+}
+
+.am-weather-label {
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.am-weather-right {
+  text-align: right;
+}
+
+.am-weather-temp {
+  font-size: 24px;
+  font-weight: 700;
+  font-family: Georgia, serif;
+}
+
+.am-panel-tip-highlight {
+  color: oklch(0.78 0.09 230);
+  margin-top: 8px;
+}
+
 /* Panel / cards */
 
 .am-panel {

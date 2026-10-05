@@ -19,7 +19,6 @@ import {
   Vote,
   X,
 } from "lucide-react";
-import cityImage from "@/assets/port-harcourt-city.jpg";
 import AfroMetaverseScene from "@/components/afrometaverse/AfroMetaverseScene";
 import { useEconomyStore } from "@/stores/economyStore";
 import { useResilienceStore } from "@/stores/resilienceStore";
@@ -426,20 +425,16 @@ export function AfroMetaverseGame() {
                 <p>Tap a marker to visit a district. Every street has something for a citizen on the move.</p>
               </div>
               <div
-                className="am-city-wrap"
+                className="am-city-wrap am-city-canvas"
                 style={{
                   background: weather.sky,
-                  boxShadow: `inset 0 0 0 1px rgba(255,255,255,0.08), 0 24px 50px ${weather.glow}`,
-                  height: 520,
-                  overflow: "hidden",
+                  boxShadow: `inset 0 0 0 1px oklch(1 0 0 / 0.08), 0 24px 50px ${weather.glow}`,
                 }}
               >
                 <div
+                  className="am-city-overlay"
                   style={{
-                    position: "absolute",
-                    inset: 0,
                     background: `radial-gradient(circle at top, ${weather.glow}, transparent 45%)`,
-                    pointerEvents: "none",
                   }}
                 />
                 <AfroMetaverseScene
@@ -467,32 +462,19 @@ export function AfroMetaverseGame() {
                 ))}
               </div>
 
-              <div
-                className="am-weather-panel"
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  gap: 12,
-                  padding: "14px 16px",
-                  marginTop: 16,
-                  borderRadius: 18,
-                  background: "rgba(17, 24, 39, 0.7)",
-                  border: "1px solid rgba(148, 163, 184, 0.2)",
-                  color: "#f8fafc",
-                  backdropFilter: "blur(8px)",
-                }}
-              >
-                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                  <span aria-hidden="true" style={{ fontSize: 28 }}>{weather.icon}</span>
+              <div className="am-weather-panel">
+                <div className="am-weather-left">
+                  <span className="am-weather-icon" aria-hidden="true">
+                    {weather.icon}
+                  </span>
                   <div>
-                    <div style={{ fontSize: 12, textTransform: "uppercase", letterSpacing: 1.2, opacity: 0.75 }}>Weather</div>
-                    <strong style={{ fontSize: 18 }}>{weather.label}</strong>
+                    <div className="am-weather-meta">Weather</div>
+                    <div className="am-weather-label">{weather.label}</div>
                   </div>
                 </div>
-                <div style={{ textAlign: "right" }}>
-                  <div style={{ fontSize: 12, opacity: 0.75 }}>{timeOfDay.label}</div>
-                  <strong style={{ fontSize: 24 }}>{Math.round(weatherStore.state.temperature)}°C</strong>
+                <div className="am-weather-right">
+                  <div className="am-weather-meta">{timeOfDay.label}</div>
+                  <div className="am-weather-temp">{Math.round(weatherStore.state.temperature)}°C</div>
                 </div>
               </div>
 
@@ -500,19 +482,36 @@ export function AfroMetaverseGame() {
                 <div className="am-panel">
                   <div className="am-panel-head">
                     <h2>{activeDistrict.name}</h2>
-                    <button className="am-panel-close" onClick={() => setSelectedDistrict(null)} aria-label="Close district panel">
+                    <button
+                      className="am-panel-close"
+                      onClick={() => setSelectedDistrict(null)}
+                      aria-label="Close district panel"
+                    >
                       <X size={16} />
                     </button>
                   </div>
                   <span className="am-chip">{activeDistrict.tag}</span>
                   <p className="am-panel-blurb">{activeDistrict.blurb}</p>
                   <p className="am-panel-tip">{activeDistrict.tip}</p>
-                  <p className="am-panel-tip" style={{ color: "#bae6fd", marginTop: 8 }}>
-                    {districtWeatherNote}
-                  </p>
+                  <p className="am-panel-tip am-panel-tip-highlight">{districtWeatherNote}</p>
                   <div className="am-panel-actions">
-                    <button className="am-btn am-btn-primary" onClick={() => go(activeDistrict.tag === "Trade" ? "market" : activeDistrict.tag === "Civic" ? "civic" : "work")}>
-                      {activeDistrict.tag === "Trade" ? "Browse the market" : activeDistrict.tag === "Civic" ? "Open the vote" : "Find work here"}
+                    <button
+                      className="am-btn am-btn-primary"
+                      onClick={() =>
+                        go(
+                          activeDistrict.tag === "Trade"
+                            ? "market"
+                            : activeDistrict.tag === "Civic"
+                              ? "civic"
+                              : "work",
+                        )
+                      }
+                    >
+                      {activeDistrict.tag === "Trade"
+                        ? "Browse the market"
+                        : activeDistrict.tag === "Civic"
+                          ? "Open the vote"
+                          : "Find work here"}
                     </button>
                   </div>
                 </div>
