@@ -1445,3 +1445,121 @@
   letter-spacing: 0.04em;
   pointer-events: none;
 }
+
+.am-wanted {
+  display: inline-flex;
+  gap: 2px;
+  font-size: 14px;
+  letter-spacing: 1px;
+}
+
+.am-star-on {
+  color: var(--am-coral);
+}
+
+.am-star-off {
+  color: var(--am-line);
+}
+
+.am-gear-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.am-gear-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--am-ink-soft);
+}
+
+.am-kind {
+  text-transform: uppercase;
+  font-size: 10px;
+  margin-left: 8px;
+  padding: 2px 8px;
+  border-radius: 999px;
+}
+
+.am-kind-legal {
+  background: var(--am-mint-soft);
+  color: oklch(0.38 0.08 155);
+}
+
+.am-kind-grey {
+  background: var(--am-gold-soft);
+  color: oklch(0.42 0.08 80);
+}
+
+.am-kind-heat {
+  background: oklch(0.92 0.05 25);
+  color: oklch(0.45 0.14 25);
+}
+
+.am-substeps {
+  margin: 4px 0 6px 18px;
+  padding: 0;
+  list-style: none;
+  font-size: 12px;
+}
+
+.am-minimap {
+  position: absolute;
+  right: 12px;
+  bottom: 12px;
+  z-index: 3;
+  width: 140px;
+  height: 110px;
+  border-radius: 12px;
+  border: 1px solid var(--am-line);
+  background: oklch(0.2 0.03 65 / 0.82);
+  box-shadow: var(--am-shadow);
+}
+
+.am-minimap-title {
+  position: absolute;
+  top: 6px;
+  left: 8px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--am-forest-ink);
+  opacity: 0.8;
+}
+
+.am-minimap-dot {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  margin: -5px 0 0 -5px;
+  border-radius: 50%;
+  border: 0;
+  background: oklch(0.75 0.05 90);
+  cursor: pointer;
+  padding: 0;
+}
+
+.am-minimap-active {
+  background: var(--am-coral);
+  box-shadow: 0 0 0 3px oklch(0.7 0.12 40 / 0.45);
+}
+
+.am-minimap-near {
+  background: var(--am-gold);
+}
+
+.am-minimap-player {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  margin: -4px 0 0 -4px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 0 0 2px var(--am-coral);
+  pointer-events: none;
+}

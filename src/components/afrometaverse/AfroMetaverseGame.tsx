@@ -23,11 +23,18 @@ import {
 } from "lucide-react";
 import AfroMetaverseScene from "@/components/afrometaverse/AfroMetaverseScene";
 import AuthModal from "@/components/afrometaverse/AuthModal";
+import { MISSIONS, missionToActive } from "@/data/missions";
 import { useCitizenAuth } from "@/hooks/useCitizenAuth";
 import { useCityLive } from "@/hooks/useCityLive";
 import { useEconomyStore } from "@/stores/economyStore";
 import { useResilienceStore } from "@/stores/resilienceStore";
-import { DISTRICT_WORLD, useRoamStore, type TransportId } from "@/stores/roamStore";
+import {
+  DISTRICT_WORLD,
+  GEAR_LABEL,
+  useRoamStore,
+  type GearId,
+  type TransportId,
+} from "@/stores/roamStore";
 import { useSocialStateStore } from "@/stores/socialStateStore";
 import { useWeatherStore } from "@/stores/weatherStore";
 import { useWorldStateStore } from "@/stores/worldStateStore";
@@ -328,12 +335,22 @@ export function AfroMetaverseGame() {
   const nearDistrictId = useRoamStore((s) => s.nearDistrictId);
   const activeMission = useRoamStore((s) => s.activeMission);
   const missionLog = useRoamStore((s) => s.missionLog);
+  const wantedLevel = useRoamStore((s) => s.wantedLevel);
+  const heatPoints = useRoamStore((s) => s.heatPoints);
+  const gear = useRoamStore((s) => s.gear);
+  const showMinimap = useRoamStore((s) => s.showMinimap);
   const setRoamMode = useRoamStore((s) => s.setMode);
   const setTransport = useRoamStore((s) => s.setTransport);
   const startMission = useRoamStore((s) => s.startMission);
   const completeStep = useRoamStore((s) => s.completeStep);
+  const completeSubStep = useRoamStore((s) => s.completeSubStep);
   const clearMission = useRoamStore((s) => s.clearMission);
   const setRoamPosition = useRoamStore((s) => s.setPosition);
+  const addHeat = useRoamStore((s) => s.addHeat);
+  const coolHeat = useRoamStore((s) => s.coolHeat);
+  const equipGear = useRoamStore((s) => s.equipGear);
+  const unlockGear = useRoamStore((s) => s.unlockGear);
+  const toggleMinimap = useRoamStore((s) => s.toggleMinimap);
 
   const displayNameEarly = isAuthenticated ? progress.displayName : "Ekene Okoro";
   const {
@@ -456,92 +473,97 @@ export function AfroMetaverseGame() {
   }
 
   function beginMission(jobId: string) {
-    const job = JOBS.find((j) => j.id === jobId);
-    if (!job || completedJobs.includes(jobId)) return;
+    const def = MISSIONS.find((j) => j.id === jobId);
+    if (!def || completedJobs.includes(jobId)) return;
     if (activeMission) {
       announce("Finish or cancel your current mission first.");
       return;
     }
-    startMission({
-      jobId: job.id,
-      title: job.title,
-      reward: job.coins,
-      rep: job.rep,
-      startedAt: Date.now(),
-      steps: [
-        {
-          id: "arrive",
-          label: `Travel to ${job.district}`,
-          districtId: job.districtId,
-          done: false,
-        },
-        {
-          id: "work",
-          label: "Complete the shift on site",
-          districtId: job.districtId,
-          done: false,
-        },
-      ],
-    });
-    const world = DISTRICT_WORLD[job.districtId];
-    if (world) {
-      // Spawn near map center; player walks/rides to the district
-      setRoamPosition([0, 0.6, 6]);
-    }
-    setSelectedDistrict(job.districtId);
-    setScreen("city");
-    setRoamMode("walk");
-    announce(`Mission: ${job.title}. Use WASD to reach ${job.district}.`);
-  }
-
-  function finishMissionOnSite() {
-    const mission = useRoamStore.getState().activeMission;
-    if (!mission) return;
-    const job = JOBS.find((j) => j.id === mission.jobId);
-    if (!job) return;
-
-    const arrive = mission.steps.find((s) => s.id === "arrive");
-    if (arrive && !arrive.done) {
-      if (nearDistrictId !== job.districtId) {
-        announce(`You are not at ${job.district} yet. Keep moving.`);
+    if (def.requiredGear && def.requiredGear !== "none") {
+      if (!gear.unlocked.includes(def.requiredGear)) {
+        announce(`You need ${GEAR_LABEL[def.requiredGear]} unlocked for this job.`);
         return;
       }
-      completeStep("arrive");
-      announce(`Arrived at ${job.district}. Press Complete shift when ready.`);
+      if (gear.equipped !== def.requiredGear) {
+        equipGear(def.requiredGear);
+      }
+    }
+    if (def.kind === "heat" && wantedLevel >= 4) {
+      announce("Heat is too high — cool off before taking this job.");
+      return;
+    }
+    startMission(missionToActive(def));
+    setRoamPosition([0, 0.6, 6]);
+    setSelectedDistrict(def.districtId);
+    setScreen("city");
+    setRoamMode("walk");
+    announce(`Mission: ${def.title}. Nested objectives unlock on site.`);
+  }
+
+  function advanceMissionObjective() {
+    const mission = useRoamStore.getState().activeMission;
+    if (!mission) return;
+    const def = MISSIONS.find((j) => j.id === mission.jobId);
+    if (!def) return;
+
+    const current = mission.steps.find((s) => !s.done);
+    if (!current) {
+      // All steps done — payout
+      const nextDay = cityDay + 1;
+      useWeatherStore.getState().advanceDay();
+      useWorldStateStore.getState().updateWorldState(nextDay);
+      const nextJobs = [...completedJobs, def.id];
+      const coins = Math.round(
+        def.coins *
+          (economyStore[def.district.toLowerCase().replace(/ /g, "-") as keyof typeof economyStore]?.jobMultiplier ?? 1),
+      );
+      const nextBalance = balance + coins;
+      const nextRep = Math.max(0, Math.min(99, reputation + def.rep));
+      setCompletedJobs(nextJobs);
+      setBalance(nextBalance);
+      setReputation(nextRep);
+      setCityDay(nextDay);
+      if (mission.heatOnSuccess > 0) addHeat(mission.heatOnSuccess);
+      else if (mission.kind === "legal") coolHeat(8);
+      if (def.kind === "grey" && !gear.unlocked.includes("sidearm")) {
+        unlockGear("sidearm");
+      }
+      if (def.kind === "heat" && !gear.unlocked.includes("carbine")) {
+        unlockGear("carbine");
+      }
+      clearMission();
+      announce(
+        `${def.title} complete — +${def.coins} coins` +
+          (mission.heatOnSuccess > 0 ? ` · heat +${mission.heatOnSuccess}` : ""),
+      );
+      persist({
+        completedJobs: nextJobs,
+        balance: nextBalance,
+        reputation: nextRep,
+        cityDay: nextDay,
+      });
       return;
     }
 
-    if (nearDistrictId !== job.districtId) {
-      announce(`Stay in ${job.district} to finish the shift.`);
+    if (nearDistrictId !== current.districtId && nearDistrictId !== def.districtId) {
+      announce(`Go to ${DISTRICT_WORLD[current.districtId]?.name ?? current.districtId} first.`);
       return;
     }
 
-    completeStep("work");
+    // Nested sub-objectives first
+    const openSub = current.subSteps?.find((s) => !s.done);
+    if (openSub) {
+      completeSubStep(current.id, openSub.id);
+      announce(openSub.label);
+      // If parent auto-completes via all subs, message
+      const refreshed = useRoamStore.getState().activeMission;
+      const stepNow = refreshed?.steps.find((s) => s.id === current.id);
+      if (stepNow?.done) announce(`Segment complete: ${current.label}`);
+      return;
+    }
 
-    const nextDay = cityDay + 1;
-    useWeatherStore.getState().advanceDay();
-    useWorldStateStore.getState().updateWorldState(nextDay);
-
-    const nextJobs = [...completedJobs, job.id];
-    const coins = Math.round(
-      job.coins *
-        (economyStore[job.district.toLowerCase().replace(/ /g, "-") as keyof typeof economyStore]?.jobMultiplier ?? 1),
-    );
-    const nextBalance = balance + coins;
-    const nextRep = Math.min(99, reputation + job.rep);
-
-    setCompletedJobs(nextJobs);
-    setBalance(nextBalance);
-    setReputation(nextRep);
-    setCityDay(nextDay);
-    clearMission();
-    announce(`Shift done — ${job.coins} City Coins earned at ${job.district}.`);
-    persist({
-      completedJobs: nextJobs,
-      balance: nextBalance,
-      reputation: nextRep,
-      cityDay: nextDay,
-    });
+    completeStep(current.id);
+    announce(current.label);
   }
 
   /** Instant complete for guests who prefer the old one-click flow */
@@ -764,31 +786,84 @@ export function AfroMetaverseGame() {
                 {nearDistrictId && (
                   <span className="am-chip">Near {DISTRICT_WORLD[nearDistrictId]?.name ?? nearDistrictId}</span>
                 )}
+                <button type="button" className="am-chip am-transport-chip" onClick={() => toggleMinimap()}>
+                  {showMinimap ? "Hide map" : "Show map"}
+                </button>
+                <span className="am-wanted" title={`Heat ${heatPoints}/100`} aria-label={`Wanted level ${wantedLevel}`}>
+                  {Array.from({ length: 5 }, (_, i) => (
+                    <span key={i} className={i < wantedLevel ? "am-star-on" : "am-star-off"}>
+                      ★
+                    </span>
+                  ))}
+                </span>
+                {wantedLevel > 0 && (
+                  <button type="button" className="am-btn am-btn-ghost" onClick={() => coolHeat(15)}>
+                    Lay low (−heat)
+                  </button>
+                )}
+              </div>
+
+              <div className="am-gear-bar">
+                <span className="am-gear-label">Loadout</span>
+                {(Object.keys(GEAR_LABEL) as GearId[]).map((id) => (
+                  <button
+                    key={id}
+                    type="button"
+                    className={`am-chip am-transport-chip ${gear.equipped === id ? "am-transport-active" : ""}`}
+                    disabled={!gear.unlocked.includes(id)}
+                    onClick={() => equipGear(id)}
+                    title={
+                      id === "none"
+                        ? "Unarmed"
+                        : gear.unlocked.includes(id)
+                          ? `${GEAR_LABEL[id]} · ammo ${gear.ammo[id as Exclude<GearId, "none">] ?? 0}`
+                          : "Locked — unlock via missions"
+                    }
+                  >
+                    {GEAR_LABEL[id]}
+                  </button>
+                ))}
               </div>
 
               {activeMission && (
                 <div className="am-mission-hud">
                   <div className="am-mission-head">
-                    <strong>{activeMission.title}</strong>
+                    <strong>
+                      {activeMission.title}
+                      <span className={`am-kind am-kind-${activeMission.kind}`}>{activeMission.kind}</span>
+                    </strong>
                     <span>
-                      +{activeMission.reward} coins · +{activeMission.rep} rep
+                      +{activeMission.reward} coins · {activeMission.rep >= 0 ? "+" : ""}
+                      {activeMission.rep} rep
+                      {activeMission.heatOnSuccess > 0 ? ` · heat +${activeMission.heatOnSuccess}` : ""}
                     </span>
                   </div>
                   <ul className="am-mission-steps">
                     {activeMission.steps.map((step) => (
                       <li key={step.id} className={step.done ? "am-step-done" : ""}>
                         {step.done ? "✓" : "○"} {step.label}
+                        {step.subSteps && step.subSteps.length > 0 && (
+                          <ul className="am-substeps">
+                            {step.subSteps.map((sub) => (
+                              <li key={sub.id} className={sub.done ? "am-step-done" : ""}>
+                                {sub.done ? "✓" : "·"} {sub.label}
+                              </li>
+                            ))}
+                          </ul>
+                        )}
                       </li>
                     ))}
                   </ul>
                   <div className="am-panel-actions">
-                    <button type="button" className="am-btn am-btn-primary" onClick={finishMissionOnSite}>
-                      {activeMission.steps[0]?.done ? "Complete shift" : "Check arrival"}
+                    <button type="button" className="am-btn am-btn-primary" onClick={advanceMissionObjective}>
+                      Advance objective
                     </button>
                     <button
                       type="button"
                       className="am-btn am-btn-ghost"
                       onClick={() => {
+                        const m = useRoamStore.getState().activeMission;
+                        if (m && m.heatOnFail > 0) addHeat(Math.floor(m.heatOnFail / 2));
                         clearMission();
                         announce("Mission cancelled.");
                       }}
@@ -842,6 +917,33 @@ export function AfroMetaverseGame() {
                   ))}
                 {roamMode !== "orbit" && (
                   <div className="am-roam-hint">WASD · third-person · click canvas to focus</div>
+                )}
+                {showMinimap && (
+                  <div className="am-minimap" aria-label="City minimap">
+                    <span className="am-minimap-title">Map</span>
+                    {DISTRICTS.map((d) => {
+                      const world = DISTRICT_WORLD[d.id];
+                      const left = world ? ((world.x + 11) / 22) * 100 : d.x;
+                      const top = world ? ((world.z + 8) / 17) * 100 : d.y;
+                      return (
+                        <button
+                          key={d.id}
+                          type="button"
+                          className={`am-minimap-dot ${selectedDistrict === d.id ? "am-minimap-active" : ""} ${nearDistrictId === d.id ? "am-minimap-near" : ""}`}
+                          style={{ left: `${left}%`, top: `${top}%` }}
+                          title={d.name}
+                          onClick={() => setSelectedDistrict(d.id)}
+                        />
+                      );
+                    })}
+                    <span
+                      className="am-minimap-player"
+                      style={{
+                        left: `${((useRoamStore.getState().position[0] + 11) / 22) * 100}%`,
+                        top: `${((useRoamStore.getState().position[2] + 8) / 17) * 100}%`,
+                      }}
+                    />
+                  </div>
                 )}
               </div>
 
@@ -908,18 +1010,23 @@ export function AfroMetaverseGame() {
           {screen === "work" && (
             <section>
               <div className="am-screen-head">
-                <h1>Work desk</h1>
+                <h1>Mission board</h1>
                 <p>
-                  Shifts are missions: travel to the district in free roam, then complete the job on site.
-                  Quick-complete is still available for a fast day.
+                  Legal shifts, grey jobs, and high-heat ops. Each mission has nested objectives — travel, sub-tasks on
+                  site, then extract. Wanted stars rise on heat work.
                 </p>
               </div>
               <div className="am-cards">
-                {JOBS.map((job) => {
+                {MISSIONS.map((job) => {
                   const done = completedJobs.includes(job.id);
+                  const lockedGear =
+                    job.requiredGear &&
+                    job.requiredGear !== "none" &&
+                    !gear.unlocked.includes(job.requiredGear);
                   return (
                     <article key={job.id} className={`am-card ${done ? "am-card-done" : ""}`}>
                       <div className="am-card-top">
+                        <span className={`am-chip am-kind am-kind-${job.kind}`}>{job.kind}</span>
                         <span className="am-chip">{job.district}</span>
                         <span className="am-coins">
                           <Coins size={14} /> {job.coins}
@@ -927,21 +1034,26 @@ export function AfroMetaverseGame() {
                       </div>
                       <h2>{job.title}</h2>
                       <p>{job.blurb}</p>
+                      {job.requiredGear && job.requiredGear !== "none" && (
+                        <p className="am-panel-tip">Requires {GEAR_LABEL[job.requiredGear]}</p>
+                      )}
                       <div className="am-panel-actions">
                         <button
                           className={`am-btn ${done ? "am-btn-ghost" : "am-btn-primary"}`}
-                          disabled={done || !!activeMission}
+                          disabled={done || !!activeMission || !!lockedGear}
                           onClick={() => beginMission(job.id)}
                         >
                           {done ? (
                             <>
-                              <Check size={15} /> Shift completed
+                              <Check size={15} /> Done
                             </>
+                          ) : lockedGear ? (
+                            "Gear locked"
                           ) : (
                             "Start mission"
                           )}
                         </button>
-                        {!done && (
+                        {!done && job.kind === "legal" && (
                           <button
                             className="am-btn am-btn-secondary"
                             disabled={!!activeMission}
@@ -955,7 +1067,10 @@ export function AfroMetaverseGame() {
                   );
                 })}
               </div>
-              <p className="am-note">City Coins are play money. They cannot be bought, sold or traded outside this game.</p>
+              <p className="am-note">
+                This is a fictional simulation. Gear, heat, and missions are game systems only and have no real-world
+                use.
+              </p>
             </section>
           )}
 
