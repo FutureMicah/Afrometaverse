@@ -1267,3 +1267,60 @@
   background: var(--am-gold-soft);
   color: oklch(0.42 0.08 80);
 }
+
+.am-citizen-name-block {
+  min-width: 0;
+  flex: 1;
+}
+
+.am-citizen-name-block strong {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.am-name-edit-btn {
+  border: 0;
+  background: transparent;
+  color: var(--am-coral);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  padding: 0;
+}
+
+.am-name-edit-btn:hover {
+  text-decoration: underline;
+}
+
+.am-name-edit {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+
+.am-name-edit input {
+  flex: 1;
+  min-width: 120px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid var(--am-line);
+  background: var(--am-cream);
+  color: var(--am-ink);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.am-name-edit input:focus {
+  outline: 2px solid var(--am-coral);
+  outline-offset: 1px;
+}
+
+.am-name-edit .am-btn {
+  padding: 8px 12px;
+  font-size: 12px;
+}

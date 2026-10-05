@@ -261,12 +261,14 @@ export function AfroMetaverseGame() {
     progress,
     loading: authLoading,
     saving,
+    lastSavedAt,
     authError,
     signInWithEmail,
     signUpWithEmail,
     signInWithGoogle,
     signOut,
     saveProgress,
+    updateDisplayName,
   } = useCitizenAuth();
 
   const [screen, setScreen] = useState<ScreenId>("city");
@@ -286,7 +288,30 @@ export function AfroMetaverseGame() {
   const toastTimer = useRef<number | undefined>(undefined);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [authOpen, setAuthOpen] = useState(false);
+  const [editingName, setEditingName] = useState(false);
+  const [nameDraft, setNameDraft] = useState("");
   const hydratedFromServer = useRef(false);
+
+  function formatSavedAt(date: Date | null) {
+    if (!date) return "Not saved yet";
+    const diffMs = Date.now() - date.getTime();
+    if (diffMs < 15_000) return "Just now";
+    if (diffMs < 60_000) return `${Math.floor(diffMs / 1000)}s ago`;
+    if (diffMs < 3_600_000) return `${Math.floor(diffMs / 60_000)}m ago`;
+    return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  }
+
+  async function commitDisplayName() {
+    const next = nameDraft.trim();
+    if (!next || next === progress.displayName) {
+      setEditingName(false);
+      return;
+    }
+    const ok = await updateDisplayName(next);
+    setEditingName(false);
+    if (ok) announce(`Name updated to ${next}.`);
+    else announce("Could not update name — try again.");
+  }
 
   const weatherStore = useWeatherStore((state) => state);
   const worldState = useWorldStateStore((state) => state.state);
@@ -473,8 +498,8 @@ export function AfroMetaverseGame() {
           <span className="am-live-dot" aria-hidden="true" />
           <span className="am-live-label">Live</span>
           {isAuthenticated ? (
-            <span className={`am-save-pill ${saving ? "" : ""}`}>
-              {saving ? "Saving…" : "Saved"}
+            <span className="am-save-pill" title={lastSavedAt ? lastSavedAt.toLocaleString() : undefined}>
+              {saving ? "Saving…" : `Saved · ${formatSavedAt(lastSavedAt)}`}
             </span>
           ) : (
             <span className="am-save-pill am-save-pill-guest">Guest</span>
@@ -851,18 +876,64 @@ export function AfroMetaverseGame() {
         <aside className="am-citizen" aria-label="Citizen card">
           <div className="am-citizen-head">
             <span className="am-citizen-avatar am-citizen-avatar-lg">{avatarInitials}</span>
-            <div>
-              <strong>{displayName}</strong>
-              <small>
-                {levelLabel} ·{" "}
-                {isAuthenticated ? (
-                  <>
-                    <BadgeCheck size={11} className="am-verified" /> Saved
-                  </>
-                ) : (
-                  "Guest"
-                )}
-              </small>
+            <div className="am-citizen-name-block">
+              {isAuthenticated && editingName ? (
+                <form
+                  className="am-name-edit"
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    void commitDisplayName();
+                  }}
+                >
+                  <input
+                    value={nameDraft}
+                    onChange={(e) => setNameDraft(e.target.value)}
+                    maxLength={40}
+                    autoFocus
+                    aria-label="Display name"
+                  />
+                  <button type="submit" className="am-btn am-btn-primary">
+                    Save
+                  </button>
+                  <button
+                    type="button"
+                    className="am-btn am-btn-ghost"
+                    onClick={() => setEditingName(false)}
+                  >
+                    Cancel
+                  </button>
+                </form>
+              ) : (
+                <>
+                  <strong>
+                    {displayName}
+                    {isAuthenticated && (
+                      <button
+                        type="button"
+                        className="am-name-edit-btn"
+                        onClick={() => {
+                          setNameDraft(displayName);
+                          setEditingName(true);
+                        }}
+                        aria-label="Edit display name"
+                      >
+                        Edit
+                      </button>
+                    )}
+                  </strong>
+                  <small>
+                    {levelLabel} ·{" "}
+                    {isAuthenticated ? (
+                      <>
+                        <BadgeCheck size={11} className="am-verified" />{" "}
+                        {saving ? "Saving…" : formatSavedAt(lastSavedAt)}
+                      </>
+                    ) : (
+                      "Guest"
+                    )}
+                  </small>
+                </>
+              )}
             </div>
           </div>
           {!isAuthenticated && (

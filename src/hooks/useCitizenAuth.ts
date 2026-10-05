@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types";
@@ -59,7 +59,27 @@ export function useCitizenAuth() {
   const [progress, setProgress] = useState<CitizenProgress>(DEFAULT_PROGRESS);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
   const [authError, setAuthError] = useState<string | null>(null);
+
+  const progressRef = useRef(progress);
+  const userRef = useRef(user);
+  const pendingRef = useRef<Partial<CitizenProgress> | null>(null);
+  const saveTimerRef = useRef<number | undefined>(undefined);
+
+  useEffect(() => {
+    progressRef.current = progress;
+  }, [progress]);
+
+  useEffect(() => {
+    userRef.current = user;
+  }, [user]);
+
+  useEffect(() => {
+    return () => {
+      if (saveTimerRef.current) window.clearTimeout(saveTimerRef.current);
+    };
+  }, []);
 
   const ensureCitizenRow = useCallback(async (u: User): Promise<CitizenRow | null> => {
     const { data: existing, error: readError } = await supabase
@@ -122,7 +142,10 @@ export function useCitizenAuth() {
 
       if (nextSession?.user) {
         const row = await ensureCitizenRow(nextSession.user);
-        if (row) setProgress(rowToProgress(row));
+        if (row) {
+          setProgress(rowToProgress(row));
+          setLastSavedAt(row.updated_at ? new Date(row.updated_at) : new Date());
+        }
       } else {
         setProgress(DEFAULT_PROGRESS);
       }
@@ -142,10 +165,14 @@ export function useCitizenAuth() {
       setUser(nextSession?.user ?? null);
       if (nextSession?.user) {
         void ensureCitizenRow(nextSession.user).then((row) => {
-          if (row) setProgress(rowToProgress(row));
+          if (row) {
+            setProgress(rowToProgress(row));
+            setLastSavedAt(row.updated_at ? new Date(row.updated_at) : new Date());
+          }
         });
       } else {
         setProgress(DEFAULT_PROGRESS);
+        setLastSavedAt(null);
       }
     });
 
@@ -206,43 +233,81 @@ export function useCitizenAuth() {
     setSession(null);
     setUser(null);
     setProgress(DEFAULT_PROGRESS);
+    setLastSavedAt(null);
+    pendingRef.current = null;
+    if (saveTimerRef.current) {
+      window.clearTimeout(saveTimerRef.current);
+      saveTimerRef.current = undefined;
+    }
   }, []);
 
+  const flushSave = useCallback(async (): Promise<boolean> => {
+    const u = userRef.current;
+    const pending = pendingRef.current;
+    if (!u || !pending) return true;
+
+    pendingRef.current = null;
+    const merged: CitizenProgress = { ...progressRef.current, ...pending };
+    progressRef.current = merged;
+    setProgress(merged);
+    setSaving(true);
+    setAuthError(null);
+
+    const { error } = await supabase
+      .from("citizens")
+      .update({
+        display_name: merged.displayName,
+        avatar_initials: merged.avatarInitials,
+        balance: merged.balance,
+        reputation: merged.reputation,
+        city_day: merged.cityDay,
+        completed_jobs: merged.completedJobs,
+        purchased_goods: merged.purchasedGoods,
+        voted_for: merged.votedFor,
+        done_courses: merged.doneCourses,
+        liked_posts: merged.likedPosts,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", u.id);
+
+    setSaving(false);
+    if (error) {
+      console.error("[citizen] save failed", error);
+      setAuthError(error.message);
+      return false;
+    }
+    setLastSavedAt(new Date());
+    return true;
+  }, []);
+
+  /** Optimistic local merge + debounced write (450ms). */
   const saveProgress = useCallback(
     async (next: Partial<CitizenProgress>) => {
-      if (!user) return false;
+      if (!userRef.current) return false;
 
-      const merged: CitizenProgress = { ...progress, ...next };
+      pendingRef.current = { ...(pendingRef.current ?? {}), ...next };
+      const merged: CitizenProgress = { ...progressRef.current, ...pendingRef.current };
+      progressRef.current = merged;
       setProgress(merged);
-      setSaving(true);
-      setAuthError(null);
 
-      const { error } = await supabase
-        .from("citizens")
-        .update({
-          display_name: merged.displayName,
-          avatar_initials: merged.avatarInitials,
-          balance: merged.balance,
-          reputation: merged.reputation,
-          city_day: merged.cityDay,
-          completed_jobs: merged.completedJobs,
-          purchased_goods: merged.purchasedGoods,
-          voted_for: merged.votedFor,
-          done_courses: merged.doneCourses,
-          liked_posts: merged.likedPosts,
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", user.id);
-
-      setSaving(false);
-      if (error) {
-        console.error("[citizen] save failed", error);
-        setAuthError(error.message);
-        return false;
-      }
-      return true;
+      if (saveTimerRef.current) window.clearTimeout(saveTimerRef.current);
+      return new Promise<boolean>((resolve) => {
+        saveTimerRef.current = window.setTimeout(() => {
+          void flushSave().then(resolve);
+        }, 450);
+      });
     },
-    [progress, user],
+    [flushSave],
+  );
+
+  const updateDisplayName = useCallback(
+    async (name: string) => {
+      const trimmed = name.trim();
+      if (!trimmed || !userRef.current) return false;
+      const initials = initialsFromName(trimmed);
+      return saveProgress({ displayName: trimmed, avatarInitials: initials });
+    },
+    [saveProgress],
   );
 
   return {
@@ -252,12 +317,15 @@ export function useCitizenAuth() {
     progress,
     loading,
     saving,
+    lastSavedAt,
     authError,
     signInWithEmail,
     signUpWithEmail,
     signInWithGoogle,
     signOut,
     saveProgress,
+    updateDisplayName,
+    flushSave,
     setProgressLocal: setProgress,
     defaultProgress: DEFAULT_PROGRESS,
   };
