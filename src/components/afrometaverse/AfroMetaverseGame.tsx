@@ -759,7 +759,7 @@ export function AfroMetaverseGame() {
                 <h1>Port Harcourt, Day {cityDay}</h1>
                 <p>
                   {roamMode === "orbit"
-                    ? "Tap a marker or enter Free roam to walk the streets — open-city exploration, civic jobs."
+                    ? "Four hubs, filled streets, empty lots and build sites — room for the city to grow. Free roam with WASD."
                     : "WASD / arrows to move. Reach the glowing district to advance your mission."}
                 </p>
               </div>
@@ -1002,7 +1002,7 @@ export function AfroMetaverseGame() {
                 </div>
               )}
               <p className="am-note">
-                This is a simulation. Districts, jobs and City Coins are part of the game and have no real-world value.
+                Simulation city fabric: occupied blocks, fenced development lots, scaffolds and a port crane — space left for future infrastructure. Districts, jobs and City Coins have no real-world value.
               </p>
             </section>
           )}

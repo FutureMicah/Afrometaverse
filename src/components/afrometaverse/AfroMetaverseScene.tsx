@@ -10,13 +10,100 @@ import {
 } from "@/stores/roamStore";
 
 const DISTRICT_LAYOUT = {
-  "town-market": { x: -3, z: 2.5, color: "#f59e0b", label: "Town Market" },
-  "civic-centre": { x: 0, z: -1.5, color: "#34d399", label: "Civic Centre" },
-  creekside: { x: -5.5, z: -3.5, color: "#60a5fa", label: "Creekside" },
-  port: { x: 5.5, z: 2.5, color: "#f97316", label: "The Port" },
+  "town-market": { x: -3, z: 2.5, color: "#e8a54b", label: "Town Market" },
+  "civic-centre": { x: 0, z: -1.5, color: "#4db6a0", label: "Civic Centre" },
+  creekside: { x: -5.5, z: -3.5, color: "#5b9fd4", label: "Creekside" },
+  port: { x: 5.5, z: 2.5, color: "#e07a3a", label: "The Port" },
 } as const;
 
-const BOUNDS = { minX: -11, maxX: 11, minZ: -8, maxZ: 9 };
+const BOUNDS = { minX: -12, maxX: 12, minZ: -9, maxZ: 10 };
+
+/** Warm Port Harcourt palette — dusty roads, ochre walls, teal roofs */
+const PALETTE = {
+  road: "#5c5346",
+  roadLine: "#c4b59a",
+  dirt: "#c4a574",
+  lot: "#b8956a",
+  lotMark: "#d4b896",
+  wallWarm: "#d9b896",
+  wallCoral: "#c97b63",
+  wallTeal: "#5f9e8f",
+  wallCream: "#efe2c8",
+  roofTin: "#7a8b8c",
+  roofClay: "#a65d3f",
+  scaffold: "#c9a227",
+  crane: "#e8a317",
+  water: "#2a6f8f",
+  waterDeep: "#1a4d66",
+  green: "#5a7d4e",
+  palm: "#3d6b3a",
+  lamp: "#f0e6c8",
+  concrete: "#9a958c",
+  fence: "#6b6560",
+};
+
+type BuildingSpec = {
+  x: number;
+  z: number;
+  w: number;
+  h: number;
+  d: number;
+  color: string;
+  roof?: string;
+  kind?: "block" | "shed" | "tower";
+};
+
+/** Filled city fabric around the four hubs */
+const CITY_BLOCKS: BuildingSpec[] = [
+  // Town market cluster
+  { x: -4.2, z: 3.8, w: 1.4, h: 1.4, d: 1.2, color: PALETTE.wallWarm, roof: PALETTE.roofTin },
+  { x: -2.0, z: 4.0, w: 1.6, h: 1.8, d: 1.3, color: PALETTE.wallCoral, roof: PALETTE.roofClay },
+  { x: -5.0, z: 1.6, w: 1.3, h: 1.2, d: 1.4, color: PALETTE.wallCream, roof: PALETTE.roofTin },
+  { x: -1.2, z: 1.5, w: 1.1, h: 2.2, d: 1.1, color: PALETTE.wallTeal, roof: PALETTE.roofClay, kind: "tower" },
+  // Civic neighbourhood
+  { x: 1.8, z: -2.4, w: 1.5, h: 2.0, d: 1.4, color: PALETTE.wallCream, roof: PALETTE.roofTin },
+  { x: -1.6, z: -2.8, w: 1.3, h: 1.6, d: 1.2, color: PALETTE.wallWarm, roof: PALETTE.roofClay },
+  { x: 2.4, z: -0.4, w: 1.2, h: 1.5, d: 1.1, color: PALETTE.wallCoral, roof: PALETTE.roofTin },
+  { x: -2.2, z: -0.2, w: 1.0, h: 1.3, d: 1.0, color: PALETTE.wallTeal, roof: PALETTE.roofClay },
+  // Creekside stilt / low sheds
+  { x: -7.0, z: -2.2, w: 1.4, h: 1.0, d: 1.2, color: PALETTE.wallWarm, roof: PALETTE.roofTin, kind: "shed" },
+  { x: -4.2, z: -4.6, w: 1.2, h: 1.1, d: 1.0, color: PALETTE.wallCream, roof: PALETTE.roofClay, kind: "shed" },
+  { x: -6.8, z: -4.8, w: 1.5, h: 0.9, d: 1.3, color: PALETTE.wallCoral, roof: PALETTE.roofTin, kind: "shed" },
+  // Port industrial
+  { x: 7.2, z: 1.2, w: 2.0, h: 1.6, d: 1.5, color: PALETTE.concrete, roof: PALETTE.roofTin, kind: "shed" },
+  { x: 4.2, z: 4.0, w: 1.6, h: 2.4, d: 1.4, color: PALETTE.wallWarm, roof: PALETTE.roofClay, kind: "tower" },
+  { x: 7.0, z: 3.8, w: 1.4, h: 1.3, d: 1.6, color: PALETTE.concrete, roof: PALETTE.roofTin },
+  // Infill toward centre
+  { x: 3.5, z: 1.0, w: 1.2, h: 1.7, d: 1.1, color: PALETTE.wallTeal, roof: PALETTE.roofClay },
+  { x: -3.5, z: -0.8, w: 1.1, h: 1.4, d: 1.0, color: PALETTE.wallCream, roof: PALETTE.roofTin },
+];
+
+/** Empty lots / future development parcels */
+const DEV_LOTS: { x: number; z: number; w: number; d: number; label: string }[] = [
+  { x: 1.2, z: 3.2, w: 2.4, d: 2.0, label: "Future housing" },
+  { x: -7.5, z: 1.0, w: 2.2, d: 1.8, label: "Market expansion" },
+  { x: 3.8, z: -3.6, w: 2.6, d: 2.2, label: "Civic annex site" },
+  { x: 8.2, z: -1.5, w: 2.0, d: 2.4, label: "Port logistics pad" },
+  { x: -1.0, z: 6.2, w: 2.8, d: 1.6, label: "Transit corridor" },
+];
+
+/** Active construction sites */
+const BUILD_SITES: { x: number; z: number; phase: "scaffold" | "foundation" | "crane" }[] = [
+  { x: 1.0, z: 3.0, phase: "scaffold" },
+  { x: 3.6, z: -3.4, phase: "foundation" },
+  { x: 7.8, z: -1.2, phase: "crane" },
+  { x: -7.2, z: 0.8, phase: "scaffold" },
+];
+
+const ROAD_SEGMENTS: { x: number; z: number; w: number; d: number; rot?: number }[] = [
+  { x: 0, z: 0.2, w: 22, d: 1.1 },
+  { x: 0, z: 4.6, w: 16, d: 0.85 },
+  { x: 0, z: -2.8, w: 18, d: 0.9 },
+  { x: -3.2, z: 1.0, w: 0.9, d: 12 },
+  { x: 2.8, z: 0.5, w: 0.9, d: 11 },
+  { x: 5.5, z: 1.5, w: 0.85, d: 8 },
+  { x: -5.5, z: -1.5, w: 0.8, d: 9 },
+];
 
 function CityGround({
   weather,
@@ -25,68 +112,318 @@ function CityGround({
 }) {
   return (
     <>
-      <ambientLight intensity={0.45 * weather.lightingMultiplier} />
+      <ambientLight intensity={0.42 * weather.lightingMultiplier} />
+      <hemisphereLight args={["#f5e6c8", "#6b5a40", 0.35 * weather.lightingMultiplier]} />
       <directionalLight
-        position={[8, 12, 7]}
-        intensity={1.2 * weather.lightingMultiplier}
+        position={[10, 14, 6]}
+        intensity={1.15 * weather.lightingMultiplier}
         castShadow
         shadow-mapSize-width={1024}
         shadow-mapSize-height={1024}
+        shadow-camera-far={40}
+        shadow-camera-left={-15}
+        shadow-camera-right={15}
+        shadow-camera-top={15}
+        shadow-camera-bottom={-15}
       />
 
-      <mesh rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
-        <planeGeometry args={[40, 40]} />
-        <meshStandardMaterial color={weather.groundColor} />
+      {/* Earth / laterite base */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} receiveShadow position={[0, -0.02, 0]}>
+        <planeGeometry args={[48, 48]} />
+        <meshStandardMaterial color={weather.groundColor || PALETTE.dirt} />
       </mesh>
 
-      <mesh position={[0, 0.02, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
-        <planeGeometry args={[18, 0.9]} />
-        <meshStandardMaterial color="#f8fafc" opacity={0.7} transparent />
-      </mesh>
-
-      <mesh position={[-2.2, 0.04, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
-        <planeGeometry args={[8, 0.7]} />
-        <meshStandardMaterial color="#f8fafc" opacity={0.7} transparent />
-      </mesh>
-
-      <mesh position={[4.5, 0.04, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
-        <planeGeometry args={[7, 0.7]} />
-        <meshStandardMaterial color="#f8fafc" opacity={0.7} transparent />
-      </mesh>
+      {/* Soft green patches */}
+      {[
+        [-8, 4.5],
+        [9, -4],
+        [-9, -5.5],
+        [8, 6],
+      ].map(([x, z], i) => (
+        <mesh key={i} rotation={[-Math.PI / 2, 0, 0]} position={[x, 0.01, z]} receiveShadow>
+          <circleGeometry args={[1.6 + (i % 3) * 0.3, 16]} />
+          <meshStandardMaterial color={PALETTE.green} opacity={0.55} transparent />
+        </mesh>
+      ))}
     </>
   );
 }
 
-function DistrictBuilding({
+function RoadNetwork() {
+  return (
+    <group>
+      {ROAD_SEGMENTS.map((r, i) => (
+        <group key={i}>
+          <mesh
+            position={[r.x, 0.03, r.z]}
+            rotation={[-Math.PI / 2, 0, r.rot ?? 0]}
+            receiveShadow
+          >
+            <planeGeometry args={[r.w, r.d]} />
+            <meshStandardMaterial color={PALETTE.road} />
+          </mesh>
+          {/* Centre dashed suggestion */}
+          <mesh position={[r.x, 0.04, r.z]} rotation={[-Math.PI / 2, 0, r.rot ?? 0]}>
+            <planeGeometry args={[r.w * 0.9, 0.06]} />
+            <meshStandardMaterial color={PALETTE.roadLine} opacity={0.35} transparent />
+          </mesh>
+        </group>
+      ))}
+    </group>
+  );
+}
+
+function StreetFurniture() {
+  const lamps = useMemo(
+    () =>
+      [
+        [-2, 0.8],
+        [2.5, 0.8],
+        [-3, 4.2],
+        [3, 4.2],
+        [-5, -2.4],
+        [5.2, 2.0],
+        [0, -2.4],
+        [-6, -3.2],
+      ] as [number, number][],
+    [],
+  );
+
+  return (
+    <group>
+      {lamps.map(([x, z], i) => (
+        <group key={i} position={[x, 0, z]}>
+          <mesh position={[0, 1.1, 0]} castShadow>
+            <cylinderGeometry args={[0.05, 0.07, 2.2, 6]} />
+            <meshStandardMaterial color={PALETTE.concrete} />
+          </mesh>
+          <mesh position={[0, 2.25, 0]}>
+            <sphereGeometry args={[0.12, 8, 8]} />
+            <meshStandardMaterial color={PALETTE.lamp} emissive={PALETTE.lamp} emissiveIntensity={0.35} />
+          </mesh>
+        </group>
+      ))}
+      {/* Simple palm trunks */}
+      {[
+        [-8.5, -3],
+        [-9, -4.2],
+        [9.5, 3],
+        [10, 4.2],
+        [-4, 6.5],
+      ].map(([x, z], i) => (
+        <group key={`p${i}`} position={[x, 0, z]}>
+          <mesh position={[0, 1.2, 0]} castShadow>
+            <cylinderGeometry args={[0.1, 0.14, 2.4, 6]} />
+            <meshStandardMaterial color="#6b5344" />
+          </mesh>
+          <mesh position={[0, 2.5, 0]}>
+            <sphereGeometry args={[0.55, 8, 8]} />
+            <meshStandardMaterial color={PALETTE.palm} />
+          </mesh>
+        </group>
+      ))}
+    </group>
+  );
+}
+
+function CityBlock({ spec }: { spec: BuildingSpec }) {
+  const y = spec.h / 2;
+  return (
+    <group position={[spec.x, 0, spec.z]}>
+      <mesh castShadow receiveShadow position={[0, y, 0]}>
+        <boxGeometry args={[spec.w, spec.h, spec.d]} />
+        <meshStandardMaterial color={spec.color} />
+      </mesh>
+      {spec.roof && (
+        <mesh position={[0, spec.h + 0.12, 0]} castShadow>
+          <boxGeometry args={[spec.w * 1.05, 0.22, spec.d * 1.05]} />
+          <meshStandardMaterial color={spec.roof} />
+        </mesh>
+      )}
+      {/* Simple window band */}
+      <mesh position={[0, y * 0.9, spec.d / 2 + 0.01]}>
+        <boxGeometry args={[spec.w * 0.7, spec.h * 0.25, 0.04]} />
+        <meshStandardMaterial color="#2a3340" opacity={0.65} transparent />
+      </mesh>
+    </group>
+  );
+}
+
+function DistrictHub({
   position,
   color,
   active,
   near,
+  label,
 }: {
   position: [number, number, number];
   color: string;
   active: boolean;
   near: boolean;
+  label: string;
 }) {
+  const lit = active || near;
   return (
     <group position={position}>
-      <mesh castShadow receiveShadow position={[0, 1.2, 0]}>
-        <boxGeometry args={[2.1, 2.4, 2.1]} />
+      {/* Plinth */}
+      <mesh position={[0, 0.08, 0]} receiveShadow rotation={[-Math.PI / 2, 0, 0]}>
+        <planeGeometry args={[3.2, 3.2]} />
+        <meshStandardMaterial color={lit ? "#efe2c8" : "#c4b59a"} opacity={0.9} transparent />
+      </mesh>
+      {/* Main hub volume */}
+      <mesh castShadow receiveShadow position={[0, 1.35, 0]}>
+        <boxGeometry args={[2.3, 2.7, 2.3]} />
         <meshStandardMaterial
-          color={active || near ? "#fef3c7" : color}
-          emissive={active || near ? color : "#000000"}
-          emissiveIntensity={active || near ? 0.4 : 0.08}
+          color={lit ? "#fef3c7" : color}
+          emissive={lit ? color : "#000000"}
+          emissiveIntensity={lit ? 0.35 : 0.06}
         />
       </mesh>
-      <mesh position={[0, 2.8, 0]} castShadow>
-        <boxGeometry args={[1.3, 0.6, 1.3]} />
-        <meshStandardMaterial color="#e2e8f0" />
+      {/* Upper storey */}
+      <mesh position={[0, 3.0, 0]} castShadow>
+        <boxGeometry args={[1.6, 0.7, 1.6]} />
+        <meshStandardMaterial color={PALETTE.wallCream} />
+      </mesh>
+      <mesh position={[0, 3.45, 0]}>
+        <boxGeometry args={[1.75, 0.18, 1.75]} />
+        <meshStandardMaterial color={PALETTE.roofClay} />
+      </mesh>
+      {/* Side annex */}
+      <mesh position={[1.5, 0.7, 0.4]} castShadow>
+        <boxGeometry args={[0.9, 1.4, 1.1]} />
+        <meshStandardMaterial color={PALETTE.wallWarm} />
       </mesh>
       {near && (
-        <mesh position={[0, 3.5, 0]}>
-          <sphereGeometry args={[0.18, 12, 12]} />
-          <meshStandardMaterial color="#fef08a" emissive="#facc15" emissiveIntensity={0.8} />
+        <mesh position={[0, 3.9, 0]}>
+          <sphereGeometry args={[0.2, 12, 12]} />
+          <meshStandardMaterial color="#fef08a" emissive="#facc15" emissiveIntensity={0.9} />
         </mesh>
+      )}
+      {/* Market canopy near market hub */}
+      {label === "Town Market" && (
+        <mesh position={[0, 1.6, 1.8]} castShadow>
+          <boxGeometry args={[2.8, 0.08, 1.2]} />
+          <meshStandardMaterial color="#e8a54b" opacity={0.85} transparent />
+        </mesh>
+      )}
+    </group>
+  );
+}
+
+function DevelopmentLot({
+  x,
+  z,
+  w,
+  d,
+}: {
+  x: number;
+  z: number;
+  w: number;
+  d: number;
+}) {
+  return (
+    <group position={[x, 0, z]}>
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.04, 0]} receiveShadow>
+        <planeGeometry args={[w, d]} />
+        <meshStandardMaterial color={PALETTE.lot} />
+      </mesh>
+      {/* Survey stakes */}
+      {[
+        [-w / 2 + 0.15, -d / 2 + 0.15],
+        [w / 2 - 0.15, -d / 2 + 0.15],
+        [-w / 2 + 0.15, d / 2 - 0.15],
+        [w / 2 - 0.15, d / 2 - 0.15],
+      ].map(([sx, sz], i) => (
+        <mesh key={i} position={[sx, 0.35, sz]}>
+          <boxGeometry args={[0.06, 0.7, 0.06]} />
+          <meshStandardMaterial color={PALETTE.scaffold} />
+        </mesh>
+      ))}
+      {/* Plot outline */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.05, 0]}>
+        <planeGeometry args={[w * 0.92, d * 0.92]} />
+        <meshStandardMaterial color={PALETTE.lotMark} opacity={0.4} transparent />
+      </mesh>
+      {/* Fence posts */}
+      {Array.from({ length: 6 }).map((_, i) => {
+        const t = i / 5;
+        return (
+          <mesh key={`f${i}`} position={[-w / 2 + t * w, 0.4, d / 2]}>
+            <boxGeometry args={[0.05, 0.8, 0.05]} />
+            <meshStandardMaterial color={PALETTE.fence} />
+          </mesh>
+        );
+      })}
+    </group>
+  );
+}
+
+function ConstructionSite({
+  x,
+  z,
+  phase,
+}: {
+  x: number;
+  z: number;
+  phase: "scaffold" | "foundation" | "crane";
+}) {
+  return (
+    <group position={[x, 0, z]}>
+      {phase === "foundation" && (
+        <>
+          <mesh position={[0, 0.15, 0]} receiveShadow>
+            <boxGeometry args={[2.0, 0.3, 1.8]} />
+            <meshStandardMaterial color={PALETTE.concrete} />
+          </mesh>
+          <mesh position={[0.4, 0.5, 0]} castShadow>
+            <boxGeometry args={[0.8, 0.5, 0.6]} />
+            <meshStandardMaterial color="#8a8580" />
+          </mesh>
+        </>
+      )}
+      {phase === "scaffold" && (
+        <>
+          <mesh position={[0, 1.0, 0]} castShadow>
+            <boxGeometry args={[1.6, 2.0, 1.4]} />
+            <meshStandardMaterial color={PALETTE.wallCream} opacity={0.7} transparent />
+          </mesh>
+          {/* Scaffold poles */}
+          {[
+            [-0.9, -0.8],
+            [0.9, -0.8],
+            [-0.9, 0.8],
+            [0.9, 0.8],
+          ].map(([sx, sz], i) => (
+            <mesh key={i} position={[sx, 1.2, sz]}>
+              <cylinderGeometry args={[0.04, 0.04, 2.4, 5]} />
+              <meshStandardMaterial color={PALETTE.scaffold} />
+            </mesh>
+          ))}
+          <mesh position={[0, 2.4, 0]}>
+            <boxGeometry args={[2.0, 0.08, 1.8]} />
+            <meshStandardMaterial color={PALETTE.scaffold} />
+          </mesh>
+        </>
+      )}
+      {phase === "crane" && (
+        <>
+          <mesh position={[0, 0.2, 0]} receiveShadow>
+            <boxGeometry args={[1.8, 0.4, 1.8]} />
+            <meshStandardMaterial color={PALETTE.concrete} />
+          </mesh>
+          <mesh position={[0, 3.2, 0]} castShadow>
+            <boxGeometry args={[0.25, 6.2, 0.25]} />
+            <meshStandardMaterial color={PALETTE.crane} />
+          </mesh>
+          <mesh position={[1.4, 6.0, 0]} castShadow>
+            <boxGeometry args={[3.2, 0.18, 0.18]} />
+            <meshStandardMaterial color={PALETTE.crane} />
+          </mesh>
+          <mesh position={[2.8, 5.2, 0]}>
+            <boxGeometry args={[0.35, 0.35, 0.35]} />
+            <meshStandardMaterial color="#4a5568" />
+          </mesh>
+        </>
       )}
     </group>
   );
@@ -94,14 +431,85 @@ function DistrictBuilding({
 
 function Waterfront({ active }: { active: boolean }) {
   return (
-    <group position={[-5.5, 0.1, -4.5]}>
+    <group position={[-5.5, 0.05, -5.2]}>
       <mesh rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
-        <planeGeometry args={[6, 3.5]} />
+        <planeGeometry args={[8, 4.5]} />
         <meshStandardMaterial
-          color={active ? "#0ea5e9" : "#1d4ed8"}
+          color={active ? "#3b9bc7" : PALETTE.water}
           transparent
-          opacity={active ? 0.9 : 0.7}
+          opacity={0.88}
         />
+      </mesh>
+      {/* Jetty */}
+      <mesh position={[0.5, 0.2, 1.2]} castShadow>
+        <boxGeometry args={[3.5, 0.25, 0.8]} />
+        <meshStandardMaterial color="#6b5344" />
+      </mesh>
+      <mesh position={[-1.2, 0.35, 0.6]} castShadow>
+        <boxGeometry args={[0.15, 0.7, 0.15]} />
+        <meshStandardMaterial color="#5a4638" />
+      </mesh>
+      <mesh position={[1.8, 0.35, 0.6]} castShadow>
+        <boxGeometry args={[0.15, 0.7, 0.15]} />
+        <meshStandardMaterial color="#5a4638" />
+      </mesh>
+      {/* Mangrove suggestion */}
+      {[-2.5, -1.5, 2.2].map((mx, i) => (
+        <mesh key={i} position={[mx, 0.5, -1.5]}>
+          <sphereGeometry args={[0.4, 6, 6]} />
+          <meshStandardMaterial color={PALETTE.palm} />
+        </mesh>
+      ))}
+    </group>
+  );
+}
+
+function PortInfrastructure() {
+  return (
+    <group position={[6.5, 0, 2.8]}>
+      {/* Crane legs */}
+      <mesh position={[1.5, 2.5, 0]} castShadow>
+        <boxGeometry args={[0.2, 5, 0.2]} />
+        <meshStandardMaterial color="#c45c26" />
+      </mesh>
+      <mesh position={[2.8, 2.5, 0]} castShadow>
+        <boxGeometry args={[0.2, 5, 0.2]} />
+        <meshStandardMaterial color="#c45c26" />
+      </mesh>
+      <mesh position={[2.15, 5.1, 0]} castShadow>
+        <boxGeometry args={[2.0, 0.25, 0.25]} />
+        <meshStandardMaterial color="#e07a3a" />
+      </mesh>
+      <mesh position={[2.15, 5.1, 1.2]} castShadow>
+        <boxGeometry args={[0.15, 0.15, 2.4]} />
+        <meshStandardMaterial color="#e07a3a" />
+      </mesh>
+      {/* Containers */}
+      {[
+        [0, 0.5, 1.5, "#1d6f8a"],
+        [0, 0.5, 2.4, "#b45309"],
+        [0, 1.3, 1.9, "#4b5563"],
+      ].map(([x, y, z, c], i) => (
+        <mesh key={i} position={[x as number, y as number, z as number]} castShadow>
+          <boxGeometry args={[1.4, 0.9, 0.8]} />
+          <meshStandardMaterial color={c as string} />
+        </mesh>
+      ))}
+    </group>
+  );
+}
+
+function DrainageChannel() {
+  // Port Harcourt flood-aware civic infrastructure
+  return (
+    <group>
+      <mesh position={[0.5, 0.06, 2.4]} rotation={[-Math.PI / 2, 0, 0.15]} receiveShadow>
+        <planeGeometry args={[10, 0.35]} />
+        <meshStandardMaterial color="#4a5568" opacity={0.7} transparent />
+      </mesh>
+      <mesh position={[-4.0, 0.06, -0.5]} rotation={[-Math.PI / 2, 0, 1.2]} receiveShadow>
+        <planeGeometry args={[6, 0.3]} />
+        <meshStandardMaterial color="#4a5568" opacity={0.65} transparent />
       </mesh>
     </group>
   );
@@ -114,22 +522,22 @@ function AtmosphereEffects({
 }) {
   const rainDrops = useMemo(
     () =>
-      Array.from({ length: 120 }, (_, index) => ({
+      Array.from({ length: 100 }, (_, index) => ({
         key: index,
-        x: (Math.random() - 0.5) * 20,
+        x: (Math.random() - 0.5) * 24,
         y: Math.random() * 8 + 2,
-        z: (Math.random() - 0.5) * 16,
+        z: (Math.random() - 0.5) * 18,
       })),
     [],
   );
 
   const dustDust = useMemo(
     () =>
-      Array.from({ length: 40 }, (_, index) => ({
+      Array.from({ length: 36 }, (_, index) => ({
         key: index,
-        x: (Math.random() - 0.5) * 18,
+        x: (Math.random() - 0.5) * 20,
         y: Math.random() * 4 + 0.5,
-        z: (Math.random() - 0.5) * 14,
+        z: (Math.random() - 0.5) * 16,
       })),
     [],
   );
@@ -139,16 +547,15 @@ function AtmosphereEffects({
       {weather.rainIntensity > 0.1 &&
         rainDrops.map((drop) => (
           <mesh key={drop.key} position={[drop.x, drop.y, drop.z]}>
-            <boxGeometry args={[0.04, 0.6, 0.04]} />
-            <meshStandardMaterial color="#dbeafe" transparent opacity={0.65} />
+            <boxGeometry args={[0.04, 0.55, 0.04]} />
+            <meshStandardMaterial color="#dbeafe" transparent opacity={0.6} />
           </mesh>
         ))}
-
       {weather.dustIntensity > 0.1 &&
         dustDust.map((dust) => (
           <mesh key={dust.key} position={[dust.x, dust.y, dust.z]}>
             <sphereGeometry args={[0.07, 8, 8]} />
-            <meshStandardMaterial color="#d6b77a" transparent opacity={0.4} />
+            <meshStandardMaterial color="#d6b77a" transparent opacity={0.35} />
           </mesh>
         ))}
     </>
@@ -164,7 +571,7 @@ function SimpleVehicle({
   color: string;
   kind: "okada" | "taxi" | "ferry";
 }) {
-  const scale = kind === "ferry" ? 1.4 : kind === "taxi" ? 1.1 : 0.75;
+  const scale = kind === "ferry" ? 1.35 : kind === "taxi" ? 1.05 : 0.72;
   return (
     <group position={position} scale={scale}>
       <mesh castShadow position={[0, 0.35, 0]}>
@@ -181,12 +588,18 @@ function SimpleVehicle({
 
 function PlayerAvatar({ transport }: { transport: TransportId }) {
   const color =
-    transport === "okada" ? "#f97316" : transport === "taxi" ? "#eab308" : transport === "ferry" ? "#0ea5e9" : "#f8fafc";
+    transport === "okada"
+      ? "#f97316"
+      : transport === "taxi"
+        ? "#eab308"
+        : transport === "ferry"
+          ? "#0ea5e9"
+          : "#f8fafc";
   return (
     <group>
       <mesh castShadow position={[0, 0.55, 0]}>
         <capsuleGeometry args={[0.28, 0.55, 6, 12]} />
-        <meshStandardMaterial color={color} emissive={color} emissiveIntensity={0.15} />
+        <meshStandardMaterial color={color} emissive={color} emissiveIntensity={0.12} />
       </mesh>
       <mesh position={[0, 1.15, 0]}>
         <sphereGeometry args={[0.22, 16, 16]} />
@@ -268,7 +681,6 @@ function PlayerController({
       onDistrictChange?.(near);
     }
 
-    // Follow camera — GTA-lite third person
     const target = group.current.position;
     const camOffset = new THREE.Vector3(0, 6.5, 9);
     const desired = target.clone().add(camOffset);
@@ -276,7 +688,6 @@ function PlayerController({
     camera.lookAt(target.x, target.y + 1.2, target.z);
   });
 
-  // Sync external position when switching into walk mode
   useEffect(() => {
     if (group.current && mode !== "orbit") {
       group.current.position.set(position[0], position[1], position[2]);
@@ -314,44 +725,45 @@ export function AfroMetaverseScene({
   return (
     <Canvas
       shadows
-      camera={{ position: [0, 8, 12], fov: 42 }}
+      camera={{ position: [0, 9, 13], fov: 42 }}
       style={{ width: "100%", height: "100%", background: weather.groundColor }}
       tabIndex={0}
     >
       <CityGround weather={weather} />
+      <RoadNetwork />
+      <DrainageChannel />
+      <StreetFurniture />
 
       <group>
-        <mesh position={[0, 0.08, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
-          <planeGeometry args={[30, 18]} />
-          <meshStandardMaterial color="#0f172a" transparent opacity={0.18} />
-        </mesh>
-
         <Waterfront active={weather.id === "rainy"} />
+        <PortInfrastructure />
 
         {Object.entries(DISTRICT_LAYOUT).map(([districtId, info]) => (
-          <DistrictBuilding
+          <DistrictHub
             key={districtId}
             position={[info.x, 0, info.z] as [number, number, number]}
             color={info.color}
             active={selectedDistrict === districtId}
             near={nearDistrictId === districtId}
+            label={info.label}
           />
         ))}
 
-        {/* Roads */}
-        <mesh position={[0, 0.05, 4.5]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
-          <planeGeometry args={[8, 1.6]} />
-          <meshStandardMaterial color="#f8fafc" opacity={0.4} transparent />
-        </mesh>
-        <mesh position={[0, 0.05, -2.7]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
-          <planeGeometry args={[10, 1.2]} />
-          <meshStandardMaterial color="#f8fafc" opacity={0.35} transparent />
-        </mesh>
+        {CITY_BLOCKS.map((spec, i) => (
+          <CityBlock key={i} spec={spec} />
+        ))}
 
-        {/* Parked transport flavor */}
+        {DEV_LOTS.map((lot, i) => (
+          <DevelopmentLot key={i} x={lot.x} z={lot.z} w={lot.w} d={lot.d} />
+        ))}
+
+        {BUILD_SITES.map((site, i) => (
+          <ConstructionSite key={i} x={site.x} z={site.z} phase={site.phase} />
+        ))}
+
         <SimpleVehicle position={[-1.5, 0, 5.2]} color="#f97316" kind="okada" />
         <SimpleVehicle position={[2.2, 0, 5]} color="#eab308" kind="taxi" />
-        <SimpleVehicle position={[-6.2, 0.05, -5.2]} color="#0ea5e9" kind="ferry" />
+        <SimpleVehicle position={[-6.0, 0.05, -4.6]} color="#0ea5e9" kind="ferry" />
       </group>
 
       <AtmosphereEffects weather={weather} />
@@ -360,9 +772,11 @@ export function AfroMetaverseScene({
       {mode === "orbit" && (
         <OrbitControls
           enablePan={false}
-          enableZoom={false}
-          minPolarAngle={Math.PI / 3.5}
-          maxPolarAngle={Math.PI / 2.2}
+          enableZoom={true}
+          minDistance={8}
+          maxDistance={22}
+          minPolarAngle={Math.PI / 4}
+          maxPolarAngle={Math.PI / 2.15}
           target={[0, 1.2, 0]}
         />
       )}
