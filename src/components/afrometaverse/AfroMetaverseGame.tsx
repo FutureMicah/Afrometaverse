@@ -13,7 +13,6 @@ import {
   MapPin,
   Megaphone,
   Send,
-  ShoppingBag,
   Sparkles,
   Store,
   Vote,
@@ -24,6 +23,9 @@ import cityImage from "@/assets/port-harcourt-city.jpg";
 type ScreenId = "city" | "work" | "market" | "civic" | "social" | "learn";
 
 type BuildingKind = "market" | "hotel" | "office" | "clinic" | "religious" | "education" | "transport" | "industry";
+
+type TimeOfDay = "Morning" | "Afternoon" | "Evening" | "Night";
+type WeatherState = "Rainy" | "Dry" | "Harmattan";
 
 type CityBuilding = {
   id: string;
@@ -433,6 +435,13 @@ const STARTING_POSTS = [
   },
 ];
 
+const TIME_OF_DAY: TimeOfDay[] = ["Morning", "Afternoon", "Evening", "Night"];
+const WEATHER_STATES: { label: WeatherState; temp: number; summary: string; risk: string }[] = [
+  { label: "Rainy", temp: 29, summary: "Heavy rain across the lower streets and creek routes.", risk: "Low-lying roads and ferries are slowing down." },
+  { label: "Dry", temp: 31, summary: "Warm air and dry roads make travel easier across the city.", risk: "Dust and heat are a mild nuisance in the outer districts." },
+  { label: "Harmattan", temp: 27, summary: "Cool air and dry winds sweep through the city.", risk: "Air quality drops and outdoor work may feel harder." },
+];
+
 const FEED_LIMIT = 280;
 
 function clampPost(text: string) {
@@ -460,9 +469,19 @@ export function AfroMetaverseGame() {
   const [toast, setToast] = useState<{ id: number; text: string } | null>(null);
   const toastTimer = useRef<number | undefined>(undefined);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const [timeOfDayIndex, setTimeOfDayIndex] = useState(0);
+  const [weatherIndex, setWeatherIndex] = useState(0);
 
   useEffect(() => {
-    return () => window.clearTimeout(toastTimer.current);
+    const cycleTimer = window.setInterval(() => {
+      setTimeOfDayIndex((index) => (index + 1) % TIME_OF_DAY.length);
+      setWeatherIndex((index) => (index + 1) % WEATHER_STATES.length);
+    }, 12000);
+
+    return () => {
+      window.clearInterval(cycleTimer);
+      window.clearTimeout(toastTimer.current);
+    };
   }, []);
 
   function announce(text: string) {
@@ -471,6 +490,8 @@ export function AfroMetaverseGame() {
     toastTimer.current = window.setTimeout(() => setToast(null), 3200);
   }
 
+  const currentTime = TIME_OF_DAY[timeOfDayIndex];
+  const currentWeather = WEATHER_STATES[weatherIndex];
   const level = Math.min(99, 1 + Math.floor(reputation / 10));
   const levelLabel = `Level ${String(level).padStart(2, "0")}`;
   const repPct = Math.min(100, (reputation % 10) * 10 || (reputation === 0 ? 0 : 100));
@@ -480,6 +501,18 @@ export function AfroMetaverseGame() {
   const selectedBuilding = selectedBuildingId ? CITY_BUILDINGS.find((b) => b.id === selectedBuildingId) ?? null : null;
   const insideBuilding = insideBuildingId ? CITY_BUILDINGS.find((b) => b.id === insideBuildingId) ?? null : null;
   const currentRoom = insideBuilding && currentRoomId ? insideBuilding.rooms.find((room) => room.id === currentRoomId) ?? null : null;
+
+  const districtRisk = activeDistrict
+    ? currentWeather.label === "Rainy"
+      ? activeDistrict.id === "creekside" || activeDistrict.id === "town-market"
+        ? "High flooding risk"
+        : "Moderate transport delay"
+      : currentWeather.label === "Harmattan"
+        ? activeDistrict.id === "creekside"
+          ? "Dusty wind, slow river traffic"
+          : "Dry air, reduced visibility"
+        : "Smooth roads and good movement"
+    : "Citywide travel conditions are stable";
 
   function go(next: ScreenId) {
     setScreen(next);
@@ -620,6 +653,19 @@ export function AfroMetaverseGame() {
                 <h1>Port Harcourt, Day {cityDay}</h1>
                 <p>Tap a marker to visit a district. Every street has something for a citizen on the move.</p>
               </div>
+
+              <div className="am-weather-panel">
+                <div className="am-weather-main">
+                  <span className="am-weather-state">{currentWeather.label}</span>
+                  <strong>{currentWeather.temp}°C</strong>
+                  <small>{currentTime}</small>
+                </div>
+                <div className="am-weather-copy">
+                  <p>{currentWeather.summary}</p>
+                  <span>{currentWeather.risk}</span>
+                </div>
+              </div>
+
               <div className="am-city-wrap">
                 <img src={cityImage} alt="Isometric illustration of Port Harcourt at midday" className="am-city-img" />
                 {DISTRICTS.map((d) => (
@@ -661,6 +707,10 @@ export function AfroMetaverseGame() {
                       <div>
                         <strong>Economy</strong>
                         <span>{activeDistrict.economy}</span>
+                      </div>
+                      <div>
+                        <strong>Travel</strong>
+                        <span>{districtRisk}</span>
                       </div>
                     </div>
                     <div className="am-panel-actions">
@@ -850,7 +900,7 @@ export function AfroMetaverseGame() {
                       <div className="am-card-top">
                         <span className="am-good-emoji" aria-hidden="true">{good.emoji}</span>
                         <span className="am-coins">
-                          <Banknote size={14} /> {good.price}
+                          <Coins size={14} /> {good.price}
                         </span>
                       </div>
                       <h2>{good.name}</h2>
@@ -1069,7 +1119,7 @@ export function AfroMetaverseGame() {
 
           <div className="am-pulse">
             <span className="am-pulse-title">City pulse</span>
-            <p>Vote 003 leads with solar lamps · Ferries running on time · Market busy since dawn</p>
+            <p>{currentWeather.label} · {currentTime} · {districtRisk}</p>
           </div>
         </aside>
       </div>
