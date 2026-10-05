@@ -24,6 +24,7 @@ import {
 import AfroMetaverseScene from "@/components/afrometaverse/AfroMetaverseScene";
 import AuthModal from "@/components/afrometaverse/AuthModal";
 import { useCitizenAuth } from "@/hooks/useCitizenAuth";
+import { useCityLive } from "@/hooks/useCityLive";
 import { useEconomyStore } from "@/stores/economyStore";
 import { useResilienceStore } from "@/stores/resilienceStore";
 import { useSocialStateStore } from "@/stores/socialStateStore";
@@ -257,6 +258,7 @@ function getDistrictWeatherNote(districtId: string | undefined, weatherId: Weath
 
 export function AfroMetaverseGame() {
   const {
+    user,
     isAuthenticated,
     progress,
     loading: authLoading,
@@ -282,7 +284,7 @@ export function AfroMetaverseGame() {
   const [openCourse, setOpenCourse] = useState<string | null>(null);
   const [selectedDistrict, setSelectedDistrict] = useState<string | null>("town-market");
   const [postDraft, setPostDraft] = useState("");
-  const [posts, setPosts] = useState(STARTING_POSTS);
+  const [localPosts, setLocalPosts] = useState(STARTING_POSTS);
   const [likedPosts, setLikedPosts] = useState<string[]>([]);
   const [toast, setToast] = useState<{ id: number; text: string } | null>(null);
   const toastTimer = useRef<number | undefined>(undefined);
@@ -317,6 +319,45 @@ export function AfroMetaverseGame() {
   const worldState = useWorldStateStore((state) => state.state);
   const resilienceStore = useResilienceStore((state) => state);
   const economyStore = useEconomyStore((state) => state.state);
+
+  const displayNameEarly = isAuthenticated ? progress.displayName : "Ekene Okoro";
+  const {
+    posts: livePosts,
+    events: cityEvents,
+    proposals: liveProposals,
+    onlineCount,
+    liveReady,
+    publishPost,
+    likeRemotePost,
+    castLiveVote,
+  } = useCityLive({
+    enabled: isAuthenticated,
+    userId: user?.id ?? null,
+    displayName: displayNameEarly,
+    districtId: selectedDistrict,
+    cityDay,
+    fallbackPosts: STARTING_POSTS,
+    fallbackProposals: PROPOSALS.map((p) => ({
+      id: p.id,
+      title: p.title,
+      blurb: p.blurb,
+      votes: p.votes,
+      status: "open",
+      closesOnDay: 7,
+      outcomeNote: null,
+    })),
+  });
+
+  const posts = isAuthenticated && liveReady ? livePosts : localPosts;
+  const proposals = isAuthenticated && liveProposals.length > 0 ? liveProposals : PROPOSALS.map((p) => ({
+    id: p.id,
+    title: p.title,
+    blurb: p.blurb,
+    votes: p.votes,
+    status: "open" as const,
+    closesOnDay: 7,
+    outcomeNote: null as string | null,
+  }));
   const socialState = useSocialStateStore((state) => state.state);
 
   // Hydrate local game state once when authenticated progress loads
@@ -443,10 +484,22 @@ export function AfroMetaverseGame() {
     persist({ purchasedGoods: nextGoods, balance: nextBalance });
   }
 
-  function castVote(proposalId: string) {
+  async function castVote(proposalId: string) {
     if (votedFor) {
       announce("You have already voted this season — one vote per citizen.");
       return;
+    }
+    const proposal = proposals.find((p) => p.id === proposalId);
+    if (proposal && proposal.status !== "open") {
+      announce("This vote is closed for the season.");
+      return;
+    }
+    if (isAuthenticated) {
+      const ok = await castLiveVote(proposalId);
+      if (!ok) {
+        announce("Could not record vote on the city ledger — try again.");
+        return;
+      }
     }
     const nextRep = Math.min(99, reputation + 2);
     setVotedFor(proposalId);
@@ -468,19 +521,31 @@ export function AfroMetaverseGame() {
     persist({ doneCourses: nextCourses, balance: nextBalance, reputation: nextRep });
   }
 
-  function submitPost() {
+  async function submitPost() {
     const text = clampPost(postDraft.trim());
     if (!text) return;
-    setPosts((p) => [{ id: `s${Date.now()}`, author: displayName, text, likes: 0 }, ...p]);
+    if (isAuthenticated) {
+      const remote = await publishPost(text);
+      if (!remote) {
+        announce("Could not reach the Town Square — check your connection.");
+        return;
+      }
+    } else {
+      setLocalPosts((p) => [{ id: `s${Date.now()}`, author: displayName, text, likes: 0 }, ...p]);
+    }
     setPostDraft("");
     announce("Posted to the Town Square.");
   }
 
-  function likePost(postId: string) {
+  async function likePost(postId: string) {
     if (likedPosts.includes(postId)) return;
     const nextLiked = [...likedPosts, postId];
     setLikedPosts(nextLiked);
-    setPosts((p) => p.map((post) => (post.id === postId ? { ...post, likes: post.likes + 1 } : post)));
+    if (isAuthenticated) {
+      await likeRemotePost(postId);
+    } else {
+      setLocalPosts((p) => p.map((post) => (post.id === postId ? { ...post, likes: post.likes + 1 } : post)));
+    }
     persist({ likedPosts: nextLiked });
   }
 
@@ -743,29 +808,49 @@ export function AfroMetaverseGame() {
             <section>
               <div className="am-screen-head">
                 <h1>Community Vote 003</h1>
-                <p>The council posts one question each season. One vote per citizen, counted at the Civic Centre.</p>
+                <p>
+                  The council posts one question each season. One vote per citizen, counted at the Civic Centre.
+                  {proposals.some((p) => p.status === "open")
+                    ? ` Open until Day ${Math.max(...proposals.map((p) => p.closesOnDay))}.`
+                    : " This season's vote has closed."}
+                </p>
               </div>
               <div className="am-cards">
-                {PROPOSALS.map((proposal) => {
+                {proposals.map((proposal) => {
                   const mine = votedFor === proposal.id;
                   const other = votedFor && votedFor !== proposal.id;
+                  const closed = proposal.status !== "open";
                   return (
-                    <article key={proposal.id} className={`am-card ${mine ? "am-card-voted" : ""}`}>
+                    <article
+                      key={proposal.id}
+                      className={`am-card ${mine ? "am-card-voted" : ""} ${proposal.status === "passed" ? "am-card-passed" : ""}`}
+                    >
                       <div className="am-card-top">
-                        <span className="am-chip">Proposal</span>
+                        <span className="am-chip">
+                          {proposal.status === "passed"
+                            ? "Passed"
+                            : proposal.status === "rejected"
+                              ? "Not passed"
+                              : "Proposal"}
+                        </span>
                         <span className="am-votes">{proposal.votes.toLocaleString()} votes</span>
                       </div>
                       <h2>{proposal.title}</h2>
                       <p>{proposal.blurb}</p>
+                      {proposal.outcomeNote && (
+                        <p className="am-panel-tip am-panel-tip-highlight">{proposal.outcomeNote}</p>
+                      )}
                       <button
                         className={`am-btn ${mine ? "am-btn-ghost" : "am-btn-primary"}`}
-                        disabled={!!votedFor}
-                        onClick={() => castVote(proposal.id)}
+                        disabled={!!votedFor || closed}
+                        onClick={() => void castVote(proposal.id)}
                       >
                         {mine ? (
                           <>
                             <Check size={15} /> Your vote
                           </>
+                        ) : closed ? (
+                          "Vote closed"
                         ) : other ? (
                           "Vote closed for you"
                         ) : (
@@ -786,8 +871,28 @@ export function AfroMetaverseGame() {
             <section>
               <div className="am-screen-head">
                 <h1>Town Square</h1>
-                <p>What is the city saying today, Day {cityDay}?</p>
+                <p>
+                  What is the city saying today, Day {cityDay}?
+                  {isAuthenticated && (
+                    <span className="am-presence-line">
+                      {" "}
+                      · {Math.max(onlineCount, 1)} citizen{onlineCount === 1 ? "" : "s"} nearby
+                      {liveReady ? " · live" : ""}
+                    </span>
+                  )}
+                </p>
               </div>
+              {cityEvents.length > 0 && (
+                <div className="am-events">
+                  {cityEvents.map((ev) => (
+                    <article key={ev.id} className="am-event-card">
+                      <span className="am-chip">{ev.eventType}</span>
+                      <strong>{ev.title}</strong>
+                      <p>{ev.body}</p>
+                    </article>
+                  ))}
+                </div>
+              )}
               <div className="am-compose">
                 <textarea
                   className="am-compose-input"
@@ -799,7 +904,11 @@ export function AfroMetaverseGame() {
                 />
                 <div className="am-compose-foot">
                   <span>{FEED_LIMIT - postDraft.length}</span>
-                  <button className="am-btn am-btn-primary" onClick={submitPost} disabled={!postDraft.trim()}>
+                  <button
+                    className="am-btn am-btn-primary"
+                    onClick={() => void submitPost()}
+                    disabled={!postDraft.trim()}
+                  >
                     <Send size={15} /> Post
                   </button>
                 </div>
@@ -814,7 +923,7 @@ export function AfroMetaverseGame() {
                     <p>{post.text}</p>
                     <button
                       className={`am-like ${likedPosts.includes(post.id) ? "am-like-active" : ""}`}
-                      onClick={() => likePost(post.id)}
+                      onClick={() => void likePost(post.id)}
                       disabled={likedPosts.includes(post.id)}
                     >
                       <Heart size={14} /> {post.likes}

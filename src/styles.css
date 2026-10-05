@@ -1324,3 +1324,42 @@
   padding: 8px 12px;
   font-size: 12px;
 }
+
+.am-presence-line {
+  color: var(--am-ink-soft);
+  font-weight: 600;
+}
+
+.am-events {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.am-event-card {
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 1px solid var(--am-line);
+  background: var(--am-mint-soft);
+}
+
+.am-event-card .am-chip {
+  margin-top: 0;
+  margin-bottom: 6px;
+}
+
+.am-event-card strong {
+  display: block;
+  font-size: 14px;
+  margin-bottom: 4px;
+}
+
+.am-event-card p {
+  margin: 0;
+  font-size: 13px;
+  color: var(--am-ink-soft);
+}
+
+.am-card-passed {
+  box-shadow: 0 0 0 2px var(--am-mint);
+}

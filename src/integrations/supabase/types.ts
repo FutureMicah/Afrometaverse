@@ -62,12 +62,157 @@ export type Database = {
         }
         Relationships: []
       }
+      town_posts: {
+        Row: {
+          id: string
+          author_id: string | null
+          author_name: string
+          body: string
+          likes: number
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          author_id?: string | null
+          author_name: string
+          body: string
+          likes?: number
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          author_id?: string | null
+          author_name?: string
+          body?: string
+          likes?: number
+          created_at?: string
+        }
+        Relationships: []
+      }
+      presence: {
+        Row: {
+          user_id: string
+          display_name: string
+          district_id: string | null
+          last_seen: string
+        }
+        Insert: {
+          user_id: string
+          display_name: string
+          district_id?: string | null
+          last_seen?: string
+        }
+        Update: {
+          user_id?: string
+          display_name?: string
+          district_id?: string | null
+          last_seen?: string
+        }
+        Relationships: []
+      }
+      city_events: {
+        Row: {
+          id: string
+          title: string
+          body: string
+          event_type: string
+          starts_on_day: number
+          ends_on_day: number
+          is_active: boolean
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          title: string
+          body: string
+          event_type?: string
+          starts_on_day: number
+          ends_on_day: number
+          is_active?: boolean
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          title?: string
+          body?: string
+          event_type?: string
+          starts_on_day?: number
+          ends_on_day?: number
+          is_active?: boolean
+          created_at?: string
+        }
+        Relationships: []
+      }
+      vote_proposals: {
+        Row: {
+          id: string
+          season: string
+          title: string
+          blurb: string
+          vote_count: number
+          status: string
+          closes_on_day: number
+          outcome_note: string | null
+          created_at: string
+        }
+        Insert: {
+          id: string
+          season?: string
+          title: string
+          blurb: string
+          vote_count?: number
+          status?: string
+          closes_on_day?: number
+          outcome_note?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          season?: string
+          title?: string
+          blurb?: string
+          vote_count?: number
+          status?: string
+          closes_on_day?: number
+          outcome_note?: string | null
+          created_at?: string
+        }
+        Relationships: []
+      }
+      citizen_votes: {
+        Row: {
+          citizen_id: string
+          proposal_id: string
+          season: string
+          created_at: string
+        }
+        Insert: {
+          citizen_id: string
+          proposal_id: string
+          season?: string
+          created_at?: string
+        }
+        Update: {
+          citizen_id?: string
+          proposal_id?: string
+          season?: string
+          created_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      cast_civic_vote: {
+        Args: { p_proposal_id: string; p_season?: string }
+        Returns: undefined
+      }
+      resolve_votes_for_day: {
+        Args: { p_day: number }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never

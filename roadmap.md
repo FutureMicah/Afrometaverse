@@ -14,10 +14,16 @@
 - [x] useCitizenAuth hook (session, email/password, Google, load/save progress)
 - [x] AuthModal UI (email + Google) with am-* styles
 - [x] Game wires save on work / market / vote / learn / likes
+- [x] Debounced saves, last-saved time, editable display name
 - [ ] Run SQL migration in Lovable Cloud / Supabase
 - [ ] Enable Google provider in Supabase Auth settings
 - [ ] End-to-end test: sign up → play → reload → progress restored
 
-## Batch 3 — A living city (not started)
-- [ ] Real-time social feed / multiplayer presence
-- [ ] Scheduled city events and vote outcomes
+## Batch 3 — A living city (in progress)
+- [x] Schema: town_posts, presence, city_events, vote_proposals, citizen_votes + RPCs
+- [x] useCityLive: realtime feed, presence heartbeats, events, vote tallies/outcomes
+- [x] Town Square shows live posts, presence count, scheduled city events
+- [x] Civic vote uses shared tallies; closes by day with pass/reject outcomes
+- [ ] Run SQL migration 0002_living_city.sql in Lovable Cloud
+- [ ] Enable Realtime on town_posts + presence tables
+- [ ] E2E: two browsers post/see each other; vote closes after day threshold
