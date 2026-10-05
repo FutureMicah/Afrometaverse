@@ -23,6 +23,34 @@ import cityImage from "@/assets/port-harcourt-city.jpg";
 
 type ScreenId = "city" | "work" | "market" | "civic" | "social" | "learn";
 
+type BuildingKind = "market" | "hotel" | "office" | "clinic" | "religious" | "education" | "transport" | "industry";
+
+type CityBuilding = {
+  id: string;
+  name: string;
+  district: string;
+  kind: BuildingKind;
+  status: "open" | "busy" | "closed";
+  blurb: string;
+  access: string;
+  rooms: {
+    id: string;
+    name: string;
+    description: string;
+  }[];
+};
+
+type Vehicle = {
+  id: string;
+  name: string;
+  type: "taxi" | "bus" | "ferry" | "motorcycle" | "truck";
+  from: string;
+  to: string;
+  cost: number;
+  duration: string;
+  note: string;
+};
+
 const NAV: { id: ScreenId; label: string; icon: typeof MapPin }[] = [
   { id: "city", label: "City", icon: MapPin },
   { id: "work", label: "Work", icon: Briefcase },
@@ -41,6 +69,8 @@ const DISTRICTS = [
     tag: "Trade",
     blurb: "Miles One market road: pepper stalls, ankara bolts, okra by the basin.",
     tip: "Most jobs and goods flow through here. Start your day where the crowd is.",
+    climate: "Rainy-season flooding risk in low-lying corners.",
+    economy: "Wholesale trade, food stalls and informal retail keep the district alive.",
   },
   {
     id: "civic-centre",
@@ -50,6 +80,8 @@ const DISTRICTS = [
     tag: "Civic",
     blurb: "The old assembly hall where the community council posts weekly votes.",
     tip: "One vote per citizen. Your say shapes next season's city projects.",
+    climate: "Roads stay busy despite occasional downpours.",
+    economy: "Government offices, policy meetings and civic administration drive the district.",
   },
   {
     id: "creekside",
@@ -59,6 +91,8 @@ const DISTRICTS = [
     tag: "Waterfront",
     blurb: "Stilt houses and canoe ferries crossing the mangrove channels.",
     tip: "Ferry work pays well but the tide decides your shift.",
+    climate: "Heavy rain raises flooding risk and delays river crossings.",
+    economy: "Fishing, ferry transport and river logistics are the lifeblood here.",
   },
   {
     id: "port",
@@ -68,6 +102,238 @@ const DISTRICTS = [
     tag: "Industry",
     blurb: "Container cranes over the Bonny channel, ledgers stacked three deep.",
     tip: "Steady, higher-paying shifts for citizens with a good reputation.",
+    climate: "Dry season helps delivery routes, wet season slows cargo flow.",
+    economy: "Shipping, logistics and industrial work anchor the district's money network.",
+  },
+];
+
+const CITY_BUILDINGS: CityBuilding[] = [
+  {
+    id: "mile1-market",
+    name: "Mile 1 Market",
+    district: "town-market",
+    kind: "market",
+    status: "busy",
+    blurb: "A dense row of stalls where food, clothing, household goods and quick deals change hands all day.",
+    access: "Open from early morning until late evening. Expect crowding, bargaining and quick movement.",
+    rooms: [
+      { id: "entrance", name: "Market Entrance", description: "Vendors call out prices, people flow in and out, and goods are stacked by the gate." },
+      { id: "produce", name: "Produce Section", description: "Vegetables, peppers, yams and fresh fish are sold in the busiest aisle." },
+      { id: "textiles", name: "Textile Stalls", description: "Ankara, lace, thread and cheap household textiles line the walls and tables." },
+      { id: "food-stalls", name: "Food Stalls", description: "Sizzling suya, pepper soup, rice and grilled fish fill the air with dense spice and smoke." },
+      { id: "storage", name: "Stock Room", description: "A back room where bags, crates and unsold goods are kept during the day." },
+    ],
+  },
+  {
+    id: "dline-plaza",
+    name: "D-Line Plaza",
+    district: "town-market",
+    kind: "market",
+    status: "open",
+    blurb: "A cleaner, modern shopping strip with stronger brands and a more structured retail rhythm.",
+    access: "Good for electronics, fashion and higher-end household purchases.",
+    rooms: [
+      { id: "front-foyer", name: "Front Foyer", description: "A structured retail entrance with cleaner floors and brighter signs." },
+      { id: "fashion", name: "Fashion Row", description: "Clothes, shoes and accessories are displayed in clean open spaces." },
+      { id: "tech", name: "Electronics Hall", description: "Phone accessories, chargers and other small electronics are stacked on tables." },
+      { id: "manager-office", name: "Manager Office", description: "A quieter back room used for records, staff coordination and pricing." },
+    ],
+  },
+  {
+    id: "city-hall",
+    name: "Civic Hall",
+    district: "civic-centre",
+    kind: "office",
+    status: "open",
+    blurb: "The local government and council hub for votes, permits, neighborhood updates and civic planning.",
+    access: "Residents can enter for voting, appointments and public meetings.",
+    rooms: [
+      { id: "lobby", name: "Main Lobby", description: "Notices, lines, and a constant flow of residents and officials move through the central hall." },
+      { id: "voting-chamber", name: "Voting Chamber", description: "Ballot booths, civic notices and a formal space for the season's decisions." },
+      { id: "records", name: "Records Office", description: "Documents, permit applications and public records are stored here." },
+      { id: "meeting-room", name: "Meeting Room", description: "A formal room used for district meetings and community planning sessions." },
+    ],
+  },
+  {
+    id: "community-centre",
+    name: "Community Centre",
+    district: "civic-centre",
+    kind: "office",
+    status: "busy",
+    blurb: "This is where neighborhood leaders, volunteers and residents gather for planning and announcements.",
+    access: "Public meetings are common; leaders often gather here to shape local initiatives.",
+    rooms: [
+      { id: "hall", name: "Community Hall", description: "An open room used for speeches, meetings and local planning sessions." },
+      { id: "registration", name: "Registration Desk", description: "Residents sign up for events and get updates on public projects." },
+      { id: "storage-room", name: "Supply Room", description: "Tables, chairs and community equipment are stored here for group gatherings." },
+    ],
+  },
+  {
+    id: "creek-ferry",
+    name: "Creek Ferry Dock",
+    district: "creekside",
+    kind: "transport",
+    status: "busy",
+    blurb: "A river crossing hub where ferries move people and goods across the creek lanes.",
+    access: "Access is weather-sensitive and depends on tide and rainfall conditions.",
+    rooms: [
+      { id: "dock-gate", name: "Dock Gate", description: "Passengers gather here before boarding while goods are loaded and checked." },
+      { id: "ticket-booth", name: "Ticket Booth", description: "Ticket sellers work here to manage boarding and schedule information." },
+      { id: "waiting-area", name: "Waiting Area", description: "A covered area where people wait for the next boat crossing." },
+      { id: "ferry-deck", name: "Ferry Deck", description: "The boat itself, with benches, cargo, ropes and the rhythmic movement of the water." },
+    ],
+  },
+  {
+    id: "waterfront-fish",
+    name: "Waterfront Fish House",
+    district: "creekside",
+    kind: "market",
+    status: "open",
+    blurb: "Fresh seafood, smoked fish and river-side trade dominate this market lane.",
+    access: "Popular with workers who need affordable protein and quick riverfront food.",
+    rooms: [
+      { id: "shoreline", name: "Shoreline Stall", description: "Fish are sold directly from the water edge and nearby tables." },
+      { id: "smoking-room", name: "Smoking Room", description: "Smoked fish, dried seafood and preserved ingredients are stored and prepared here." },
+      { id: "counter", name: "Trade Counter", description: "A space for quick sales, small talk and price changes depending on the day." },
+    ],
+  },
+  {
+    id: "trans-amadi-warehouses",
+    name: "Trans-Amadi Warehouses",
+    district: "port",
+    kind: "industry",
+    status: "busy",
+    blurb: "Cargo, industrial storage and logistics operations keep the district humming with work and movement.",
+    access: "Entry is often restricted without a work pass or clearance.",
+    rooms: [
+      { id: "loading-bay", name: "Loading Bay", description: "Containers and palletized goods move through this noisy, active workspace." },
+      { id: "storage-floor", name: "Storage Floor", description: "Crates, boxes and equipment are stacked in a highly organized order." },
+      { id: "admin-office", name: "Admin Office", description: "Paperwork, manifests and cargo approvals are handled in this back office." },
+    ],
+  },
+  {
+    id: "port-admin",
+    name: "Port Office Complex",
+    district: "port",
+    kind: "office",
+    status: "open",
+    blurb: "A hub for customs, document handling, cargo approval and shift administration.",
+    access: "A formal process is required for many office visits and business claims.",
+    rooms: [
+      { id: "office-entry", name: "Entry Corridor", description: "People wait patiently in a formal area before appointments and stack room." },
+      { id: "clearance-room", name: "Clearance Desk", description: "Spot-checks, cargo approval and paperwork are handled here." },
+      { id: "managers-room", name: "Managers Room", description: "The inner office where approval decisions and shift schedules are reviewed." },
+    ],
+  },
+  {
+    id: "old-gra-hotel",
+    name: "Old GRA Hotel",
+    district: "civic-centre",
+    kind: "hotel",
+    status: "open",
+    blurb: "A formal accommodation and hospitality venue used by business travelers and visitors.",
+    access: "Good for meetings, lodging and premium services.",
+    rooms: [
+      { id: "lobby", name: "Hotel Lobby", description: "A polished reception hall with seating and staff who manage check-ins and guests." },
+      { id: "restaurant", name: "Restaurant", description: "Business dinners, quiet lunches and conversations happen here." },
+      { id: "hallway", name: "Guest Hallway", description: "Quiet corridors with rooms stretching along each side of the floor." },
+      { id: "room-101", name: "Guest Room", description: "A simple room with bed, bathroom and a place for refuge from the city rush." },
+    ],
+  },
+  {
+    id: "diobu-clinic",
+    name: "Diobu Community Clinic",
+    district: "town-market",
+    kind: "clinic",
+    status: "open",
+    blurb: "A neighborhood medical point where quick consultations, checkups and treatment happen.",
+    access: "Open to residents and workers with moderate wait times depending on the day.",
+    rooms: [
+      { id: "reception", name: "Reception", description: "Paper files, queues and a small waiting room for quick checkups." },
+      { id: "consultation", name: "Consultation Room", description: "An exam room where doctors talk to patients and examine symptoms." },
+      { id: "pharmacy", name: "Pharmacy", description: "Stocked shelves hold common medicine for quick access and treatment." },
+    ],
+  },
+  {
+    id: "church-square",
+    name: "City Church Square",
+    district: "civic-centre",
+    kind: "religious",
+    status: "open",
+    blurb: "A church complex and community gathering space where sermons, outreach and local services happen.",
+    access: "Open throughout the week with very busy Sunday gatherings.",
+    rooms: [
+      { id: "chapel", name: "Main Chapel", description: "A central worship room where sermons, hymns and community prayers happen." },
+      { id: "community-room", name: "Community Room", description: "A gathering space for outreach, meetings and small local events." },
+      { id: "office", name: "Pastor Office", description: "A quiet room for guidance, meetings and small practical help." },
+    ],
+  },
+  {
+    id: "city-school",
+    name: "Port Harcourt Academy",
+    district: "town-market",
+    kind: "education",
+    status: "open",
+    blurb: "A school and learner center where classes, assignments and youth programs bring the neighborhood to life.",
+    access: "Open during school hours and for educational events on weekends.",
+    rooms: [
+      { id: "school-entry", name: "School Entrance", description: "Students arrive here before class, books in hand and conversations flowing." },
+      { id: "classroom", name: "Classroom", description: "A basic classroom with benches, blackboards and a calm teacher-led atmosphere." },
+      { id: "library", name: "Library", description: "A quiet room for reading, research and assignment work." },
+    ],
+  },
+];
+
+const DISTRICT_VEHICLES: Vehicle[] = [
+  {
+    id: "taxi-yellow",
+    name: "Yellow Taxi",
+    type: "taxi",
+    from: "town-market",
+    to: "civic-centre",
+    cost: 300,
+    duration: "25 min",
+    note: "A reliable route between the market and the civic centre during most of the day.",
+  },
+  {
+    id: "ferry-creek",
+    name: "Creek Ferry",
+    type: "ferry",
+    from: "creekside",
+    to: "town-market",
+    cost: 200,
+    duration: "20 min",
+    note: "Weather-sensitive and important in the wet season when roads flood.",
+  },
+  {
+    id: "bus-route-1",
+    name: "Bus Route 1",
+    type: "bus",
+    from: "civic-centre",
+    to: "town-market",
+    cost: 150,
+    duration: "35 min",
+    note: "A regular city bus with multiple stops and a crowded but affordable ride.",
+  },
+  {
+    id: "okada-short",
+    name: "Okada Short Ride",
+    type: "motorcycle",
+    from: "town-market",
+    to: "port",
+    cost: 400,
+    duration: "15 min",
+    note: "Fast but riskier; good for quick movement across busy city routes.",
+  },
+  {
+    id: "cargo-truck",
+    name: "Cargo Truck",
+    type: "truck",
+    from: "port",
+    to: "town-market",
+    cost: 550,
+    duration: "30 min",
+    note: "Used for moving packaged goods and stock. Slow, but highly useful for business runs.",
   },
 ];
 
@@ -126,7 +392,7 @@ const COURSES = [
     minutes: 8,
     reward: 40,
     lesson:
-      "Every stall keeps two columns: what came in, what went out. If the left column grows faster than the coins on the right, someone is eating the profit. Practice by copying one day of Mama Ngo's okra sales.",
+      "Every stall keeps two columns: what came in, what went out. If the left column grows faster than the coins on the right, someone is eating the profit. Practice by copying one day of Mama Ngo's daily ledger.",
   },
   {
     id: "c2",
@@ -142,7 +408,7 @@ const COURSES = [
     minutes: 15,
     reward: 80,
     lesson:
-      "A good proposal names one problem, one place, and one fix. \"Dark road\" becomes \"solar lamps on Creek Road between the jetty and the market gate\". Say who pays, who maintains, and how neighbours can object.",
+      "A good proposal names one problem, one place, and one fix. \"Dark road\" becomes \"solar lamps on Creek Road between the jetty and the market gate\". Say who pays, who maintains, and how next season will measure the result.",
   },
 ];
 
@@ -183,7 +449,11 @@ export function AfroMetaverseGame() {
   const [votedFor, setVotedFor] = useState<string | null>(null);
   const [doneCourses, setDoneCourses] = useState<string[]>([]);
   const [openCourse, setOpenCourse] = useState<string | null>(null);
-  const [selectedDistrict, setSelectedDistrict] = useState<string | null>(null);
+  const [selectedDistrict, setSelectedDistrict] = useState<string | null>("town-market");
+  const [selectedBuildingId, setSelectedBuildingId] = useState<string | null>(null);
+  const [insideBuildingId, setInsideBuildingId] = useState<string | null>(null);
+  const [currentRoomId, setCurrentRoomId] = useState<string | null>(null);
+  const [selectedVehicleId, setSelectedVehicleId] = useState<string | null>(null);
   const [postDraft, setPostDraft] = useState("");
   const [posts, setPosts] = useState(STARTING_POSTS);
   const [likedPosts, setLikedPosts] = useState<string[]>([]);
@@ -205,6 +475,11 @@ export function AfroMetaverseGame() {
   const levelLabel = `Level ${String(level).padStart(2, "0")}`;
   const repPct = Math.min(100, (reputation % 10) * 10 || (reputation === 0 ? 0 : 100));
   const activeDistrict = DISTRICTS.find((d) => d.id === selectedDistrict) ?? null;
+  const districtBuildings = activeDistrict ? CITY_BUILDINGS.filter((building) => building.district === activeDistrict.id) : [];
+  const districtVehicles = activeDistrict ? DISTRICT_VEHICLES.filter((v) => v.from === activeDistrict.id || v.to === activeDistrict.id) : [];
+  const selectedBuilding = selectedBuildingId ? CITY_BUILDINGS.find((b) => b.id === selectedBuildingId) ?? null : null;
+  const insideBuilding = insideBuildingId ? CITY_BUILDINGS.find((b) => b.id === insideBuildingId) ?? null : null;
+  const currentRoom = insideBuilding && currentRoomId ? insideBuilding.rooms.find((room) => room.id === currentRoomId) ?? null : null;
 
   function go(next: ScreenId) {
     setScreen(next);
@@ -266,9 +541,34 @@ export function AfroMetaverseGame() {
     setPosts((p) => p.map((post) => (post.id === postId ? { ...post, likes: post.likes + 1 } : post)));
   }
 
+  function enterBuilding(buildingId: string) {
+    const building = CITY_BUILDINGS.find((item) => item.id === buildingId);
+    if (!building) return;
+    setInsideBuildingId(buildingId);
+    setSelectedBuildingId(buildingId);
+    setCurrentRoomId(building.rooms[0]?.id ?? null);
+    announce(`You enter ${building.name}.`);
+  }
+
+  function leaveBuilding() {
+    setInsideBuildingId(null);
+    setCurrentRoomId(null);
+    announce("You step back outside into the city.");
+  }
+
+  function travelVehicle(vehicleId: string) {
+    const vehicle = DISTRICT_VEHICLES.find((item) => item.id === vehicleId);
+    if (!vehicle) return;
+    setSelectedVehicleId(vehicleId);
+    setSelectedDistrict(vehicle.to);
+    setSelectedBuildingId(null);
+    setInsideBuildingId(null);
+    setCurrentRoomId(null);
+    announce(`You ride the ${vehicle.name} to ${DISTRICTS.find((d) => d.id === vehicle.to)?.name ?? "the next district"}.`);
+  }
+
   return (
     <div className="am-shell">
-      {/* ---------- Top bar ---------- */}
       <header className="am-topbar">
         <div className="am-brand">
           <span className="am-brand-mark">A.</span>
@@ -295,7 +595,6 @@ export function AfroMetaverseGame() {
       </header>
 
       <div className="am-body">
-        {/* ---------- Left rail ---------- */}
         <nav className={`am-rail ${mobileNavOpen ? "am-rail-open" : ""}`} aria-label="City navigation">
           {NAV.map((item) => {
             const Icon = item.icon;
@@ -311,12 +610,9 @@ export function AfroMetaverseGame() {
               </button>
             );
           })}
-          <p className="am-rail-note">
-            Season 01 · Day {cityDay}
-          </p>
+          <p className="am-rail-note">Season 01 · Day {cityDay}</p>
         </nav>
 
-        {/* ---------- Main ---------- */}
         <main className="am-main">
           {screen === "city" && (
             <section>
@@ -331,7 +627,12 @@ export function AfroMetaverseGame() {
                     key={d.id}
                     className={`am-marker ${selectedDistrict === d.id ? "am-marker-active" : ""}`}
                     style={{ left: `${d.x}%`, top: `${d.y}%` }}
-                    onClick={() => setSelectedDistrict(d.id)}
+                    onClick={() => {
+                      setSelectedDistrict(d.id);
+                      setSelectedBuildingId(null);
+                      setInsideBuildingId(null);
+                      setCurrentRoomId(null);
+                    }}
                     aria-label={`Visit ${d.name}`}
                   >
                     <MapPin size={16} />
@@ -339,24 +640,156 @@ export function AfroMetaverseGame() {
                   </button>
                 ))}
               </div>
+
               {activeDistrict && (
-                <div className="am-panel">
-                  <div className="am-panel-head">
-                    <h2>{activeDistrict.name}</h2>
-                    <button className="am-panel-close" onClick={() => setSelectedDistrict(null)} aria-label="Close district panel">
-                      <X size={16} />
-                    </button>
+                <>
+                  <div className="am-panel">
+                    <div className="am-panel-head">
+                      <h2>{activeDistrict.name}</h2>
+                      <button className="am-panel-close" onClick={() => setSelectedDistrict(null)} aria-label="Close district panel">
+                        <X size={16} />
+                      </button>
+                    </div>
+                    <span className="am-chip">{activeDistrict.tag}</span>
+                    <p className="am-panel-blurb">{activeDistrict.blurb}</p>
+                    <p className="am-panel-tip">{activeDistrict.tip}</p>
+                    <div className="am-panel-info-grid">
+                      <div>
+                        <strong>Climate</strong>
+                        <span>{activeDistrict.climate}</span>
+                      </div>
+                      <div>
+                        <strong>Economy</strong>
+                        <span>{activeDistrict.economy}</span>
+                      </div>
+                    </div>
+                    <div className="am-panel-actions">
+                      <button className="am-btn am-btn-primary" onClick={() => go(activeDistrict.tag === "Trade" ? "market" : activeDistrict.tag === "Civic" ? "civic" : "work")}>
+                        {activeDistrict.tag === "Trade" ? "Browse the market" : activeDistrict.tag === "Civic" ? "Open the vote" : "Find work here"}
+                      </button>
+                    </div>
                   </div>
-                  <span className="am-chip">{activeDistrict.tag}</span>
-                  <p className="am-panel-blurb">{activeDistrict.blurb}</p>
-                  <p className="am-panel-tip">{activeDistrict.tip}</p>
-                  <div className="am-panel-actions">
-                    <button className="am-btn am-btn-primary" onClick={() => go(activeDistrict.tag === "Trade" ? "market" : activeDistrict.tag === "Civic" ? "civic" : "work")}>
-                      {activeDistrict.tag === "Trade" ? "Browse the market" : activeDistrict.tag === "Civic" ? "Open the vote" : "Find work here"}
-                    </button>
+
+                  <div className="am-panel">
+                    <div className="am-panel-head">
+                      <h2>Buildings</h2>
+                    </div>
+                    <div className="am-building-grid">
+                      {districtBuildings.map((building) => (
+                        <button
+                          key={building.id}
+                          className={`am-building-card ${selectedBuildingId === building.id ? "am-building-card-active" : ""}`}
+                          onClick={() => setSelectedBuildingId(building.id)}
+                        >
+                          <div className="am-building-card-head">
+                            <span className="am-building-kind">{building.kind}</span>
+                            <span className={`am-building-status am-building-status-${building.status}`}>{building.status}</span>
+                          </div>
+                          <strong>{building.name}</strong>
+                          <p>{building.blurb}</p>
+                        </button>
+                      ))}
+                    </div>
                   </div>
-                </div>
+
+                  <div className="am-panel">
+                    <div className="am-panel-head">
+                      <h2>Vehicles</h2>
+                    </div>
+                    <div className="am-transport-grid">
+                      {districtVehicles.map((vehicle) => (
+                        <div key={vehicle.id} className="am-transport-card">
+                          <div className="am-transport-meta">
+                            <span className="am-building-kind">{vehicle.type}</span>
+                            <span className="am-transport-cost">{vehicle.cost} coins</span>
+                          </div>
+                          <strong>{vehicle.name}</strong>
+                          <p>{vehicle.note}</p>
+                          <div className="am-transport-route">
+                            <span>{DISTRICTS.find((d) => d.id === vehicle.from)?.name ?? "Start"}</span>
+                            <ChevronRight size={14} />
+                            <span>{DISTRICTS.find((d) => d.id === vehicle.to)?.name ?? "Destination"}</span>
+                          </div>
+                          <button className="am-btn am-btn-primary" onClick={() => travelVehicle(vehicle.id)}>
+                            Ride {vehicle.duration}
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {selectedBuilding && (
+                    <div className="am-panel">
+                      <div className="am-panel-head">
+                        <h2>{selectedBuilding.name}</h2>
+                        <button className="am-panel-close" onClick={() => setSelectedBuildingId(null)} aria-label="Close building panel">
+                          <X size={16} />
+                        </button>
+                      </div>
+                      <span className="am-chip">{selectedBuilding.kind}</span>
+                      <p className="am-panel-blurb">{selectedBuilding.blurb}</p>
+                      <p className="am-panel-tip">{selectedBuilding.access}</p>
+                      <div className="am-room-list">
+                        {selectedBuilding.rooms.map((room) => (
+                          <button
+                            key={room.id}
+                            className={`am-room-item ${currentRoomId === room.id ? "am-room-item-active" : ""}`}
+                            onClick={() => {
+                              setCurrentRoomId(room.id);
+                              setInsideBuildingId(selectedBuilding.id);
+                              announce(`You move into ${selectedBuilding.name} — ${room.name}.`);
+                            }}
+                          >
+                            <strong>{room.name}</strong>
+                            <span>{room.description}</span>
+                          </button>
+                        ))}
+                      </div>
+                      <div className="am-panel-actions">
+                        <button className="am-btn am-btn-primary" onClick={() => enterBuilding(selectedBuilding.id)}>
+                          Enter building
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {insideBuilding && (
+                    <div className="am-panel">
+                      <div className="am-panel-head">
+                        <h2>{insideBuilding.name}</h2>
+                        <button className="am-panel-close" onClick={leaveBuilding} aria-label="Leave building">
+                          <X size={16} />
+                        </button>
+                      </div>
+                      <span className="am-chip">Inside</span>
+                      {currentRoom ? (
+                        <>
+                          <p className="am-panel-blurb">{currentRoom.name}</p>
+                          <p className="am-panel-tip">{currentRoom.description}</p>
+                        </>
+                      ) : (
+                        <p className="am-panel-tip">You are standing at the building entrance.</p>
+                      )}
+                      <div className="am-room-list">
+                        {insideBuilding.rooms.map((room) => (
+                          <button
+                            key={room.id}
+                            className={`am-room-item ${currentRoomId === room.id ? "am-room-item-active" : ""}`}
+                            onClick={() => {
+                              setCurrentRoomId(room.id);
+                              announce(`You are now in ${insideBuilding.name} — ${room.name}.`);
+                            }}
+                          >
+                            <strong>{room.name}</strong>
+                            <span>{room.description}</span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </>
               )}
+
               <p className="am-note">
                 This is a simulation. Districts, jobs and City Coins are part of the game and have no real-world value.
               </p>
@@ -577,7 +1010,6 @@ export function AfroMetaverseGame() {
           )}
         </main>
 
-        {/* ---------- Right citizen card ---------- */}
         <aside className="am-citizen" aria-label="Citizen card">
           <div className="am-citizen-head">
             <span className="am-citizen-avatar am-citizen-avatar-lg">EO</span>
@@ -588,6 +1020,7 @@ export function AfroMetaverseGame() {
               </small>
             </div>
           </div>
+
           <div className="am-wallet">
             <span className="am-wallet-label">Wallet</span>
             <span className="am-wallet-amount">
@@ -595,6 +1028,7 @@ export function AfroMetaverseGame() {
             </span>
             <span className="am-wallet-sub">City Coins</span>
           </div>
+
           <div className="am-rep">
             <div className="am-rep-row">
               <span>Reputation</span>
@@ -604,6 +1038,7 @@ export function AfroMetaverseGame() {
               <span style={{ width: `${repPct}%` }} />
             </div>
           </div>
+
           <dl className="am-stats">
             <div>
               <dt>City days</dt>
@@ -618,6 +1053,7 @@ export function AfroMetaverseGame() {
               <dd>{doneCourses.length}</dd>
             </div>
           </dl>
+
           <div className="am-next-move">
             <span className="am-next-label">Next move</span>
             {completedJobs.length === 0 ? (
@@ -630,6 +1066,7 @@ export function AfroMetaverseGame() {
               <button className="am-btn am-btn-secondary" onClick={() => go("market")}>Treat yourself at the market</button>
             )}
           </div>
+
           <div className="am-pulse">
             <span className="am-pulse-title">City pulse</span>
             <p>Vote 003 leads with solar lamps · Ferries running on time · Market busy since dawn</p>
@@ -637,7 +1074,6 @@ export function AfroMetaverseGame() {
         </aside>
       </div>
 
-      {/* ---------- Mobile nav ---------- */}
       <nav className="am-nav-mobile" aria-label="City navigation, mobile">
         {NAV.slice(0, 5).map((item) => {
           const Icon = item.icon;
@@ -655,7 +1091,6 @@ export function AfroMetaverseGame() {
         })}
       </nav>
 
-      {/* ---------- Toast ---------- */}
       {toast && (
         <div key={toast.id} className="am-toast" role="status">
           <Landmark size={15} /> {toast.text}
