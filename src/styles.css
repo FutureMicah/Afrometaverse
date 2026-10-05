@@ -1119,3 +1119,151 @@
     transition: none;
   }
 }
+
+/* ---------- Auth modal (Batch 2) ---------- */
+
+.am-auth-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: oklch(0.2 0.03 65 / 0.55);
+  backdrop-filter: blur(6px);
+}
+
+.am-auth-card {
+  width: min(420px, 100%);
+  padding: 22px 22px 18px;
+  border-radius: 20px;
+  background: var(--am-paper);
+  border: 1px solid var(--am-line);
+  box-shadow: var(--am-shadow);
+  animation: am-rise 220ms ease;
+}
+
+.am-auth-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.am-auth-head h2 {
+  margin: 0 0 4px;
+  font-size: 22px;
+}
+
+.am-auth-head p {
+  margin: 0;
+  font-size: 13px;
+  color: var(--am-ink-soft);
+}
+
+.am-auth-google {
+  width: 100%;
+  justify-content: center;
+}
+
+.am-auth-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 16px 0;
+  color: var(--am-ink-soft);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+}
+
+.am-auth-divider::before,
+.am-auth-divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--am-line);
+}
+
+.am-auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.am-auth-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--am-ink-soft);
+}
+
+.am-auth-field input {
+  padding: 11px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--am-line);
+  background: var(--am-cream);
+  color: var(--am-ink);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.am-auth-field input:focus {
+  outline: 2px solid var(--am-coral);
+  outline-offset: 1px;
+}
+
+.am-auth-error {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: oklch(0.94 0.05 25);
+  color: oklch(0.4 0.12 25);
+  font-size: 13px;
+}
+
+.am-auth-submit {
+  width: 100%;
+  justify-content: center;
+  margin-top: 4px;
+}
+
+.am-auth-switch {
+  margin: 14px 0 0;
+  text-align: center;
+  font-size: 13px;
+  color: var(--am-ink-soft);
+}
+
+.am-auth-switch button {
+  border: 0;
+  background: none;
+  color: var(--am-coral);
+  font-weight: 700;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.am-auth-note {
+  margin-top: 12px;
+}
+
+.am-save-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--am-mint-soft);
+  color: oklch(0.38 0.06 165);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.am-save-pill-guest {
+  background: var(--am-gold-soft);
+  color: oklch(0.42 0.08 80);
+}

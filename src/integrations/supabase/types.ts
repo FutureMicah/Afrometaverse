@@ -14,7 +14,54 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      citizens: {
+        Row: {
+          id: string
+          display_name: string
+          avatar_initials: string
+          balance: number
+          reputation: number
+          city_day: number
+          completed_jobs: string[]
+          purchased_goods: string[]
+          voted_for: string | null
+          done_courses: string[]
+          liked_posts: string[]
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id: string
+          display_name?: string
+          avatar_initials?: string
+          balance?: number
+          reputation?: number
+          city_day?: number
+          completed_jobs?: string[]
+          purchased_goods?: string[]
+          voted_for?: string | null
+          done_courses?: string[]
+          liked_posts?: string[]
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          display_name?: string
+          avatar_initials?: string
+          balance?: number
+          reputation?: number
+          city_day?: number
+          completed_jobs?: string[]
+          purchased_goods?: string[]
+          voted_for?: string | null
+          done_courses?: string[]
+          liked_posts?: string[]
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

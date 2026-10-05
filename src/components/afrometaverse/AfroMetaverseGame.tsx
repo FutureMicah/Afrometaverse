@@ -10,6 +10,8 @@ import {
   Coins,
   Heart,
   Landmark,
+  LogIn,
+  LogOut,
   MapPin,
   Megaphone,
   Send,
@@ -20,6 +22,8 @@ import {
   X,
 } from "lucide-react";
 import AfroMetaverseScene from "@/components/afrometaverse/AfroMetaverseScene";
+import AuthModal from "@/components/afrometaverse/AuthModal";
+import { useCitizenAuth } from "@/hooks/useCitizenAuth";
 import { useEconomyStore } from "@/stores/economyStore";
 import { useResilienceStore } from "@/stores/resilienceStore";
 import { useSocialStateStore } from "@/stores/socialStateStore";
@@ -252,6 +256,19 @@ function getDistrictWeatherNote(districtId: string | undefined, weatherId: Weath
 }
 
 export function AfroMetaverseGame() {
+  const {
+    isAuthenticated,
+    progress,
+    loading: authLoading,
+    saving,
+    authError,
+    signInWithEmail,
+    signUpWithEmail,
+    signInWithGoogle,
+    signOut,
+    saveProgress,
+  } = useCitizenAuth();
+
   const [screen, setScreen] = useState<ScreenId>("city");
   const [balance, setBalance] = useState(2450);
   const [reputation, setReputation] = useState(24);
@@ -268,12 +285,40 @@ export function AfroMetaverseGame() {
   const [toast, setToast] = useState<{ id: number; text: string } | null>(null);
   const toastTimer = useRef<number | undefined>(undefined);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const [authOpen, setAuthOpen] = useState(false);
+  const hydratedFromServer = useRef(false);
 
   const weatherStore = useWeatherStore((state) => state);
   const worldState = useWorldStateStore((state) => state.state);
   const resilienceStore = useResilienceStore((state) => state);
   const economyStore = useEconomyStore((state) => state.state);
   const socialState = useSocialStateStore((state) => state.state);
+
+  // Hydrate local game state once when authenticated progress loads
+  useEffect(() => {
+    if (!isAuthenticated || authLoading) return;
+    if (hydratedFromServer.current) return;
+    hydratedFromServer.current = true;
+    setBalance(progress.balance);
+    setReputation(progress.reputation);
+    setCityDay(progress.cityDay);
+    setCompletedJobs(progress.completedJobs);
+    setPurchasedGoods(progress.purchasedGoods);
+    setVotedFor(progress.votedFor);
+    setDoneCourses(progress.doneCourses);
+    setLikedPosts(progress.likedPosts);
+    if (progress.cityDay > 1) {
+      useWeatherStore.getState().setDay(progress.cityDay);
+      useWorldStateStore.getState().updateWorldState(progress.cityDay);
+    }
+  }, [authLoading, isAuthenticated, progress]);
+
+  // Reset hydration flag on sign-out so next login reloads
+  useEffect(() => {
+    if (!isAuthenticated) {
+      hydratedFromServer.current = false;
+    }
+  }, [isAuthenticated]);
 
   useEffect(() => {
     setCityDay(worldState.day);
@@ -294,6 +339,24 @@ export function AfroMetaverseGame() {
     toastTimer.current = window.setTimeout(() => setToast(null), 3200);
   }
 
+  function persist(partial: {
+    balance?: number;
+    reputation?: number;
+    cityDay?: number;
+    completedJobs?: string[];
+    purchasedGoods?: string[];
+    votedFor?: string | null;
+    doneCourses?: string[];
+    likedPosts?: string[];
+  }) {
+    if (!isAuthenticated) return;
+    void saveProgress(partial).then((ok) => {
+      if (!ok) announce("Could not save progress — check your connection.");
+    });
+  }
+
+  const displayName = isAuthenticated ? progress.displayName : "Ekene Okoro";
+  const avatarInitials = isAuthenticated ? progress.avatarInitials : "EO";
   const level = Math.min(99, 1 + Math.floor(reputation / 10));
   const levelLabel = `Level ${String(level).padStart(2, "0")}`;
   const repPct = Math.min(100, (reputation % 10) * 10 || (reputation === 0 ? 0 : 100));
@@ -319,11 +382,25 @@ export function AfroMetaverseGame() {
     useWeatherStore.getState().advanceDay();
     useWorldStateStore.getState().updateWorldState(nextDay);
 
-    setCompletedJobs((c) => [...c, jobId]);
-    setBalance((b) => b + Math.round(job.coins * (economyStore[job.district.toLowerCase().replace(/ /g, "-") as keyof typeof economyStore]?.jobMultiplier ?? 1)));
-    setReputation((r) => Math.min(99, r + job.rep));
+    const nextJobs = [...completedJobs, jobId];
+    const coins = Math.round(
+      job.coins *
+        (economyStore[job.district.toLowerCase().replace(/ /g, "-") as keyof typeof economyStore]?.jobMultiplier ?? 1),
+    );
+    const nextBalance = balance + coins;
+    const nextRep = Math.min(99, reputation + job.rep);
+
+    setCompletedJobs(nextJobs);
+    setBalance(nextBalance);
+    setReputation(nextRep);
     setCityDay(nextDay);
     announce(`Shift done — ${job.coins} City Coins earned at ${job.district}.`);
+    persist({
+      completedJobs: nextJobs,
+      balance: nextBalance,
+      reputation: nextRep,
+      cityDay: nextDay,
+    });
   }
 
   function buyGood(goodId: string) {
@@ -333,9 +410,12 @@ export function AfroMetaverseGame() {
       announce("Not enough City Coins — take a shift at the Work desk first.");
       return;
     }
-    setPurchasedGoods((p) => [...p, goodId]);
-    setBalance((b) => b - good.price);
+    const nextGoods = [...purchasedGoods, goodId];
+    const nextBalance = balance - good.price;
+    setPurchasedGoods(nextGoods);
+    setBalance(nextBalance);
     announce(`Purchased ${good.name} for ${good.price} City Coins.`);
+    persist({ purchasedGoods: nextGoods, balance: nextBalance });
   }
 
   function castVote(proposalId: string) {
@@ -343,32 +423,40 @@ export function AfroMetaverseGame() {
       announce("You have already voted this season — one vote per citizen.");
       return;
     }
+    const nextRep = Math.min(99, reputation + 2);
     setVotedFor(proposalId);
-    setReputation((r) => Math.min(99, r + 2));
+    setReputation(nextRep);
     announce("Vote recorded for Community Vote 003. Thank you, citizen.");
+    persist({ votedFor: proposalId, reputation: nextRep });
   }
 
   function finishCourse(courseId: string) {
     const course = COURSES.find((c) => c.id === courseId);
     if (!course || doneCourses.includes(courseId)) return;
-    setDoneCourses((d) => [...d, courseId]);
-    setBalance((b) => b + course.reward);
-    setReputation((r) => Math.min(99, r + 3));
+    const nextCourses = [...doneCourses, courseId];
+    const nextBalance = balance + course.reward;
+    const nextRep = Math.min(99, reputation + 3);
+    setDoneCourses(nextCourses);
+    setBalance(nextBalance);
+    setReputation(nextRep);
     announce(`Course complete — ${course.reward} City Coins added to your wallet.`);
+    persist({ doneCourses: nextCourses, balance: nextBalance, reputation: nextRep });
   }
 
   function submitPost() {
     const text = clampPost(postDraft.trim());
     if (!text) return;
-    setPosts((p) => [{ id: `s${Date.now()}`, author: "Ekene Okoro", text, likes: 0 }, ...p]);
+    setPosts((p) => [{ id: `s${Date.now()}`, author: displayName, text, likes: 0 }, ...p]);
     setPostDraft("");
     announce("Posted to the Town Square.");
   }
 
   function likePost(postId: string) {
     if (likedPosts.includes(postId)) return;
-    setLikedPosts((l) => [...l, postId]);
+    const nextLiked = [...likedPosts, postId];
+    setLikedPosts(nextLiked);
     setPosts((p) => p.map((post) => (post.id === postId ? { ...post, likes: post.likes + 1 } : post)));
+    persist({ likedPosts: nextLiked });
   }
 
   return (
@@ -384,17 +472,41 @@ export function AfroMetaverseGame() {
         <div className="am-topbar-right">
           <span className="am-live-dot" aria-hidden="true" />
           <span className="am-live-label">Live</span>
+          {isAuthenticated ? (
+            <span className={`am-save-pill ${saving ? "" : ""}`}>
+              {saving ? "Saving…" : "Saved"}
+            </span>
+          ) : (
+            <span className="am-save-pill am-save-pill-guest">Guest</span>
+          )}
           <button className="am-bell" aria-label="Notifications" onClick={() => announce("No new notices. The city is quiet for now.")}>
             <Bell size={16} />
           </button>
-          <div className="am-citizen-chip">
-            <span className="am-citizen-avatar">EO</span>
-            <span className="am-citizen-chip-text">
-              <strong>Ekene Okoro</strong>
-              <small>{levelLabel} · Verified</small>
-            </span>
-            <BadgeCheck size={14} className="am-verified" />
-          </div>
+          {isAuthenticated ? (
+            <button
+              type="button"
+              className="am-citizen-chip"
+              onClick={() => void signOut()}
+              title="Sign out"
+            >
+              <span className="am-citizen-avatar">{avatarInitials}</span>
+              <span className="am-citizen-chip-text">
+                <strong>{displayName}</strong>
+                <small>{levelLabel} · Verified</small>
+              </span>
+              <LogOut size={14} className="am-verified" />
+            </button>
+          ) : (
+            <button type="button" className="am-citizen-chip" onClick={() => setAuthOpen(true)}>
+              <span className="am-citizen-avatar">{avatarInitials}</span>
+              <span className="am-citizen-chip-text">
+                <strong>{displayName}</strong>
+                <small>
+                  <LogIn size={11} /> Sign in to save
+                </small>
+              </span>
+            </button>
+          )}
         </div>
       </header>
 
@@ -738,14 +850,31 @@ export function AfroMetaverseGame() {
 
         <aside className="am-citizen" aria-label="Citizen card">
           <div className="am-citizen-head">
-            <span className="am-citizen-avatar am-citizen-avatar-lg">EO</span>
+            <span className="am-citizen-avatar am-citizen-avatar-lg">{avatarInitials}</span>
             <div>
-              <strong>Ekene Okoro</strong>
+              <strong>{displayName}</strong>
               <small>
-                {levelLabel} · <BadgeCheck size={11} className="am-verified" /> Verified
+                {levelLabel} ·{" "}
+                {isAuthenticated ? (
+                  <>
+                    <BadgeCheck size={11} className="am-verified" /> Saved
+                  </>
+                ) : (
+                  "Guest"
+                )}
               </small>
             </div>
           </div>
+          {!isAuthenticated && (
+            <button
+              type="button"
+              className="am-btn am-btn-primary"
+              style={{ width: "100%", justifyContent: "center" }}
+              onClick={() => setAuthOpen(true)}
+            >
+              <LogIn size={15} /> Sign in to save progress
+            </button>
+          )}
           <div className="am-wallet">
             <span className="am-wallet-label">Wallet</span>
             <span className="am-wallet-amount">
@@ -817,6 +946,15 @@ export function AfroMetaverseGame() {
           <Landmark size={15} /> {toast.text}
         </div>
       )}
+
+      <AuthModal
+        open={authOpen}
+        onClose={() => setAuthOpen(false)}
+        authError={authError}
+        onSignInEmail={signInWithEmail}
+        onSignUpEmail={signUpWithEmail}
+        onSignInGoogle={signInWithGoogle}
+      />
     </div>
   );
 }

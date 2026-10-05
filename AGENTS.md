@@ -11,10 +11,11 @@
 
 # AfroMetaverse
 
-- The first playable simulation lives in the `/` route (src/routes/index.tsx)
-  rendering the single component src/components/afrometaverse/AfroMetaverseGame.tsx
-  with local client state only. Keep it this way until live multiplayer and
-  persistent accounts are explicitly requested.
+- The playable simulation lives in the `/` route (src/routes/index.tsx)
+  rendering src/components/afrometaverse/AfroMetaverseGame.tsx.
+  Batch 2 adds optional auth + per-citizen saves via Lovable Cloud (citizens table).
+  Guests still play fully offline; signed-in citizens sync wallet, day, jobs, votes, courses.
+  Keep multiplayer / real-time feed for Batch 3.
 - All game styling uses custom `am-*` classes defined in src/styles.css. Never
   hardcode hex colors or Tailwind color utilities inside the game component.
 - The game must keep its honesty disclaimers visible: City Coins have no
