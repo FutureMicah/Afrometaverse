@@ -60,22 +60,30 @@ const CITY_BLOCKS: BuildingSpec[] = [
   { x: -2.0, z: 4.0, w: 1.6, h: 1.8, d: 1.3, color: PALETTE.wallCoral, roof: PALETTE.roofClay },
   { x: -5.0, z: 1.6, w: 1.3, h: 1.2, d: 1.4, color: PALETTE.wallCream, roof: PALETTE.roofTin },
   { x: -1.2, z: 1.5, w: 1.1, h: 2.2, d: 1.1, color: PALETTE.wallTeal, roof: PALETTE.roofClay, kind: "tower" },
+  { x: -3.2, z: 5.2, w: 1.0, h: 1.1, d: 1.0, color: PALETTE.wallCoral, roof: PALETTE.roofTin },
+  { x: -0.5, z: 3.2, w: 0.9, h: 1.5, d: 0.9, color: PALETTE.wallWarm, roof: PALETTE.roofClay },
   // Civic neighbourhood
   { x: 1.8, z: -2.4, w: 1.5, h: 2.0, d: 1.4, color: PALETTE.wallCream, roof: PALETTE.roofTin },
   { x: -1.6, z: -2.8, w: 1.3, h: 1.6, d: 1.2, color: PALETTE.wallWarm, roof: PALETTE.roofClay },
   { x: 2.4, z: -0.4, w: 1.2, h: 1.5, d: 1.1, color: PALETTE.wallCoral, roof: PALETTE.roofTin },
   { x: -2.2, z: -0.2, w: 1.0, h: 1.3, d: 1.0, color: PALETTE.wallTeal, roof: PALETTE.roofClay },
+  { x: 0.8, z: -4.0, w: 1.4, h: 1.8, d: 1.2, color: PALETTE.wallCream, roof: PALETTE.roofClay },
+  { x: 3.2, z: -1.8, w: 1.0, h: 1.2, d: 1.0, color: PALETTE.wallWarm, roof: PALETTE.roofTin },
   // Creekside stilt / low sheds
   { x: -7.0, z: -2.2, w: 1.4, h: 1.0, d: 1.2, color: PALETTE.wallWarm, roof: PALETTE.roofTin, kind: "shed" },
   { x: -4.2, z: -4.6, w: 1.2, h: 1.1, d: 1.0, color: PALETTE.wallCream, roof: PALETTE.roofClay, kind: "shed" },
   { x: -6.8, z: -4.8, w: 1.5, h: 0.9, d: 1.3, color: PALETTE.wallCoral, roof: PALETTE.roofTin, kind: "shed" },
+  { x: -8.2, z: -1.0, w: 1.1, h: 0.95, d: 1.1, color: PALETTE.wallTeal, roof: PALETTE.roofTin, kind: "shed" },
   // Port industrial
   { x: 7.2, z: 1.2, w: 2.0, h: 1.6, d: 1.5, color: PALETTE.concrete, roof: PALETTE.roofTin, kind: "shed" },
   { x: 4.2, z: 4.0, w: 1.6, h: 2.4, d: 1.4, color: PALETTE.wallWarm, roof: PALETTE.roofClay, kind: "tower" },
   { x: 7.0, z: 3.8, w: 1.4, h: 1.3, d: 1.6, color: PALETTE.concrete, roof: PALETTE.roofTin },
+  { x: 8.5, z: 2.5, w: 1.2, h: 1.1, d: 1.3, color: "#6b7280", roof: PALETTE.roofTin, kind: "shed" },
   // Infill toward centre
   { x: 3.5, z: 1.0, w: 1.2, h: 1.7, d: 1.1, color: PALETTE.wallTeal, roof: PALETTE.roofClay },
   { x: -3.5, z: -0.8, w: 1.1, h: 1.4, d: 1.0, color: PALETTE.wallCream, roof: PALETTE.roofTin },
+  { x: 1.2, z: 1.8, w: 0.95, h: 1.35, d: 0.95, color: PALETTE.wallCoral, roof: PALETTE.roofClay },
+  { x: -0.8, z: -3.6, w: 1.05, h: 1.55, d: 1.0, color: PALETTE.wallWarm, roof: PALETTE.roofTin },
 ];
 
 /** Empty lots / future development parcels */
@@ -228,6 +236,8 @@ function StreetFurniture() {
 
 function CityBlock({ spec }: { spec: BuildingSpec }) {
   const y = spec.h / 2;
+  const showTank = spec.h > 1.5;
+  const showAc = spec.kind !== "shed";
   return (
     <group position={[spec.x, 0, spec.z]}>
       <mesh castShadow receiveShadow position={[0, y, 0]}>
@@ -240,11 +250,34 @@ function CityBlock({ spec }: { spec: BuildingSpec }) {
           <meshStandardMaterial color={spec.roof} />
         </mesh>
       )}
-      {/* Simple window band */}
-      <mesh position={[0, y * 0.9, spec.d / 2 + 0.01]}>
-        <boxGeometry args={[spec.w * 0.7, spec.h * 0.25, 0.04]} />
-        <meshStandardMaterial color="#2a3340" opacity={0.65} transparent />
+      {/* Window bands */}
+      <mesh position={[0, y * 0.95, spec.d / 2 + 0.02]}>
+        <boxGeometry args={[spec.w * 0.72, Math.min(0.35, spec.h * 0.22), 0.04]} />
+        <meshStandardMaterial color="#2a3340" opacity={0.7} transparent />
       </mesh>
+      {spec.h > 1.6 && (
+        <mesh position={[0, y * 0.45, spec.d / 2 + 0.02]}>
+          <boxGeometry args={[spec.w * 0.55, 0.22, 0.04]} />
+          <meshStandardMaterial color="#1e293b" opacity={0.55} transparent />
+        </mesh>
+      )}
+      {/* Door hint */}
+      <mesh position={[0, 0.35, spec.d / 2 + 0.03]}>
+        <boxGeometry args={[0.28, 0.7, 0.05]} />
+        <meshStandardMaterial color="#3f3a36" />
+      </mesh>
+      {showTank && (
+        <mesh position={[spec.w * 0.25, spec.h + 0.45, -spec.d * 0.15]} castShadow>
+          <cylinderGeometry args={[0.18, 0.18, 0.45, 8]} />
+          <meshStandardMaterial color="#64748b" />
+        </mesh>
+      )}
+      {showAc && (
+        <mesh position={[spec.w / 2 + 0.08, y * 1.1, 0]} castShadow>
+          <boxGeometry args={[0.2, 0.25, 0.35]} />
+          <meshStandardMaterial color="#94a3b8" />
+        </mesh>
+      )}
     </group>
   );
 }
@@ -354,6 +387,26 @@ function DevelopmentLot({
           </mesh>
         );
       })}
+      {/* Site sign board */}
+      <mesh position={[0, 0.9, d / 2 + 0.1]} castShadow>
+        <boxGeometry args={[0.06, 1.4, 0.06]} />
+        <meshStandardMaterial color={PALETTE.fence} />
+      </mesh>
+      <mesh position={[0.35, 1.4, d / 2 + 0.1]} castShadow>
+        <boxGeometry args={[0.9, 0.45, 0.05]} />
+        <meshStandardMaterial color="#efe2c8" />
+      </mesh>
+      <mesh position={[0.35, 1.4, d / 2 + 0.14]}>
+        <boxGeometry args={[0.75, 0.3, 0.02]} />
+        <meshStandardMaterial color="#c45c26" />
+      </mesh>
+      {/* Gravel scatter */}
+      {[[-0.4, 0.2], [0.5, -0.3], [-0.2, -0.5]].map(([gx, gz], i) => (
+        <mesh key={`g${i}`} position={[gx, 0.08, gz]}>
+          <boxGeometry args={[0.25, 0.08, 0.2]} />
+          <meshStandardMaterial color="#8a7f6e" />
+        </mesh>
+      ))}
     </group>
   );
 }
@@ -515,7 +568,195 @@ function DrainageChannel() {
   );
 }
 
+
+function MarketStalls() {
+  const stalls = [
+    { x: -3.6, z: 2.9, color: "#e8a54b" },
+    { x: -2.6, z: 3.1, color: "#c97b63" },
+    { x: -4.6, z: 2.7, color: "#5f9e8f" },
+    { x: -3.0, z: 2.2, color: "#d9b896" },
+  ];
+  return (
+    <group>
+      {stalls.map((s, i) => (
+        <group key={i} position={[s.x, 0, s.z]}>
+          <mesh position={[0, 0.35, 0]} castShadow>
+            <boxGeometry args={[0.7, 0.7, 0.55]} />
+            <meshStandardMaterial color="#efe2c8" />
+          </mesh>
+          <mesh position={[0, 0.85, 0]} castShadow>
+            <boxGeometry args={[0.85, 0.06, 0.7]} />
+            <meshStandardMaterial color={s.color} />
+          </mesh>
+          <mesh position={[-0.35, 0.55, 0]}>
+            <boxGeometry args={[0.05, 0.9, 0.05]} />
+            <meshStandardMaterial color="#6b5344" />
+          </mesh>
+          <mesh position={[0.35, 0.55, 0]}>
+            <boxGeometry args={[0.05, 0.9, 0.05]} />
+            <meshStandardMaterial color="#6b5344" />
+          </mesh>
+          {/* Goods pile */}
+          <mesh position={[0.15, 0.15, 0.4]}>
+            <boxGeometry args={[0.25, 0.2, 0.2]} />
+            <meshStandardMaterial color="#b45309" />
+          </mesh>
+        </group>
+      ))}
+    </group>
+  );
+}
+
+function Billboard({
+  x,
+  z,
+  rot = 0,
+  title = "COMING SOON",
+}: {
+  x: number;
+  z: number;
+  rot?: number;
+  title?: string;
+}) {
+  return (
+    <group position={[x, 0, z]} rotation={[0, rot, 0]}>
+      <mesh position={[0, 1.1, 0]} castShadow>
+        <boxGeometry args={[0.08, 2.2, 0.08]} />
+        <meshStandardMaterial color="#5c5346" />
+      </mesh>
+      <mesh position={[0.55, 1.1, 0]} castShadow>
+        <boxGeometry args={[0.08, 2.2, 0.08]} />
+        <meshStandardMaterial color="#5c5346" />
+      </mesh>
+      <mesh position={[0.28, 2.0, 0]} castShadow>
+        <boxGeometry args={[1.3, 0.75, 0.06]} />
+        <meshStandardMaterial color="#efe2c8" />
+      </mesh>
+      <mesh position={[0.28, 2.0, 0.04]}>
+        <boxGeometry args={[1.1, 0.55, 0.02]} />
+        <meshStandardMaterial color="#c45c26" emissive="#c45c26" emissiveIntensity={0.15} />
+      </mesh>
+    </group>
+  );
+}
+
+function PowerPoles() {
+  const poles: [number, number][] = [
+    [-6, 2],
+    [-2, 2.2],
+    [2, 2.2],
+    [6, 2],
+    [-4, -1.5],
+    [1, -1.5],
+    [5, -1.2],
+  ];
+  return (
+    <group>
+      {poles.map(([x, z], i) => (
+        <group key={i} position={[x, 0, z]}>
+          <mesh position={[0, 2.0, 0]} castShadow>
+            <cylinderGeometry args={[0.06, 0.08, 4.0, 6]} />
+            <meshStandardMaterial color="#5c5346" />
+          </mesh>
+          <mesh position={[0, 3.9, 0]}>
+            <boxGeometry args={[0.7, 0.06, 0.06]} />
+            <meshStandardMaterial color="#3f3a36" />
+          </mesh>
+        </group>
+      ))}
+      {/* Approximate wire spans */}
+      {poles.slice(0, -1).map(([x, z], i) => {
+        const [nx, nz] = poles[i + 1];
+        const mx = (x + nx) / 2;
+        const mz = (z + nz) / 2;
+        const len = Math.hypot(nx - x, nz - z);
+        const ang = Math.atan2(nx - x, nz - z);
+        return (
+          <mesh key={`w${i}`} position={[mx, 3.85, mz]} rotation={[0, ang, 0.05]}>
+            <boxGeometry args={[0.02, 0.02, len]} />
+            <meshStandardMaterial color="#1e293b" />
+          </mesh>
+        );
+      })}
+    </group>
+  );
+}
+
+function DebrisAndProps() {
+  return (
+    <group>
+      {/* Crate stacks near port */}
+      {[
+        [5.0, 1.6],
+        [5.4, 1.8],
+        [4.8, 2.0],
+      ].map(([x, z], i) => (
+        <mesh key={`c${i}`} position={[x, 0.25 + (i % 2) * 0.2, z]} castShadow>
+          <boxGeometry args={[0.4, 0.35, 0.4]} />
+          <meshStandardMaterial color={i % 2 ? "#92400e" : "#a16207"} />
+        </mesh>
+      ))}
+      {/* Tyre pile near okada area */}
+      {[0, 1, 2].map((i) => (
+        <mesh key={`t${i}`} position={[-0.6 + i * 0.15, 0.12, 5.6]} rotation={[Math.PI / 2, 0, 0]}>
+          <torusGeometry args={[0.18, 0.06, 6, 12]} />
+          <meshStandardMaterial color="#1f2937" />
+        </mesh>
+      ))}
+      {/* Bench near civic */}
+      <mesh position={[0.6, 0.25, -1.0]} castShadow>
+        <boxGeometry args={[1.0, 0.12, 0.35]} />
+        <meshStandardMaterial color="#6b5344" />
+      </mesh>
+      <mesh position={[0.2, 0.15, -1.0]}>
+        <boxGeometry args={[0.08, 0.3, 0.3]} />
+        <meshStandardMaterial color="#5c5346" />
+      </mesh>
+      <mesh position={[1.0, 0.15, -1.0]}>
+        <boxGeometry args={[0.08, 0.3, 0.3]} />
+        <meshStandardMaterial color="#5c5346" />
+      </mesh>
+      {/* Sand bags / flood prep near creek */}
+      {[-5.8, -5.4, -5.0].map((x, i) => (
+        <mesh key={`s${i}`} position={[x, 0.12, -3.8]} castShadow>
+          <boxGeometry args={[0.35, 0.22, 0.25]} />
+          <meshStandardMaterial color="#a89968" />
+        </mesh>
+      ))}
+      {/* Generator at build site */}
+      <mesh position={[1.6, 0.3, 2.6]} castShadow>
+        <boxGeometry args={[0.55, 0.45, 0.4]} />
+        <meshStandardMaterial color="#374151" />
+      </mesh>
+      <mesh position={[1.6, 0.55, 2.6]}>
+        <cylinderGeometry args={[0.08, 0.08, 0.2, 6]} />
+        <meshStandardMaterial color="#6b7280" />
+      </mesh>
+    </group>
+  );
+}
+
+function Sidewalks() {
+  const paths = [
+    { x: 0, z: 0.95, w: 20, d: 0.35 },
+    { x: 0, z: -0.55, w: 18, d: 0.3 },
+    { x: -2.6, z: 1.2, w: 0.3, d: 8 },
+    { x: 3.4, z: 0.8, w: 0.3, d: 7 },
+  ];
+  return (
+    <group>
+      {paths.map((p, i) => (
+        <mesh key={i} position={[p.x, 0.035, p.z]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+          <planeGeometry args={[p.w, p.d]} />
+          <meshStandardMaterial color="#9a958c" opacity={0.75} transparent />
+        </mesh>
+      ))}
+    </group>
+  );
+}
+
 function AtmosphereEffects({
+
   weather,
 }: {
   weather: { rainIntensity: number; dustIntensity: number };
@@ -737,6 +978,10 @@ export function AfroMetaverseScene({
       <group>
         <Waterfront active={weather.id === "rainy"} />
         <PortInfrastructure />
+        <Sidewalks />
+        <MarketStalls />
+        <PowerPoles />
+        <DebrisAndProps />
 
         {Object.entries(DISTRICT_LAYOUT).map(([districtId, info]) => (
           <DistrictHub
@@ -761,9 +1006,16 @@ export function AfroMetaverseScene({
           <ConstructionSite key={i} x={site.x} z={site.z} phase={site.phase} />
         ))}
 
+        <Billboard x={1.5} z={4.0} rot={-0.3} />
+        <Billboard x={-6.8} z={1.8} rot={0.5} />
+        <Billboard x={8.0} z={-0.2} rot={-1.0} />
+        <Billboard x={3.2} z={-4.5} rot={0.2} />
+
         <SimpleVehicle position={[-1.5, 0, 5.2]} color="#f97316" kind="okada" />
         <SimpleVehicle position={[2.2, 0, 5]} color="#eab308" kind="taxi" />
         <SimpleVehicle position={[-6.0, 0.05, -4.6]} color="#0ea5e9" kind="ferry" />
+        <SimpleVehicle position={[4.8, 0, 0.4]} color="#dc2626" kind="taxi" />
+        <SimpleVehicle position={[-4.0, 0, -2.6]} color="#ea580c" kind="okada" />
       </group>
 
       <AtmosphereEffects weather={weather} />
