@@ -69,7 +69,13 @@
     "tw-animate-css": "^1.3.4",
     "vaul": "^1.1.2",
     "vite-tsconfig-paths": "^6.0.2",
-    "zod": "^3.25.76"
+    "zod": "^3.25.76",
+    "three": "^r128",
+    "@react-three/fiber": "^8.15.13",
+    "@react-three/drei": "^9.99.4",
+    "@react-three/postprocessing": "^2.15.2",
+    "zustand": "^4.4.7",
+    "postprocessing": "^6.33.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.32.0",
@@ -79,6 +85,7 @@
     "@types/node": "^22.16.5",
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",
+    "@types/three": "^r128",
     "@vitejs/plugin-react": "^5.2.0",
     "drizzle-kit": "^0.31.11",
     "drizzle-orm": "^0.45.3",
