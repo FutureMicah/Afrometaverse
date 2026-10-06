@@ -1,4 +1,4 @@
-# Pixel Perfect
+# Afro metaverse
 
 Implement exactly the screenshot and nothing else
 
