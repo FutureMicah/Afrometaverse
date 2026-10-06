@@ -299,8 +299,21 @@ export function AfroMetaverseGame() {
   const levelLabel = `Level ${String(level).padStart(2, "0")}`;
   const repPct = Math.min(100, (reputation % 10) * 10 || (reputation === 0 ? 0 : 100));
   const activeDistrict = DISTRICTS.find((d) => d.id === selectedDistrict) ?? null;
-  const timeOfDay = TIME_OF_DAY.find((entry) => entry.key === weatherStore.state.timeOfDay) ?? TIME_OF_DAY[0];
-  const weather = WEATHER_STATES.find((entry) => entry.id === weatherStore.state.weatherId) ?? WEATHER_STATES[0];
+  const timeOfDay = TIME_OF_DAY.find((entry) => entry.key === weatherStore.state.timeOfDay) ?? {
+    key: "morning" as TimeOfDay,
+    label: "Morning",
+    note: "The city wakes up with a bright, busy start.",
+  };
+  const weather = WEATHER_STATES.find((entry) => entry.id === weatherStore.state.weatherId) ?? {
+    id: "dry" as WeatherId,
+    label: "Dry",
+    icon: "☀️",
+    temp: 31,
+    summary: "Warm and clear with bright streets and open views.",
+    sky: "linear-gradient(180deg, rgba(255,214,102,0.7), rgba(255,255,255,0.18))",
+    glow: "rgba(255, 190, 68, 0.18)",
+    risk: "Roads are clear and traffic feels lighter.",
+  };
   const districtWeatherNote = getDistrictWeatherNote(activeDistrict?.id, weather.id as WeatherId, timeOfDay.key);
   const cityPulseText =
     worldState.globalEvents[0] ??
