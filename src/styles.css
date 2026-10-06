@@ -462,8 +462,38 @@
 
 .am-city-canvas {
   position: relative;
-  height: 520px;
+  height: min(62vh, 620px);
+  min-height: 320px;
   overflow: hidden;
+  touch-action: none;
+}
+
+.am-city-canvas canvas {
+  width: 100% !important;
+  height: 100% !important;
+  display: block;
+}
+
+@media (max-width: 830px) {
+  .am-city-canvas {
+    height: min(52vh, 480px);
+    min-height: 280px;
+    border-radius: 16px;
+  }
+}
+
+@media (max-width: 520px) {
+  .am-city-canvas {
+    height: min(48vh, 400px);
+    min-height: 240px;
+  }
+  .am-roam-bar,
+  .am-gear-bar {
+    gap: 6px;
+  }
+  .am-mission-hud {
+    padding: 12px;
+  }
 }
 
 .am-city-overlay {

@@ -1,6 +1,6 @@
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { OrbitControls } from "@react-three/drei";
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, type ReactNode } from "react";
 import * as THREE from "three";
 import {
   DISTRICT_WORLD,
@@ -695,50 +695,77 @@ function ConstructionSite({
 }
 
 function Waterfront({ active }: { active: boolean }) {
+  const waterRef = useRef<THREE.Mesh>(null);
+  const canoeRefs = useRef<(THREE.Group | null)[]>([]);
+
+  useFrame(({ clock }) => {
+    const t = clock.getElapsedTime();
+    if (waterRef.current) {
+      waterRef.current.position.y = 0.05 + Math.sin(t * 0.8) * 0.03;
+      waterRef.current.rotation.z = Math.sin(t * 0.35) * 0.01;
+    }
+    canoeRefs.current.forEach((g, i) => {
+      if (!g) return;
+      g.position.y = 0.12 + Math.sin(t * 1.2 + i) * 0.04;
+      g.rotation.z = Math.sin(t * 0.9 + i * 0.7) * 0.04;
+    });
+  });
+
   return (
     <group position={[-5.5, 0.05, -5.2]}>
-      <mesh rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
-        <planeGeometry args={[8, 4.5]} />
+      <mesh ref={waterRef} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+        <circleGeometry args={[4.2, 24]} />
         <meshStandardMaterial
-          color={active ? "#3b9bc7" : PALETTE.water}
+          color={active ? "#3b9bc7" : "#2a6f8f"}
           transparent
           opacity={0.88}
+          roughness={0.25}
+          metalness={0.15}
         />
       </mesh>
-      {/* Jetty */}
-      <mesh position={[0.5, 0.2, 1.2]} castShadow>
-        <boxGeometry args={[3.5, 0.25, 0.8]} />
-        <meshStandardMaterial color="#6b5344" />
-      </mesh>
-      <mesh position={[-1.2, 0.35, 0.6]} castShadow>
-        <boxGeometry args={[0.15, 0.7, 0.15]} />
-        <meshStandardMaterial color="#5a4638" />
-      </mesh>
-      <mesh position={[1.8, 0.35, 0.6]} castShadow>
-        <boxGeometry args={[0.15, 0.7, 0.15]} />
-        <meshStandardMaterial color="#5a4638" />
-      </mesh>
-      {/* Mangrove suggestion */}
+      {/* Jetty planks as thin cylinders laid flat-ish */}
+      {[-0.8, -0.25, 0.3, 0.85].map((ox, i) => (
+        <mesh key={i} position={[ox, 0.18, 1.1]} rotation={[0, 0, Math.PI / 2]} castShadow>
+          <cylinderGeometry args={[0.06, 0.06, 2.8, 6]} />
+          <meshStandardMaterial color="#6b5344" />
+        </mesh>
+      ))}
+      {[-1.2, 1.8].map((px, i) => (
+        <mesh key={`p${i}`} position={[px, 0.4, 0.5]} castShadow>
+          <cylinderGeometry args={[0.07, 0.09, 0.7, 5]} />
+          <meshStandardMaterial color="#5a4638" />
+        </mesh>
+      ))}
       {[-2.5, -1.5, 2.2, 1.0, -3.2].map((mx, i) => (
-        <mesh key={i} position={[mx, 0.5, -1.5 - (i % 2) * 0.4]}>
-          <sphereGeometry args={[0.35 + (i % 3) * 0.08, 6, 6]} />
+        <mesh key={`m${i}`} position={[mx, 0.45, -1.5 - (i % 2) * 0.4]}>
+          <sphereGeometry args={[0.35 + (i % 3) * 0.08, 7, 7]} />
           <meshStandardMaterial color={PALETTE.palm} />
         </mesh>
       ))}
-      {/* Moored canoe */}
-      <mesh position={[1.2, 0.2, 0.3]} rotation={[0, 0.4, 0]} castShadow>
-        <boxGeometry args={[1.4, 0.25, 0.4]} />
-        <meshStandardMaterial color="#6b5344" />
-      </mesh>
-      <mesh position={[1.2, 0.35, 0.3]} rotation={[0, 0.4, 0]}>
-        <boxGeometry args={[1.1, 0.12, 0.28]} />
-        <meshStandardMaterial color="#3f3a36" />
-      </mesh>
-      {/* Second small boat */}
-      <mesh position={[-1.5, 0.18, -0.5]} rotation={[0, -0.6, 0]} castShadow>
-        <boxGeometry args={[1.0, 0.2, 0.32]} />
-        <meshStandardMaterial color="#5c5346" />
-      </mesh>
+      <group
+        ref={(el) => {
+          canoeRefs.current[0] = el;
+        }}
+        position={[1.2, 0.15, 0.3]}
+        rotation={[0, 0.4, 0]}
+      >
+        <mesh castShadow rotation={[0, 0, Math.PI / 2]}>
+          <capsuleGeometry args={[0.12, 0.9, 4, 8]} />
+          <meshStandardMaterial color="#6b5344" />
+        </mesh>
+      </group>
+      <group
+        ref={(el) => {
+          canoeRefs.current[1] = el;
+        }}
+        position={[-1.5, 0.12, -0.5]}
+        rotation={[0, -0.6, 0]}
+      >
+        <mesh castShadow rotation={[0, 0, Math.PI / 2]}>
+          <capsuleGeometry args={[0.1, 0.7, 4, 8]} />
+          <meshStandardMaterial color="#5c5346" />
+        </mesh>
+      </group>
     </group>
   );
 }
@@ -1203,51 +1230,53 @@ function PowerPoles() {
 function DebrisAndProps() {
   return (
     <group>
-      {/* Crate stacks near port */}
-      {[
-        [5.0, 1.6],
-        [5.4, 1.8],
-        [4.8, 2.0],
-      ].map(([x, z], i) => (
-        <mesh key={`c${i}`} position={[x, 0.25 + (i % 2) * 0.2, z]} castShadow>
-          <boxGeometry args={[0.4, 0.35, 0.4]} />
-          <meshStandardMaterial color={i % 2 ? "#92400e" : "#a16207"} />
-        </mesh>
-      ))}
-      {/* Tyre pile near okada area */}
+      {/* Coil of rope / hose near port — torus, not crate */}
+      <mesh position={[5.1, 0.12, 1.7]} rotation={[Math.PI / 2, 0, 0]} castShadow>
+        <torusGeometry args={[0.22, 0.05, 6, 14]} />
+        <meshStandardMaterial color="#78716c" />
+      </mesh>
+      <mesh position={[5.35, 0.1, 1.95]} rotation={[Math.PI / 2, 0.3, 0]}>
+        <torusGeometry args={[0.18, 0.04, 6, 12]} />
+        <meshStandardMaterial color="#57534e" />
+      </mesh>
+
+      {/* Tyre pile near okada park */}
       {[0, 1, 2].map((i) => (
         <mesh key={`t${i}`} position={[-0.6 + i * 0.15, 0.12, 5.6]} rotation={[Math.PI / 2, 0, 0]}>
           <torusGeometry args={[0.18, 0.06, 6, 12]} />
           <meshStandardMaterial color="#1f2937" />
         </mesh>
       ))}
-      {/* Bench near civic */}
-      <mesh position={[0.6, 0.25, -1.0]} castShadow>
-        <boxGeometry args={[1.0, 0.12, 0.35]} />
+
+      {/* Log bench near civic — cylinders */}
+      <mesh position={[0.6, 0.22, -1.0]} rotation={[0, 0, Math.PI / 2]} castShadow>
+        <cylinderGeometry args={[0.1, 0.1, 1.0, 8]} />
         <meshStandardMaterial color="#6b5344" />
       </mesh>
-      <mesh position={[0.2, 0.15, -1.0]}>
-        <boxGeometry args={[0.08, 0.3, 0.3]} />
+      <mesh position={[0.2, 0.12, -1.0]}>
+        <cylinderGeometry args={[0.08, 0.09, 0.25, 6]} />
         <meshStandardMaterial color="#5c5346" />
       </mesh>
-      <mesh position={[1.0, 0.15, -1.0]}>
-        <boxGeometry args={[0.08, 0.3, 0.3]} />
+      <mesh position={[1.0, 0.12, -1.0]}>
+        <cylinderGeometry args={[0.08, 0.09, 0.25, 6]} />
         <meshStandardMaterial color="#5c5346" />
       </mesh>
-      {/* Sand bags / flood prep near creek */}
+
+      {/* Sandbags — soft sacks as elongated spheres */}
       {[-5.8, -5.4, -5.0].map((x, i) => (
-        <mesh key={`s${i}`} position={[x, 0.12, -3.8]} castShadow>
-          <boxGeometry args={[0.35, 0.22, 0.25]} />
+        <mesh key={`s${i}`} position={[x, 0.1, -3.8]} scale={[1, 0.7, 0.85]} castShadow>
+          <sphereGeometry args={[0.18, 6, 6]} />
           <meshStandardMaterial color="#a89968" />
         </mesh>
       ))}
-      {/* Generator at build site */}
-      <mesh position={[1.6, 0.3, 2.6]} castShadow>
-        <boxGeometry args={[0.55, 0.45, 0.4]} />
+
+      {/* Generator as rounded body */}
+      <mesh position={[1.6, 0.28, 2.6]} castShadow>
+        <capsuleGeometry args={[0.2, 0.25, 4, 8]} />
         <meshStandardMaterial color="#374151" />
       </mesh>
-      <mesh position={[1.6, 0.55, 2.6]}>
-        <cylinderGeometry args={[0.08, 0.08, 0.2, 6]} />
+      <mesh position={[1.6, 0.52, 2.6]}>
+        <cylinderGeometry args={[0.07, 0.07, 0.18, 6]} />
         <meshStandardMaterial color="#6b7280" />
       </mesh>
     </group>
@@ -1921,59 +1950,151 @@ function Duck({ position, rot = 0 }: { position: [number, number, number]; rot?:
   );
 }
 
+function AnimatedCreature({
+  children,
+  position,
+  rot = 0,
+  mode = "bob",
+  phase = 0,
+}: {
+  children: ReactNode;
+  position: [number, number, number];
+  rot?: number;
+  mode?: "bob" | "peck" | "pace" | "sway";
+  phase?: number;
+}) {
+  const ref = useRef<THREE.Group>(null);
+  useFrame(({ clock }) => {
+    const t = clock.getElapsedTime() + phase;
+    const g = ref.current;
+    if (!g) return;
+    if (mode === "bob") {
+      g.position.y = position[1] + Math.sin(t * 2.2) * 0.03;
+      g.rotation.y = rot + Math.sin(t * 0.7) * 0.08;
+    } else if (mode === "peck") {
+      g.position.y = position[1];
+      g.rotation.x = Math.sin(t * 4.5) * 0.25;
+      g.rotation.y = rot + Math.sin(t * 0.5) * 0.15;
+    } else if (mode === "pace") {
+      g.position.x = position[0] + Math.sin(t * 0.6) * 0.35;
+      g.position.z = position[2] + Math.cos(t * 0.6) * 0.2;
+      g.position.y = position[1];
+      g.rotation.y = rot + t * 0.3;
+    } else if (mode === "sway") {
+      g.position.y = position[1];
+      g.rotation.z = Math.sin(t * 1.5) * 0.12;
+      g.rotation.y = rot;
+    }
+  });
+  return (
+    <group ref={ref} position={position} rotation={[0, rot, 0]}>
+      {children}
+    </group>
+  );
+}
+
 function PortHarcourtAnimals() {
   return (
     <group>
-      {/* Goats grazing empty lots and roadsides — very PH */}
-      <Goat position={[1.6, 0, 3.6]} rot={0.8} />
-      <Goat position={[0.9, 0, 3.9]} rot={-0.4} scale={0.85} />
-      <Goat position={[-7.0, 0, 1.4]} rot={2.2} />
-      <Goat position={[8.0, 0, -1.8]} rot={-1.2} scale={0.9} />
+      <AnimatedCreature position={[1.6, 0, 3.6]} rot={0.8} mode="bob" phase={0.2}>
+        <Goat position={[0, 0, 0]} />
+      </AnimatedCreature>
+      <AnimatedCreature position={[0.9, 0, 3.9]} rot={-0.4} mode="bob" phase={1.1}>
+        <Goat position={[0, 0, 0]} scale={0.85} />
+      </AnimatedCreature>
+      <AnimatedCreature position={[-7.0, 0, 1.4]} rot={2.2} mode="pace" phase={0.5}>
+        <Goat position={[0, 0, 0]} />
+      </AnimatedCreature>
+      <AnimatedCreature position={[8.0, 0, -1.8]} rot={-1.2} mode="bob" phase={2}>
+        <Goat position={[0, 0, 0]} scale={0.9} />
+      </AnimatedCreature>
 
-      {/* Chickens scratching near market stalls */}
-      <Chicken position={[-3.8, 0, 3.3]} rot={0.5} />
-      <Chicken position={[-3.4, 0, 3.5]} rot={-1.0} />
-      <Chicken position={[-2.7, 0, 2.9]} rot={2.0} rooster />
-      <Chicken position={[-4.4, 0, 2.6]} rot={0.2} />
+      <AnimatedCreature position={[-3.8, 0, 3.3]} rot={0.5} mode="peck" phase={0.3}>
+        <Chicken position={[0, 0, 0]} />
+      </AnimatedCreature>
+      <AnimatedCreature position={[-3.4, 0, 3.5]} rot={-1.0} mode="peck" phase={1.4}>
+        <Chicken position={[0, 0, 0]} />
+      </AnimatedCreature>
+      <AnimatedCreature position={[-2.7, 0, 2.9]} rot={2.0} mode="peck" phase={0.8}>
+        <Chicken position={[0, 0, 0]} rooster />
+      </AnimatedCreature>
+      <AnimatedCreature position={[-4.4, 0, 2.6]} rot={0.2} mode="peck" phase={2.2}>
+        <Chicken position={[0, 0, 0]} />
+      </AnimatedCreature>
 
-      {/* Street dogs */}
-      <StreetDog position={[2.5, 0, 0.9]} rot={-0.6} />
-      <StreetDog position={[-1.0, 0, 5.0]} rot={1.4} />
-      <StreetDog position={[6.0, 0, 3.2]} rot={3.0} />
+      <AnimatedCreature position={[2.5, 0, 0.9]} rot={-0.6} mode="pace" phase={0.1}>
+        <StreetDog position={[0, 0, 0]} />
+      </AnimatedCreature>
+      <AnimatedCreature position={[-1.0, 0, 5.0]} rot={1.4} mode="bob" phase={0.7}>
+        <StreetDog position={[0, 0, 0]} />
+      </AnimatedCreature>
+      <AnimatedCreature position={[6.0, 0, 3.2]} rot={3.0} mode="pace" phase={1.5}>
+        <StreetDog position={[0, 0, 0]} />
+      </AnimatedCreature>
 
-      {/* Cats — walls, shade, near civic */}
-      <StreetCat position={[2.0, 1.55, -0.3]} rot={0.3} />
-      <StreetCat position={[-5.1, 0, 1.6]} rot={-0.8} />
-      <StreetCat position={[4.0, 0.08, 3.7]} rot={1.1} />
+      <AnimatedCreature position={[2.0, 1.55, -0.3]} rot={0.3} mode="sway" phase={0.4}>
+        <StreetCat position={[0, 0, 0]} />
+      </AnimatedCreature>
+      <AnimatedCreature position={[-5.1, 0, 1.6]} rot={-0.8} mode="bob" phase={1.8}>
+        <StreetCat position={[0, 0, 0]} />
+      </AnimatedCreature>
+      <AnimatedCreature position={[4.0, 0.08, 3.7]} rot={1.1} mode="sway" phase={0.9}>
+        <StreetCat position={[0, 0, 0]} />
+      </AnimatedCreature>
 
-      {/* Agama lizards on sunny walls and concrete */}
-      <AgamaLizard position={[-4.55, 0.5, 1.5]} rot={1.5} />
-      <AgamaLizard position={[6.35, 0.4, 0.35]} rot={-0.5} />
-      <AgamaLizard position={[0.2, 0.15, 0.5]} rot={0.9} />
-      <AgamaLizard position={[3.5, 0.35, -3.3]} rot={2.5} />
+      <AnimatedCreature position={[-4.55, 0.5, 1.5]} rot={1.5} mode="sway" phase={0.2}>
+        <AgamaLizard position={[0, 0, 0]} />
+      </AnimatedCreature>
+      <AnimatedCreature position={[6.35, 0.4, 0.35]} rot={-0.5} mode="sway" phase={1.0}>
+        <AgamaLizard position={[0, 0, 0]} />
+      </AnimatedCreature>
+      <AnimatedCreature position={[0.2, 0.15, 0.5]} rot={0.9} mode="bob" phase={0.6}>
+        <AgamaLizard position={[0, 0, 0]} />
+      </AnimatedCreature>
 
-      {/* Pigeons on road and wires area */}
-      <Bird position={[-0.5, 0.08, 0.5]} rot={0.4} kind="pigeon" />
-      <Bird position={[0.8, 0.08, 0.0]} rot={-1.2} kind="pigeon" />
-      <Bird position={[-2.5, 3.95, 2.0]} rot={0.2} kind="pigeon" />
-      <Bird position={[2.0, 3.95, 2.2]} rot={1.0} kind="pigeon" />
+      <AnimatedCreature position={[-0.5, 0.08, 0.5]} rot={0.4} mode="bob" phase={0.3}>
+        <Bird position={[0, 0, 0]} kind="pigeon" />
+      </AnimatedCreature>
+      <AnimatedCreature position={[0.8, 0.08, 0.0]} rot={-1.2} mode="peck" phase={1.1}>
+        <Bird position={[0, 0, 0]} kind="pigeon" />
+      </AnimatedCreature>
+      <AnimatedCreature position={[-2.5, 3.95, 2.0]} rot={0.2} mode="sway" phase={0.5}>
+        <Bird position={[0, 0, 0]} kind="pigeon" />
+      </AnimatedCreature>
+      <AnimatedCreature position={[2.0, 3.95, 2.2]} rot={1.0} mode="bob" phase={2.0}>
+        <Bird position={[0, 0, 0]} kind="pigeon" />
+      </AnimatedCreature>
 
-      {/* Pied crow-like on rooftop */}
-      <Bird position={[-1.2, 2.5, 1.5]} rot={-0.5} kind="crow" />
-      <Bird position={[4.2, 2.7, 4.0]} rot={0.7} kind="crow" />
+      <AnimatedCreature position={[-1.2, 2.5, 1.5]} rot={-0.5} mode="sway" phase={0.8}>
+        <Bird position={[0, 0, 0]} kind="crow" />
+      </AnimatedCreature>
+      <AnimatedCreature position={[4.2, 2.7, 4.0]} rot={0.7} mode="bob" phase={1.3}>
+        <Bird position={[0, 0, 0]} kind="crow" />
+      </AnimatedCreature>
 
-      {/* Village weaver yellow near green patches */}
-      <Bird position={[-8.5, 0.15, 4.3]} rot={0.3} kind="weaver" />
-      <Bird position={[9.0, 0.15, -3.8]} rot={-0.9} kind="weaver" />
+      <AnimatedCreature position={[-8.5, 0.15, 4.3]} rot={0.3} mode="peck" phase={0.4}>
+        <Bird position={[0, 0, 0]} kind="weaver" />
+      </AnimatedCreature>
+      <AnimatedCreature position={[9.0, 0.15, -3.8]} rot={-0.9} mode="bob" phase={1.6}>
+        <Bird position={[0, 0, 0]} kind="weaver" />
+      </AnimatedCreature>
 
-      {/* Cattle egrets near creek / drainage — classic PH wetland edge */}
-      <Bird position={[-6.2, 0.05, -4.0]} rot={0.6} kind="egret" />
-      <Bird position={[-4.8, 0.05, -4.5]} rot={-0.3} kind="egret" />
-      <Bird position={[-5.5, 0.05, -3.5]} rot={1.2} kind="egret" />
+      <AnimatedCreature position={[-6.2, 0.05, -4.0]} rot={0.6} mode="pace" phase={0.2}>
+        <Bird position={[0, 0, 0]} kind="egret" />
+      </AnimatedCreature>
+      <AnimatedCreature position={[-4.8, 0.05, -4.5]} rot={-0.3} mode="bob" phase={1.0}>
+        <Bird position={[0, 0, 0]} kind="egret" />
+      </AnimatedCreature>
+      <AnimatedCreature position={[-5.5, 0.05, -3.5]} rot={1.2} mode="pace" phase={1.7}>
+        <Bird position={[0, 0, 0]} kind="egret" />
+      </AnimatedCreature>
 
-      {/* Ducks on water edge */}
-      <Duck position={[-5.0, 0.08, -5.0]} rot={0.5} />
-      <Duck position={[-4.4, 0.08, -5.3]} rot={-0.8} />
+      <AnimatedCreature position={[-5.0, 0.08, -5.0]} rot={0.5} mode="bob" phase={0.5}>
+        <Duck position={[0, 0, 0]} />
+      </AnimatedCreature>
+      <AnimatedCreature position={[-4.4, 0.08, -5.3]} rot={-0.8} mode="bob" phase={1.2}>
+        <Duck position={[0, 0, 0]} />
+      </AnimatedCreature>
     </group>
   );
 }
@@ -2247,6 +2368,23 @@ function PlayerController({
   );
 }
 
+
+function LivingAmbience() {
+  const lampRefs = useRef<(THREE.Mesh | null)[]>([]);
+  useFrame(({ clock }) => {
+    const t = clock.getElapsedTime();
+    lampRefs.current.forEach((m, i) => {
+      if (!m) return;
+      const mat = m.material as THREE.MeshStandardMaterial;
+      if (mat && "emissiveIntensity" in mat) {
+        mat.emissiveIntensity = 0.25 + Math.sin(t * 2 + i) * 0.12;
+      }
+    });
+  });
+  // Soft pulse markers already in scene via materials; this is a no-op host for future
+  return null;
+}
+
 export function AfroMetaverseScene({
   weather,
   selectedDistrict,
@@ -2325,6 +2463,7 @@ export function AfroMetaverseScene({
       </group>
 
       <AtmosphereEffects weather={weather} />
+      <LivingAmbience />
       <PlayerController onDistrictChange={onNearDistrict} />
 
       {mode === "orbit" && (
