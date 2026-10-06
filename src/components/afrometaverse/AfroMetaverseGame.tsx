@@ -901,6 +901,20 @@ export function AfroMetaverseGame() {
                   onNearDistrict={(id) => {
                     if (id) setSelectedDistrict(id);
                   }}
+                  onInteract={(label) => {
+                    const districtMap: Record<string, string> = {
+                      "Town Market": "town-market",
+                      "Civic Centre": "civic-centre",
+                      Creekside: "creekside",
+                      "The Port": "port",
+                    };
+                    if (districtMap[label]) {
+                      setSelectedDistrict(districtMap[label]);
+                      announce(`Arrived sense: ${label}`);
+                    } else {
+                      announce(label);
+                    }
+                  }}
                 />
                 {roamMode === "orbit" &&
                   DISTRICTS.map((d) => (
@@ -916,7 +930,7 @@ export function AfroMetaverseGame() {
                     </button>
                   ))}
                 {roamMode !== "orbit" && (
-                  <div className="am-roam-hint">WASD · third-person · click canvas to focus</div>
+                  <div className="am-roam-hint">WASD · click hubs/stalls · traffic is live</div>
                 )}
                 {showMinimap && (
                   <div className="am-minimap" aria-label="City minimap">

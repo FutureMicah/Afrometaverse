@@ -2287,6 +2287,136 @@ function nearestDistrict(x: number, z: number): string | null {
   return best;
 }
 
+
+const ROAD_PATHS: [number, number][][] = [
+  // Main east-west
+  [
+    [-10, 0.2],
+    [-5, 0.2],
+    [0, 0.2],
+    [5, 0.2],
+    [10, 0.2],
+  ],
+  // North market loop
+  [
+    [-5, 4.6],
+    [-2, 4.6],
+    [0, 4.6],
+    [2, 4.6],
+    [5, 4.6],
+    [5, 2],
+    [2, 0.2],
+  ],
+  // South civic
+  [
+    [8, -2.8],
+    [4, -2.8],
+    [0, -2.8],
+    [-3, -2.8],
+    [-5, -1.5],
+    [-5.5, -3.5],
+  ],
+];
+
+function TrafficFlow() {
+  const vehicles = useMemo(
+    () => [
+      { path: 0, speed: 0.12, t0: 0, color: "#eab308", kind: "taxi" as const },
+      { path: 0, speed: 0.18, t0: 0.45, color: "#f97316", kind: "okada" as const },
+      { path: 1, speed: 0.14, t0: 0.2, color: "#dc2626", kind: "taxi" as const },
+      { path: 1, speed: 0.2, t0: 0.7, color: "#ea580c", kind: "okada" as const },
+      { path: 2, speed: 0.1, t0: 0.15, color: "#ca8a04", kind: "taxi" as const },
+      { path: 2, speed: 0.16, t0: 0.6, color: "#fb923c", kind: "okada" as const },
+    ],
+    [],
+  );
+  const refs = useRef<(THREE.Group | null)[]>([]);
+
+  useFrame(({ clock }) => {
+    const t = clock.getElapsedTime();
+    vehicles.forEach((v, i) => {
+      const g = refs.current[i];
+      if (!g) return;
+      const pts = ROAD_PATHS[v.path];
+      if (!pts || pts.length < 2) return;
+      const raw = (t * v.speed + v.t0) % 1;
+      const f = raw * (pts.length - 1);
+      const i0 = Math.floor(f);
+      const i1 = Math.min(i0 + 1, pts.length - 1);
+      const local = f - i0;
+      const [x0, z0] = pts[i0];
+      const [x1, z1] = pts[i1];
+      const x = x0 + (x1 - x0) * local;
+      const z = z0 + (z1 - z0) * local;
+      g.position.set(x, 0, z);
+      g.rotation.y = Math.atan2(x1 - x0, z1 - z0);
+    });
+  });
+
+  return (
+    <group>
+      {vehicles.map((v, i) => (
+        <group
+          key={i}
+          ref={(el) => {
+            refs.current[i] = el;
+          }}
+        >
+          <SimpleVehicle position={[0, 0, 0]} color={v.color} kind={v.kind} />
+        </group>
+      ))}
+    </group>
+  );
+}
+
+function Interactable({
+  position,
+  radius = 0.9,
+  label,
+  onInteract,
+}: {
+  position: [number, number, number];
+  radius?: number;
+  label: string;
+  onInteract?: (label: string) => void;
+}) {
+  return (
+    <mesh
+      position={[position[0], 0.6, position[2]]}
+      onClick={(e) => {
+        e.stopPropagation();
+        onInteract?.(label);
+      }}
+      onPointerOver={(e) => {
+        e.stopPropagation();
+        document.body.style.cursor = "pointer";
+      }}
+      onPointerOut={() => {
+        document.body.style.cursor = "auto";
+      }}
+    >
+      <sphereGeometry args={[radius, 8, 8]} />
+      <meshBasicMaterial transparent opacity={0} />
+    </mesh>
+  );
+}
+
+function CityHotspots({ onInteract }: { onInteract?: (label: string) => void }) {
+  return (
+    <group>
+      <Interactable position={[-3, 0, 2.5]} radius={1.4} label="Town Market" onInteract={onInteract} />
+      <Interactable position={[0, 0, -1.5]} radius={1.3} label="Civic Centre" onInteract={onInteract} />
+      <Interactable position={[-5.5, 0, -3.5]} radius={1.3} label="Creekside" onInteract={onInteract} />
+      <Interactable position={[5.5, 0, 2.5]} radius={1.4} label="The Port" onInteract={onInteract} />
+      <Interactable position={[-3.5, 0, 3.2]} radius={0.7} label="Market stall row" onInteract={onInteract} />
+      <Interactable position={[-4.7, 0, 3.5]} radius={0.5} label="Suya grill" onInteract={onInteract} />
+      <Interactable position={[1.2, 0, -0.9]} radius={0.6} label="Bus shelter" onInteract={onInteract} />
+      <Interactable position={[6.5, 0, 2.8]} radius={0.8} label="Port crane yard" onInteract={onInteract} />
+      <Interactable position={[1.2, 0, 3.2]} radius={0.7} label="Housing development lot" onInteract={onInteract} />
+    </group>
+  );
+}
+
 function PlayerController({
   onDistrictChange,
 }: {
@@ -2389,6 +2519,7 @@ export function AfroMetaverseScene({
   weather,
   selectedDistrict,
   onNearDistrict,
+  onInteract,
 }: {
   weather: {
     id: string;
@@ -2400,6 +2531,7 @@ export function AfroMetaverseScene({
   };
   selectedDistrict: string | null;
   onNearDistrict?: (id: string | null) => void;
+  onInteract?: (label: string) => void;
 }) {
   const mode = useRoamStore((s) => s.mode);
   const nearDistrictId = useRoamStore((s) => s.nearDistrictId);
@@ -2455,11 +2587,10 @@ export function AfroMetaverseScene({
         <Billboard x={8.0} z={-0.2} rot={-1.0} />
         <Billboard x={3.2} z={-4.5} rot={0.2} />
 
-        <SimpleVehicle position={[-1.5, 0, 5.2]} color="#f97316" kind="okada" />
-        <SimpleVehicle position={[2.2, 0, 5]} color="#eab308" kind="taxi" />
+        {/* Ferry stays at creek — road traffic is path-driven */}
         <SimpleVehicle position={[-6.0, 0.05, -4.6]} color="#0ea5e9" kind="ferry" />
-        <SimpleVehicle position={[4.8, 0, 0.4]} color="#dc2626" kind="taxi" />
-        <SimpleVehicle position={[-4.0, 0, -2.6]} color="#ea580c" kind="okada" />
+        <TrafficFlow />
+        <CityHotspots onInteract={onInteract} />
       </group>
 
       <AtmosphereEffects weather={weather} />
