@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, type ReactNode } from "react";
 import * as THREE from "three";
 import {
   DISTRICT_WORLD,
+  SAFEHOUSES,
   TRANSPORT_SPEED,
   useRoamStore,
   type TransportId,
@@ -2176,8 +2177,91 @@ function SimpleVehicle({
 }: {
   position: [number, number, number];
   color: string;
-  kind: "okada" | "taxi" | "ferry";
+  kind: "bicycle" | "scooter" | "keke" | "okada" | "taxi" | "ferry";
 }) {
+  if (kind === "bicycle") {
+    return (
+      <group position={position} scale={0.9}>
+        <mesh position={[0, 0.35, 0]} rotation={[0, 0, Math.PI / 2]} castShadow>
+          <torusGeometry args={[0.22, 0.03, 6, 14]} />
+          <meshStandardMaterial color="#1f2937" />
+        </mesh>
+        <mesh position={[0, 0.35, 0]} rotation={[0, 0, Math.PI / 2]}>
+          <torusGeometry args={[0.22, 0.03, 6, 14]} />
+          <meshStandardMaterial color="#1f2937" />
+        </mesh>
+        <mesh position={[0.22, 0.35, 0]} rotation={[0, 0, Math.PI / 2]}>
+          <torusGeometry args={[0.2, 0.03, 5, 12]} />
+          <meshStandardMaterial color="#111827" />
+        </mesh>
+        <mesh position={[-0.22, 0.35, 0]} rotation={[0, 0, Math.PI / 2]}>
+          <torusGeometry args={[0.2, 0.03, 5, 12]} />
+          <meshStandardMaterial color="#111827" />
+        </mesh>
+        <mesh position={[0, 0.5, 0]}>
+          <boxGeometry args={[0.45, 0.04, 0.04]} />
+          <meshStandardMaterial color={color} />
+        </mesh>
+        <mesh position={[0.05, 0.62, 0]}>
+          <boxGeometry args={[0.2, 0.04, 0.12]} />
+          <meshStandardMaterial color="#1f2937" />
+        </mesh>
+      </group>
+    );
+  }
+  if (kind === "scooter") {
+    return (
+      <group position={position} scale={0.88}>
+        <mesh position={[0, 0.28, 0]} castShadow>
+          <capsuleGeometry args={[0.1, 0.4, 4, 8]} />
+          <meshStandardMaterial color={color} />
+        </mesh>
+        <mesh position={[0.2, 0.55, 0]}>
+          <boxGeometry args={[0.06, 0.35, 0.06]} />
+          <meshStandardMaterial color="#374151" />
+        </mesh>
+        <mesh position={[0.2, 0.75, 0]}>
+          <boxGeometry args={[0.05, 0.05, 0.3]} />
+          <meshStandardMaterial color="#1f2937" />
+        </mesh>
+        <mesh position={[0.22, 0.16, 0]} rotation={[0, 0, Math.PI / 2]}>
+          <torusGeometry args={[0.12, 0.035, 5, 10]} />
+          <meshStandardMaterial color="#111827" />
+        </mesh>
+        <mesh position={[-0.22, 0.16, 0]} rotation={[0, 0, Math.PI / 2]}>
+          <torusGeometry args={[0.14, 0.04, 5, 10]} />
+          <meshStandardMaterial color="#111827" />
+        </mesh>
+      </group>
+    );
+  }
+  if (kind === "keke") {
+    return (
+      <group position={position} scale={1.0}>
+        <mesh position={[0, 0.45, 0]} castShadow>
+          <boxGeometry args={[0.9, 0.55, 0.75]} />
+          <meshStandardMaterial color={color} />
+        </mesh>
+        <mesh position={[0, 0.85, 0.05]}>
+          <boxGeometry args={[0.85, 0.35, 0.65]} />
+          <meshStandardMaterial color="#e2e8f0" transparent opacity={0.5} />
+        </mesh>
+        {/* Canopy */}
+        <mesh position={[0, 1.15, 0]} castShadow>
+          <boxGeometry args={[1.0, 0.06, 0.85]} />
+          <meshStandardMaterial color="#f8fafc" />
+        </mesh>
+        {[[0.3, 0.18, 0.3], [0.3, 0.18, -0.3], [-0.3, 0.18, 0.3], [-0.3, 0.18, -0.3]].map(
+          ([x, y, z], i) => (
+            <mesh key={i} position={[x, y, z]} rotation={[0, 0, Math.PI / 2]}>
+              <torusGeometry args={[0.14, 0.04, 5, 10]} />
+              <meshStandardMaterial color="#111827" />
+            </mesh>
+          ),
+        )}
+      </group>
+    );
+  }
   if (kind === "okada") {
     return (
       <group position={position} scale={0.85}>
@@ -2427,14 +2511,28 @@ function PlayerController({
   const { camera } = useThree();
   const mode = useRoamStore((s) => s.mode);
   const transport = useRoamStore((s) => s.transport);
+  const mountedVehicleId = useRoamStore((s) => s.mountedVehicleId);
   const setPosition = useRoamStore((s) => s.setPosition);
   const setFacing = useRoamStore((s) => s.setFacing);
   const setNearDistrict = useRoamStore((s) => s.setNearDistrict);
+  const setNearVehicle = useRoamStore((s) => s.setNearVehicle);
+  const setInSafehouse = useRoamStore((s) => s.setInSafehouse);
+  const enterNearestVehicle = useRoamStore((s) => s.enterNearestVehicle);
+  const exitVehicle = useRoamStore((s) => s.exitVehicle);
+  const updateMountedVehiclePose = useRoamStore((s) => s.updateMountedVehiclePose);
+  const coolHeat = useRoamStore((s) => s.coolHeat);
+  const worldVehicles = useRoamStore((s) => s.worldVehicles);
   const position = useRoamStore((s) => s.position);
+  const heatTick = useRef(0);
 
   useEffect(() => {
     const down = (e: KeyboardEvent) => {
       keys.current[e.key.toLowerCase()] = true;
+      if (e.key.toLowerCase() === "f" || e.key === "e") {
+        const st = useRoamStore.getState();
+        if (st.mountedVehicleId) st.exitVehicle();
+        else st.enterNearestVehicle();
+      }
     };
     const up = (e: KeyboardEvent) => {
       keys.current[e.key.toLowerCase()] = false;
@@ -2450,7 +2548,7 @@ function PlayerController({
   useFrame((_, dt) => {
     if (mode === "orbit" || !group.current) return;
 
-    const speed = TRANSPORT_SPEED[transport];
+    const speed = TRANSPORT_SPEED[transport] ?? 4;
     let dx = 0;
     let dz = 0;
     if (keys.current["w"] || keys.current["arrowup"]) dz -= 1;
@@ -2462,22 +2560,61 @@ function PlayerController({
       const len = Math.hypot(dx, dz) || 1;
       dx = (dx / len) * speed * dt;
       dz = (dz / len) * speed * dt;
-      const nextX = THREE.MathUtils.clamp(group.current.position.x + dx, BOUNDS.minX, BOUNDS.maxX);
-      const nextZ = THREE.MathUtils.clamp(group.current.position.z + dz, BOUNDS.minZ, BOUNDS.maxZ);
+      // Ferry constrained toward water band
+      let nextX = THREE.MathUtils.clamp(group.current.position.x + dx, BOUNDS.minX, BOUNDS.maxX);
+      let nextZ = THREE.MathUtils.clamp(group.current.position.z + dz, BOUNDS.minZ, BOUNDS.maxZ);
+      if (transport === "ferry") {
+        nextZ = THREE.MathUtils.clamp(nextZ, -8.5, -2.5);
+        nextX = THREE.MathUtils.clamp(nextX, -10, -2);
+      }
       group.current.position.x = nextX;
       group.current.position.z = nextZ;
       const yaw = Math.atan2(dx, dz);
       group.current.rotation.y = yaw;
       setPosition([nextX, 0.6, nextZ]);
       setFacing(yaw);
+      if (mountedVehicleId) updateMountedVehiclePose([nextX, 0, nextZ], yaw);
 
       const near = nearestDistrict(nextX, nextZ);
       setNearDistrict(near);
       onDistrictChange?.(near);
     }
 
+    // Proximity: vehicles
+    const px = group.current.position.x;
+    const pz = group.current.position.z;
+    let bestV: string | null = null;
+    let bestD = 1.6;
+    for (const v of worldVehicles) {
+      if (v.occupied) continue;
+      const d = Math.hypot(px - v.position[0], pz - v.position[2]);
+      if (d < bestD) {
+        bestD = d;
+        bestV = v.id;
+      }
+    }
+    setNearVehicle(bestV);
+
+    // Safehouses
+    let sh: string | null = null;
+    for (const s of SAFEHOUSES) {
+      if (Math.hypot(px - s.x, pz - s.z) < s.radius) {
+        sh = s.id;
+        break;
+      }
+    }
+    setInSafehouse(sh);
+    heatTick.current += dt;
+    if (sh && heatTick.current > 1) {
+      heatTick.current = 0;
+      const house = SAFEHOUSES.find((s) => s.id === sh);
+      if (house) coolHeat(house.coolRate * 0.15);
+    }
+
     const target = group.current.position;
-    const camOffset = new THREE.Vector3(0, 6.5, 9);
+    const camHeight = mountedVehicleId ? 7.2 : 6.5;
+    const camBack = mountedVehicleId ? 10 : 9;
+    const camOffset = new THREE.Vector3(0, camHeight, camBack);
     const desired = target.clone().add(camOffset);
     camera.position.lerp(desired, 1 - Math.pow(0.001, dt));
     camera.lookAt(target.x, target.y + 1.2, target.z);
@@ -2493,7 +2630,71 @@ function PlayerController({
 
   return (
     <group ref={group} position={position}>
-      <PlayerAvatar transport={transport} />
+      {mountedVehicleId ? (
+        <PlayerVehicleMesh />
+      ) : (
+        <PlayerAvatar transport={transport} />
+      )}
+    </group>
+  );
+}
+
+function PlayerVehicleMesh() {
+  const transport = useRoamStore((s) => s.transport);
+  const color =
+    transport === "okada"
+      ? "#f97316"
+      : transport === "taxi"
+        ? "#eab308"
+        : transport === "ferry"
+          ? "#0ea5e9"
+          : transport === "keke"
+            ? "#22c55e"
+            : transport === "scooter"
+              ? "#a855f7"
+              : transport === "bicycle"
+                ? "#64748b"
+                : "#f8fafc";
+  if (transport === "foot") return <PlayerAvatar transport="foot" />;
+  return (
+    <SimpleVehicle
+      position={[0, 0, 0]}
+      color={color}
+      kind={transport as "bicycle" | "scooter" | "keke" | "okada" | "taxi" | "ferry"}
+    />
+  );
+}
+
+function ParkedVehicles() {
+  const worldVehicles = useRoamStore((s) => s.worldVehicles);
+  const nearVehicleId = useRoamStore((s) => s.nearVehicleId);
+  const colors: Record<string, string> = {
+    bicycle: "#64748b",
+    scooter: "#a855f7",
+    keke: "#22c55e",
+    okada: "#f97316",
+    taxi: "#eab308",
+    ferry: "#0ea5e9",
+  };
+  return (
+    <group>
+      {worldVehicles
+        .filter((v) => !v.occupied)
+        .map((v) => (
+          <group key={v.id} position={v.position} rotation={[0, v.facing, 0]}>
+            <SimpleVehicle
+              position={[0, 0, 0]}
+              color={colors[v.kind] ?? "#94a3b8"}
+              kind={v.kind}
+            />
+            {nearVehicleId === v.id && (
+              <mesh position={[0, 1.6, 0]}>
+                <sphereGeometry args={[0.12, 8, 8]} />
+                <meshStandardMaterial color="#fef08a" emissive="#facc15" emissiveIntensity={0.8} />
+              </mesh>
+            )}
+          </group>
+        ))}
     </group>
   );
 }
@@ -2513,6 +2714,59 @@ function LivingAmbience() {
   });
   // Soft pulse markers already in scene via materials; this is a no-op host for future
   return null;
+}
+
+
+function NpcCrowd() {
+  const npcs = useMemo(
+    () =>
+      [
+        { x: -3.2, z: 3.0, phase: 0, color: "#e8a54b" },
+        { x: -2.5, z: 2.6, phase: 1.2, color: "#c45c26" },
+        { x: 0.5, z: -1.0, phase: 2.0, color: "#5f9e8f" },
+        { x: 1.5, z: -1.8, phase: 0.7, color: "#d9b896" },
+        { x: 5.0, z: 2.0, phase: 1.5, color: "#64748b" },
+        { x: -5.0, z: -3.0, phase: 2.5, color: "#a855f7" },
+        { x: 3.0, z: 0.5, phase: 0.4, color: "#22c55e" },
+        { x: -1.0, z: 4.5, phase: 1.8, color: "#f97316" },
+      ] as { x: number; z: number; phase: number; color: string }[],
+    [],
+  );
+  const refs = useRef<(THREE.Group | null)[]>([]);
+  useFrame(({ clock }) => {
+    const t = clock.getElapsedTime();
+    npcs.forEach((n, i) => {
+      const g = refs.current[i];
+      if (!g) return;
+      const ox = Math.sin(t * 0.4 + n.phase) * 0.8;
+      const oz = Math.cos(t * 0.35 + n.phase) * 0.5;
+      g.position.x = n.x + ox;
+      g.position.z = n.z + oz;
+      g.rotation.y = Math.atan2(ox, oz);
+    });
+  });
+  return (
+    <group>
+      {npcs.map((n, i) => (
+        <group
+          key={i}
+          ref={(el) => {
+            refs.current[i] = el;
+          }}
+          position={[n.x, 0, n.z]}
+        >
+          <mesh position={[0, 0.45, 0]} castShadow>
+            <capsuleGeometry args={[0.15, 0.35, 4, 8]} />
+            <meshStandardMaterial color={n.color} />
+          </mesh>
+          <mesh position={[0, 0.9, 0]}>
+            <sphereGeometry args={[0.14, 8, 8]} />
+            <meshStandardMaterial color="#fde68a" />
+          </mesh>
+        </group>
+      ))}
+    </group>
+  );
 }
 
 export function AfroMetaverseScene({
@@ -2590,6 +2844,8 @@ export function AfroMetaverseScene({
         {/* Ferry stays at creek — road traffic is path-driven */}
         <SimpleVehicle position={[-6.0, 0.05, -4.6]} color="#0ea5e9" kind="ferry" />
         <TrafficFlow />
+        <ParkedVehicles />
+        <NpcCrowd />
         <CityHotspots onInteract={onInteract} />
       </group>
 

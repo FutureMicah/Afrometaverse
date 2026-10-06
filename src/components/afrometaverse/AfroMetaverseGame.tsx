@@ -31,6 +31,8 @@ import { useResilienceStore } from "@/stores/resilienceStore";
 import {
   DISTRICT_WORLD,
   GEAR_LABEL,
+  SAFEHOUSES,
+  TRANSPORT_LABEL,
   useRoamStore,
   type GearId,
   type TransportId,
@@ -339,6 +341,12 @@ export function AfroMetaverseGame() {
   const heatPoints = useRoamStore((s) => s.heatPoints);
   const gear = useRoamStore((s) => s.gear);
   const showMinimap = useRoamStore((s) => s.showMinimap);
+  const nearVehicleId = useRoamStore((s) => s.nearVehicleId);
+  const mountedVehicleId = useRoamStore((s) => s.mountedVehicleId);
+  const inSafehouseId = useRoamStore((s) => s.inSafehouseId);
+  const worldVehicles = useRoamStore((s) => s.worldVehicles);
+  const enterNearestVehicle = useRoamStore((s) => s.enterNearestVehicle);
+  const exitVehicle = useRoamStore((s) => s.exitVehicle);
   const setRoamMode = useRoamStore((s) => s.setMode);
   const setTransport = useRoamStore((s) => s.setTransport);
   const startMission = useRoamStore((s) => s.startMission);
@@ -772,17 +780,57 @@ export function AfroMetaverseGame() {
                 >
                   {roamMode === "orbit" ? "Enter free roam" : "Exit free roam"}
                 </button>
-                {(["foot", "okada", "taxi", "ferry"] as TransportId[]).map((t) => (
+                {(
+                  [
+                    "foot",
+                    "bicycle",
+                    "scooter",
+                    "keke",
+                    "okada",
+                    "taxi",
+                    "ferry",
+                  ] as TransportId[]
+                ).map((t) => (
                   <button
                     key={t}
                     type="button"
                     className={`am-chip am-transport-chip ${roamTransport === t ? "am-transport-active" : ""}`}
-                    onClick={() => setTransport(t)}
-                    disabled={roamMode === "orbit"}
+                    onClick={() => {
+                      if (t === "foot" && mountedVehicleId) {
+                        exitVehicle();
+                        announce("On foot");
+                        return;
+                      }
+                      setTransport(t);
+                    }}
+                    disabled={roamMode === "orbit" || (!!mountedVehicleId && t !== "foot")}
                   >
-                    {t === "foot" ? "On foot" : t === "okada" ? "Okada" : t === "taxi" ? "Taxi" : "Ferry"}
+                    {TRANSPORT_LABEL[t]}
                   </button>
                 ))}
+                {roamMode !== "orbit" && (
+                  <button
+                    type="button"
+                    className="am-btn am-btn-primary"
+                    onClick={() => {
+                      if (mountedVehicleId) {
+                        exitVehicle();
+                        announce("Exited vehicle");
+                      } else {
+                        const ok = enterNearestVehicle();
+                        if (ok) announce("Entered vehicle — WASD to drive, F to exit");
+                        else announce("Move closer to a parked vehicle (glow marker)");
+                      }
+                    }}
+                  >
+                    {mountedVehicleId ? "Exit vehicle (F)" : nearVehicleId ? "Enter vehicle (F)" : "Enter (near vehicle)"}
+                  </button>
+                )}
+                {inSafehouseId && (
+                  <span className="am-chip am-kind am-kind-legal">
+                    Safehouse · {SAFEHOUSES.find((s) => s.id === inSafehouseId)?.name ?? "cool-down"}
+                  </span>
+                )}
                 {nearDistrictId && (
                   <span className="am-chip">Near {DISTRICT_WORLD[nearDistrictId]?.name ?? nearDistrictId}</span>
                 )}
@@ -930,7 +978,7 @@ export function AfroMetaverseGame() {
                     </button>
                   ))}
                 {roamMode !== "orbit" && (
-                  <div className="am-roam-hint">WASD · click hubs/stalls · traffic is live</div>
+                  <div className="am-roam-hint">WASD drive · F enter/exit · click hubs · parked vehicles glow when near</div>
                 )}
                 {showMinimap && (
                   <div className="am-minimap" aria-label="City minimap">
