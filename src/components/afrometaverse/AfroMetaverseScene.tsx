@@ -381,12 +381,35 @@ function DistrictHub({
           <meshStandardMaterial color="#fef08a" emissive="#facc15" emissiveIntensity={0.9} />
         </mesh>
       )}
-      {/* Market canopy near market hub */}
+      {/* Town Market hub: open hall + pitched tin, not a closed cube annex */}
       {label === "Town Market" && (
-        <mesh position={[0, 1.6, 1.8]} castShadow>
-          <boxGeometry args={[2.8, 0.08, 1.2]} />
-          <meshStandardMaterial color="#e8a54b" opacity={0.85} transparent />
-        </mesh>
+        <>
+          {/* Soften main volume — open front notch via darker void strip */}
+          <mesh position={[0, 0.9, 1.2]}>
+            <boxGeometry args={[1.6, 1.5, 0.08]} />
+            <meshStandardMaterial color="#1a1510" transparent opacity={0.55} />
+          </mesh>
+          {/* Pitched tin roof planes */}
+          <mesh position={[-0.55, 3.5, 0.2]} rotation={[0, 0, 0.35]} castShadow>
+            <planeGeometry args={[1.8, 2.4]} />
+            <meshStandardMaterial color="#8a9a9b" side={2} metalness={0.3} roughness={0.5} />
+          </mesh>
+          <mesh position={[0.55, 3.5, 0.2]} rotation={[0, 0, -0.35]} castShadow>
+            <planeGeometry args={[1.8, 2.4]} />
+            <meshStandardMaterial color="#7a8b8c" side={2} metalness={0.3} roughness={0.5} />
+          </mesh>
+          {/* Wooden posts under extended front shade */}
+          {[-1.1, 1.1].map((px, i) => (
+            <mesh key={i} position={[px, 0.9, 1.9]} castShadow>
+              <cylinderGeometry args={[0.05, 0.06, 1.8, 5]} />
+              <meshStandardMaterial color="#5c4030" />
+            </mesh>
+          ))}
+          <mesh position={[0, 1.85, 1.95]} rotation={[0.15, 0, 0]} castShadow>
+            <planeGeometry args={[2.6, 1.3]} />
+            <meshStandardMaterial color="#e8a54b" side={2} transparent opacity={0.8} />
+          </mesh>
+        </>
       )}
     </group>
   );
@@ -632,43 +655,335 @@ function DrainageChannel() {
 }
 
 
-function MarketStalls() {
-  const stalls = [
-    { x: -3.6, z: 2.9, color: "#e8a54b" },
-    { x: -2.6, z: 3.1, color: "#c97b63" },
-    { x: -4.6, z: 2.7, color: "#5f9e8f" },
-    { x: -3.0, z: 2.2, color: "#d9b896" },
-  ];
+
+/** Dense Mile-1 style market: poles, sagging tarps, tin, baskets — not clean boxes */
+function TarpRoof({
+  w,
+  d,
+  color,
+  sag = 0.12,
+}: {
+  w: number;
+  d: number;
+  color: string;
+  sag?: number;
+}) {
   return (
     <group>
-      {stalls.map((s, i) => (
-        <group key={i} position={[s.x, 0, s.z]}>
-          <mesh position={[0, 0.35, 0]} castShadow>
-            <boxGeometry args={[0.7, 0.7, 0.55]} />
-            <meshStandardMaterial color="#efe2c8" />
-          </mesh>
-          <mesh position={[0, 0.85, 0]} castShadow>
-            <boxGeometry args={[0.85, 0.06, 0.7]} />
-            <meshStandardMaterial color={s.color} />
-          </mesh>
-          <mesh position={[-0.35, 0.55, 0]}>
-            <boxGeometry args={[0.05, 0.9, 0.05]} />
-            <meshStandardMaterial color="#6b5344" />
-          </mesh>
-          <mesh position={[0.35, 0.55, 0]}>
-            <boxGeometry args={[0.05, 0.9, 0.05]} />
-            <meshStandardMaterial color="#6b5344" />
-          </mesh>
-          {/* Goods pile */}
-          <mesh position={[0.15, 0.15, 0.4]}>
-            <boxGeometry args={[0.25, 0.2, 0.2]} />
-            <meshStandardMaterial color="#b45309" />
-          </mesh>
-        </group>
-      ))}
+      {/* Two panels lean toward centre to suggest fabric sag */}
+      <mesh position={[0, 0, -d * 0.15]} rotation={[sag, 0, 0]} castShadow>
+        <planeGeometry args={[w, d * 0.55]} />
+        <meshStandardMaterial color={color} side={2} transparent opacity={0.92} />
+      </mesh>
+      <mesh position={[0, -0.05, d * 0.18]} rotation={[-sag * 1.1, 0, 0.04]} castShadow>
+        <planeGeometry args={[w * 0.98, d * 0.5]} />
+        <meshStandardMaterial color={color} side={2} transparent opacity={0.88} />
+      </mesh>
     </group>
   );
 }
+
+function CorrugatedTin({ w, d, color = "#8a9a9b" }: { w: number; d: number; color?: string }) {
+  const ridges = Math.max(4, Math.floor(w * 5));
+  return (
+    <group>
+      {Array.from({ length: ridges }).map((_, i) => {
+        const x = -w / 2 + (i + 0.5) * (w / ridges);
+        return (
+          <mesh key={i} position={[x, 0, 0]} rotation={[Math.PI / 2, 0, 0]} castShadow>
+            <cylinderGeometry args={[0.03, 0.03, d, 5]} />
+            <meshStandardMaterial color={color} metalness={0.35} roughness={0.55} />
+          </mesh>
+        );
+      })}
+    </group>
+  );
+}
+
+function MarketPole({ h = 1.4, lean = 0 }: { h?: number; lean?: number }) {
+  return (
+    <mesh position={[0, h / 2, 0]} rotation={[0, 0, lean]} castShadow>
+      <cylinderGeometry args={[0.035, 0.045, h, 5]} />
+      <meshStandardMaterial color="#5c4030" />
+    </mesh>
+  );
+}
+
+function Basket({ scale = 1, color = "#c4a574" }: { scale?: number; color?: string }) {
+  return (
+    <group scale={scale}>
+      <mesh position={[0, 0.08, 0]} castShadow>
+        <cylinderGeometry args={[0.12, 0.1, 0.14, 8]} />
+        <meshStandardMaterial color={color} />
+      </mesh>
+      <mesh position={[0, 0.14, 0]}>
+        <torusGeometry args={[0.11, 0.015, 4, 10]} />
+        <meshStandardMaterial color="#8b6914" />
+      </mesh>
+    </group>
+  );
+}
+
+function ProduceMound({ color, scale = 1 }: { color: string; scale?: number }) {
+  return (
+    <group scale={scale}>
+      <mesh position={[0, 0.08, 0]} castShadow>
+        <sphereGeometry args={[0.1, 6, 6]} />
+        <meshStandardMaterial color={color} />
+      </mesh>
+      <mesh position={[0.08, 0.06, 0.05]}>
+        <sphereGeometry args={[0.07, 5, 5]} />
+        <meshStandardMaterial color={color} />
+      </mesh>
+      <mesh position={[-0.06, 0.05, -0.04]}>
+        <sphereGeometry args={[0.06, 5, 5]} />
+        <meshStandardMaterial color={color} />
+      </mesh>
+    </group>
+  );
+}
+
+function ClothBolt({ color, rot = 0 }: { color: string; rot?: number }) {
+  return (
+    <mesh rotation={[1.2, rot, 0.2]} castShadow>
+      <cylinderGeometry args={[0.06, 0.06, 0.35, 6]} />
+      <meshStandardMaterial color={color} />
+    </mesh>
+  );
+}
+
+function MarketStallUnit({
+  position,
+  rot = 0,
+  tarp,
+  width = 1.1,
+  depth = 0.9,
+  variant = 0,
+}: {
+  position: [number, number, number];
+  rot?: number;
+  tarp: string;
+  width?: number;
+  depth?: number;
+  variant?: number;
+}) {
+  const leanL = variant % 2 === 0 ? -0.04 : 0.03;
+  const leanR = variant % 2 === 0 ? 0.05 : -0.02;
+  return (
+    <group position={position} rotation={[0, rot, 0]}>
+      {/* Poles — slightly irregular */}
+      <group position={[-width * 0.42, 0, -depth * 0.35]}>
+        <MarketPole h={1.35 + (variant % 3) * 0.05} lean={leanL} />
+      </group>
+      <group position={[width * 0.42, 0, -depth * 0.35]}>
+        <MarketPole h={1.3 + (variant % 2) * 0.08} lean={leanR} />
+      </group>
+      <group position={[-width * 0.4, 0, depth * 0.35]}>
+        <MarketPole h={1.25} lean={-leanR} />
+      </group>
+      <group position={[width * 0.4, 0, depth * 0.38]}>
+        <MarketPole h={1.28} lean={leanL} />
+      </group>
+
+      {/* Cross beams */}
+      <mesh position={[0, 1.22, -depth * 0.35]} rotation={[0, 0, 0.02]}>
+        <boxGeometry args={[width * 0.85, 0.04, 0.04]} />
+        <meshStandardMaterial color="#6b5344" />
+      </mesh>
+      <mesh position={[0, 1.18, depth * 0.35]} rotation={[0, 0, -0.03]}>
+        <boxGeometry args={[width * 0.82, 0.04, 0.04]} />
+        <meshStandardMaterial color="#6b5344" />
+      </mesh>
+
+      {/* Roof: tarp or tin */}
+      <group position={[0, 1.28, 0]}>
+        {variant % 3 === 1 ? (
+          <CorrugatedTin w={width * 1.05} d={depth * 1.1} color={variant % 2 ? "#7a8b8c" : "#9aa7a8"} />
+        ) : (
+          <TarpRoof w={width * 1.05} d={depth * 1.05} color={tarp} sag={0.1 + (variant % 3) * 0.03} />
+        )}
+      </group>
+
+      {/* Display table — plank, not cube counter */}
+      <mesh position={[0, 0.42, 0.05]} rotation={[0.02, 0, 0.01]} castShadow>
+        <boxGeometry args={[width * 0.75, 0.05, depth * 0.55]} />
+        <meshStandardMaterial color="#a67c52" />
+      </mesh>
+      {/* Table legs thin */}
+      {[[-0.3, -0.2], [0.3, -0.2], [-0.3, 0.15], [0.3, 0.15]].map(([lx, lz], i) => (
+        <mesh key={i} position={[lx * width, 0.2, lz]}>
+          <cylinderGeometry args={[0.025, 0.03, 0.4, 4]} />
+          <meshStandardMaterial color="#5c4030" />
+        </mesh>
+      ))}
+
+      {/* Ground mat / poly tarp underfoot */}
+      <mesh position={[0, 0.02, 0.1]} rotation={[-Math.PI / 2, 0, 0.1 * (variant % 3 - 1)]} receiveShadow>
+        <planeGeometry args={[width * 0.7, depth * 0.5]} />
+        <meshStandardMaterial color={variant % 2 ? "#5c5346" : "#3d6b3a"} transparent opacity={0.75} side={2} />
+      </mesh>
+
+      {/* Goods by variant */}
+      {variant % 4 === 0 && (
+        <>
+          <group position={[-0.2, 0.48, 0.05]}>
+            <ProduceMound color="#c45c26" scale={1.1} />
+          </group>
+          <group position={[0.15, 0.48, 0.1]}>
+            <ProduceMound color="#5a7d4e" scale={0.9} />
+          </group>
+          <group position={[0.25, 0.45, -0.1]}>
+            <Basket color="#c4a574" />
+          </group>
+        </>
+      )}
+      {variant % 4 === 1 && (
+        <>
+          <group position={[-0.15, 0.55, 0]}>
+            <ClothBolt color="#c45c26" />
+          </group>
+          <group position={[0.05, 0.52, 0.08]}>
+            <ClothBolt color="#1d6f8a" rot={0.4} />
+          </group>
+          <group position={[0.22, 0.5, -0.05]}>
+            <ClothBolt color="#e8a54b" rot={-0.3} />
+          </group>
+        </>
+      )}
+      {variant % 4 === 2 && (
+        <>
+          <group position={[-0.2, 0.45, 0]}>
+            <Basket scale={1.1} color="#b8956a" />
+          </group>
+          <group position={[0.1, 0.45, 0.12]}>
+            <Basket scale={0.9} color="#8b6914" />
+          </group>
+          <mesh position={[0.25, 0.5, -0.05]}>
+            <sphereGeometry args={[0.08, 6, 6]} />
+            <meshStandardMaterial color="#f5f0e6" />
+          </mesh>
+        </>
+      )}
+      {variant % 4 === 3 && (
+        <>
+          <mesh position={[-0.15, 0.5, 0]} castShadow>
+            <cylinderGeometry args={[0.07, 0.07, 0.2, 6]} />
+            <meshStandardMaterial color="#7c2d12" />
+          </mesh>
+          <mesh position={[0.05, 0.48, 0.1]}>
+            <cylinderGeometry args={[0.05, 0.05, 0.16, 6]} />
+            <meshStandardMaterial color="#b45309" />
+          </mesh>
+          <group position={[0.22, 0.45, -0.08]}>
+            <ProduceMound color="#dc2626" scale={0.75} />
+          </group>
+        </>
+      )}
+
+      {/* Hanging strip / price rag */}
+      <mesh position={[width * 0.15, 1.0, depth * 0.2]} rotation={[0.2, 0, 0.15]}>
+        <planeGeometry args={[0.2, 0.35]} />
+        <meshStandardMaterial color={tarp} side={2} transparent opacity={0.85} />
+      </mesh>
+    </group>
+  );
+}
+
+function MarketStalls() {
+  /** Irregular rows — like Mile 1 / oil mill road density */
+  const stalls: {
+    x: number;
+    z: number;
+    rot: number;
+    tarp: string;
+    w?: number;
+    d?: number;
+    v: number;
+  }[] = [
+    { x: -4.4, z: 3.4, rot: 0.15, tarp: "#e8a54b", v: 0 },
+    { x: -3.3, z: 3.55, rot: -0.08, tarp: "#c45c26", w: 1.0, v: 1 },
+    { x: -2.25, z: 3.35, rot: 0.22, tarp: "#5f9e8f", v: 2 },
+    { x: -4.55, z: 2.45, rot: 0.05, tarp: "#d97706", w: 0.95, v: 3 },
+    { x: -3.45, z: 2.55, rot: -0.18, tarp: "#0d9488", v: 0 },
+    { x: -2.4, z: 2.4, rot: 0.12, tarp: "#b45309", w: 1.15, v: 1 },
+    { x: -5.35, z: 3.0, rot: 0.55, tarp: "#ca8a04", w: 0.9, d: 0.85, v: 2 },
+    { x: -1.55, z: 2.85, rot: -0.45, tarp: "#dc2626", w: 0.95, v: 3 },
+    { x: -4.0, z: 1.85, rot: 0.1, tarp: "#65a30d", v: 1 },
+    { x: -2.9, z: 1.75, rot: -0.12, tarp: "#ea580c", w: 1.05, v: 2 },
+    { x: -1.85, z: 1.95, rot: 0.28, tarp: "#0891b2", v: 0 },
+    { x: -5.1, z: 1.9, rot: 0.7, tarp: "#a16207", w: 0.88, v: 3 },
+  ];
+
+  return (
+    <group>
+      {/* Packed laterite / stained ground under the market cluster */}
+      <mesh position={[-3.3, 0.025, 2.7]} rotation={[-Math.PI / 2, 0, 0.05]} receiveShadow>
+        <circleGeometry args={[2.8, 16]} />
+        <meshStandardMaterial color="#9a7b52" />
+      </mesh>
+      <mesh position={[-3.5, 0.03, 2.9]} rotation={[-Math.PI / 2, 0, -0.2]} receiveShadow>
+        <circleGeometry args={[1.6, 12]} />
+        <meshStandardMaterial color="#8b6914" transparent opacity={0.5} />
+      </mesh>
+
+      {/* Shared shade spine — long irregular corridor of tarps */}
+      <group position={[-3.3, 1.55, 2.85]}>
+        <mesh rotation={[0.08, 0.1, 0]} castShadow>
+          <planeGeometry args={[3.2, 1.4]} />
+          <meshStandardMaterial color="#c45c26" side={2} transparent opacity={0.75} />
+        </mesh>
+      </group>
+      <group position={[-3.2, 1.48, 2.2]}>
+        <mesh rotation={[-0.06, -0.05, 0.02]} castShadow>
+          <planeGeometry args={[2.6, 1.1]} />
+          <meshStandardMaterial color="#e8a54b" side={2} transparent opacity={0.7} />
+        </mesh>
+      </group>
+
+      {stalls.map((s, i) => (
+        <MarketStallUnit
+          key={i}
+          position={[s.x, 0, s.z]}
+          rot={s.rot}
+          tarp={s.tarp}
+          width={s.w}
+          depth={s.d}
+          variant={s.v}
+        />
+      ))}
+
+      {/* Central aisle clutter: basins, sacks, stool */}
+      <mesh position={[-3.35, 0.15, 2.95]} castShadow>
+        <cylinderGeometry args={[0.2, 0.22, 0.25, 10]} />
+        <meshStandardMaterial color="#64748b" metalness={0.4} roughness={0.5} />
+      </mesh>
+      <mesh position={[-3.0, 0.12, 3.15]} castShadow>
+        <sphereGeometry args={[0.16, 6, 6]} />
+        <meshStandardMaterial color="#d6c6a1" />
+      </mesh>
+      <mesh position={[-3.55, 0.2, 2.55]} castShadow>
+        <cylinderGeometry args={[0.12, 0.14, 0.35, 6]} />
+        <meshStandardMaterial color="#5c4030" />
+      </mesh>
+      {/* Smoke / suya grill suggestion */}
+      <group position={[-4.7, 0, 3.55]}>
+        <mesh position={[0, 0.25, 0]} castShadow>
+          <cylinderGeometry args={[0.2, 0.22, 0.35, 8]} />
+          <meshStandardMaterial color="#1f2937" />
+        </mesh>
+        <mesh position={[0, 0.48, 0]}>
+          <cylinderGeometry args={[0.22, 0.22, 0.06, 8]} />
+          <meshStandardMaterial color="#374151" />
+        </mesh>
+        <mesh position={[0, 0.7, 0]}>
+          <coneGeometry args={[0.08, 0.25, 5]} />
+          <meshStandardMaterial color="#6b7280" transparent opacity={0.35} />
+        </mesh>
+      </group>
+    </group>
+  );
+}
+
 
 function Billboard({
   x,
