@@ -2,6 +2,9 @@ import { create } from "zustand";
 
 export type RoamMode = "orbit" | "walk" | "ride";
 
+/** Locomotion for character animation */
+export type MoveState = "idle" | "walk" | "run" | "ride";
+
 /** All player mobility options */
 export type TransportId =
   | "foot"
@@ -69,6 +72,7 @@ interface RoamState {
   mountedVehicleId: string | null;
   position: [number, number, number];
   facing: number;
+  moveState: MoveState;
   nearDistrictId: string | null;
   nearVehicleId: string | null;
   inSafehouseId: string | null;
@@ -87,6 +91,7 @@ interface RoamState {
   setTransport: (t: TransportId) => void;
   setPosition: (pos: [number, number, number]) => void;
   setFacing: (yaw: number) => void;
+  setMoveState: (s: MoveState) => void;
   setNearDistrict: (id: string | null) => void;
   setNearVehicle: (id: string | null) => void;
   setInSafehouse: (id: string | null) => void;
@@ -190,6 +195,7 @@ export const useRoamStore = create<RoamState>((set, get) => ({
   mountedVehicleId: null,
   position: [0, 0.6, 6],
   facing: 0,
+  moveState: "idle",
   nearDistrictId: null,
   nearVehicleId: null,
   inSafehouseId: null,
@@ -219,6 +225,7 @@ export const useRoamStore = create<RoamState>((set, get) => ({
   },
   setPosition: (position) => set({ position }),
   setFacing: (facing) => set({ facing }),
+  setMoveState: (moveState) => set({ moveState }),
   setNearDistrict: (nearDistrictId) => set({ nearDistrictId }),
   setNearVehicle: (nearVehicleId) => set({ nearVehicleId }),
   setInSafehouse: (inSafehouseId) => set({ inSafehouseId }),
@@ -228,6 +235,7 @@ export const useRoamStore = create<RoamState>((set, get) => ({
       activeMission: mission,
       missionLog: [`Mission started: ${mission.title}`],
       mode: "walk",
+      moveState: "ride",
     }),
 
   completeStep: (stepId) => {
@@ -351,6 +359,7 @@ export const useRoamStore = create<RoamState>((set, get) => ({
       position: [v.position[0], 0.6, v.position[2]],
       facing: v.facing,
       mode: "walk",
+      moveState: "ride",
       missionLog: [`Entered ${TRANSPORT_LABEL[v.kind]}`, ...get().missionLog].slice(0, 10),
     });
     return true;
@@ -372,6 +381,7 @@ export const useRoamStore = create<RoamState>((set, get) => ({
       ),
       mountedVehicleId: null,
       transport: "foot",
+      moveState: "idle",
       missionLog: [`Exited vehicle — on foot`, ...get().missionLog].slice(0, 10),
     });
     return true;

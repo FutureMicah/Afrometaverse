@@ -13,6 +13,8 @@ type Props = {
   scale?: number;
   animate?: boolean;
   detail?: boolean;
+  /** idle | walk | run | ride — drives limb cycles */
+  moveState?: "idle" | "walk" | "run" | "ride";
 };
 
 function itemColor(id: string | null | undefined, fallback: string) {
@@ -71,8 +73,14 @@ export function StylizedCharacter({
   scale = 1,
   animate = true,
   detail = true,
+  moveState = "idle",
 }: Props) {
   const root = useRef<THREE.Group>(null);
+  const leftLeg = useRef<THREE.Group>(null);
+  const rightLeg = useRef<THREE.Group>(null);
+  const leftArm = useRef<THREE.Group>(null);
+  const rightArm = useRef<THREE.Group>(null);
+  const torso = useRef<THREE.Group>(null);
   const isFemale = appearance.gender === "female";
   const [faceMap, setFaceMap] = useState<THREE.Texture | null>(null);
 
@@ -134,9 +142,40 @@ export function StylizedCharacter({
   useFrame(({ clock }) => {
     if (!animate || !root.current) return;
     const t = clock.getElapsedTime();
-    root.current.position.y = Math.sin(t * 1.45) * 0.014;
-    root.current.rotation.y = Math.sin(t * 0.38) * 0.03 + postureLean;
-    root.current.rotation.z = postureLean * 0.28;
+
+    if (moveState === "ride") {
+      // Seated-ish: legs tucked, slight vehicle bob
+      root.current.position.y = Math.sin(t * 8) * 0.02;
+      if (leftLeg.current) leftLeg.current.rotation.x = -0.85;
+      if (rightLeg.current) rightLeg.current.rotation.x = -0.85;
+      if (leftArm.current) leftArm.current.rotation.x = -0.4;
+      if (rightArm.current) rightArm.current.rotation.x = -0.4;
+      if (torso.current) torso.current.rotation.x = 0.12;
+      return;
+    }
+
+    const moving = moveState === "walk" || moveState === "run";
+    const pace = moveState === "run" ? 11 : moveState === "walk" ? 7 : 1.4;
+    const swing = moveState === "run" ? 0.85 : moveState === "walk" ? 0.55 : 0.08;
+    const bob = moveState === "run" ? 0.045 : moveState === "walk" ? 0.025 : 0.012;
+
+    root.current.position.y = Math.sin(t * pace) * bob;
+    root.current.rotation.y = (moving ? 0 : Math.sin(t * 0.38) * 0.03) + postureLean;
+    root.current.rotation.z = postureLean * 0.28 + (moving ? Math.sin(t * pace) * 0.03 : 0);
+
+    const legA = Math.sin(t * pace) * swing;
+    const legB = Math.sin(t * pace + Math.PI) * swing;
+    const armA = Math.sin(t * pace + Math.PI) * swing * 0.75;
+    const armB = Math.sin(t * pace) * swing * 0.75;
+
+    if (leftLeg.current) leftLeg.current.rotation.x = legA;
+    if (rightLeg.current) rightLeg.current.rotation.x = legB;
+    if (leftArm.current) leftArm.current.rotation.x = armA;
+    if (rightArm.current) rightArm.current.rotation.x = armB;
+    if (torso.current) {
+      torso.current.rotation.y = moving ? Math.sin(t * pace) * 0.06 : 0;
+      torso.current.rotation.x = moveState === "run" ? 0.12 : 0;
+    }
   });
 
   const eyeR =
@@ -178,42 +217,42 @@ export function StylizedCharacter({
             <sphereGeometry args={[0.26 * hip, 20, 16]} />
             <ClothMat color={bottomC} denim={isDenimBottom} />
           </mesh>
-          {/* Upper thighs */}
-          <mesh position={[-0.12 * hip, 0.55, 0]} castShadow>
-            <capsuleGeometry args={[0.13 * hip, 0.26, 8, 14]} />
-            <ClothMat color={bottomC} denim={isDenimBottom} />
-          </mesh>
-          <mesh position={[0.12 * hip, 0.55, 0]} castShadow>
-            <capsuleGeometry args={[0.13 * hip, 0.26, 8, 14]} />
-            <ClothMat color={bottomC} denim={isDenimBottom} />
-          </mesh>
-          {/* Knees */}
-          <mesh position={[-0.12 * hip, 0.36, 0.02]}>
-            <sphereGeometry args={[0.1 * hip, 12, 12]} />
-            <ClothMat color={bottomC} denim={isDenimBottom} />
-          </mesh>
-          <mesh position={[0.12 * hip, 0.36, 0.02]}>
-            <sphereGeometry args={[0.1 * hip, 12, 12]} />
-            <ClothMat color={bottomC} denim={isDenimBottom} />
-          </mesh>
-          {/* Calves */}
-          <mesh position={[-0.11 * hip, 0.18, 0.03]} castShadow>
-            <capsuleGeometry args={[0.095 * hip, 0.2, 8, 12]} />
-            <ClothMat color={bottomC} denim={isDenimBottom} />
-          </mesh>
-          <mesh position={[0.11 * hip, 0.18, 0.03]} castShadow>
-            <capsuleGeometry args={[0.095 * hip, 0.2, 8, 12]} />
-            <ClothMat color={bottomC} denim={isDenimBottom} />
-          </mesh>
-          {/* Ankles */}
-          <mesh position={[-0.11 * hip, 0.08, 0.04]}>
-            <sphereGeometry args={[0.07 * hip, 10, 10]} />
-            <ClothMat color={bottomC} denim={isDenimBottom} />
-          </mesh>
-          <mesh position={[0.11 * hip, 0.08, 0.04]}>
-            <sphereGeometry args={[0.07 * hip, 10, 10]} />
-            <ClothMat color={bottomC} denim={isDenimBottom} />
-          </mesh>
+          <group ref={leftLeg} position={[-0.12 * hip, 0.78, 0]}>
+            <mesh position={[0, -0.23, 0]} castShadow>
+              <capsuleGeometry args={[0.13 * hip, 0.26, 8, 14]} />
+              <ClothMat color={bottomC} denim={isDenimBottom} />
+            </mesh>
+            <mesh position={[0, -0.42, 0.02]}>
+              <sphereGeometry args={[0.1 * hip, 12, 12]} />
+              <ClothMat color={bottomC} denim={isDenimBottom} />
+            </mesh>
+            <mesh position={[0.01, -0.6, 0.03]} castShadow>
+              <capsuleGeometry args={[0.095 * hip, 0.2, 8, 12]} />
+              <ClothMat color={bottomC} denim={isDenimBottom} />
+            </mesh>
+            <mesh position={[0.01, -0.7, 0.04]}>
+              <sphereGeometry args={[0.07 * hip, 10, 10]} />
+              <ClothMat color={bottomC} denim={isDenimBottom} />
+            </mesh>
+          </group>
+          <group ref={rightLeg} position={[0.12 * hip, 0.78, 0]}>
+            <mesh position={[0, -0.23, 0]} castShadow>
+              <capsuleGeometry args={[0.13 * hip, 0.26, 8, 14]} />
+              <ClothMat color={bottomC} denim={isDenimBottom} />
+            </mesh>
+            <mesh position={[0, -0.42, 0.02]}>
+              <sphereGeometry args={[0.1 * hip, 12, 12]} />
+              <ClothMat color={bottomC} denim={isDenimBottom} />
+            </mesh>
+            <mesh position={[-0.01, -0.6, 0.03]} castShadow>
+              <capsuleGeometry args={[0.095 * hip, 0.2, 8, 12]} />
+              <ClothMat color={bottomC} denim={isDenimBottom} />
+            </mesh>
+            <mesh position={[-0.01, -0.7, 0.04]}>
+              <sphereGeometry args={[0.07 * hip, 10, 10]} />
+              <ClothMat color={bottomC} denim={isDenimBottom} />
+            </mesh>
+          </group>
           {/* Seam + belt */}
           <mesh position={[0, 0.58, 0.13]}>
             <boxGeometry args={[0.012, 0.48, 0.01]} />
@@ -272,6 +311,7 @@ export function StylizedCharacter({
       ))}
 
       {/* ——— TORSO ——— */}
+      <group ref={torso}>
       <mesh position={[0, 1.05, 0]} castShadow>
         <capsuleGeometry args={[0.27 * waist, 0.4, 8, 16]} />
         <ClothMat color={topC} soft={isSoftTop} />
@@ -304,6 +344,7 @@ export function StylizedCharacter({
         <ClothMat color={topC} soft={isSoftTop} />
       </mesh>
 
+      </group>
       {/* ——— OUTERWEAR ——— */}
       {outerC && (
         <group>
@@ -363,47 +404,55 @@ export function StylizedCharacter({
         </group>
       )}
 
-      {/* ——— ARMS ——— */}
-      {[-1, 1].map((side) => (
-        <group key={side}>
-          <mesh
-            position={[side * 0.4 * shoulder, 1.05, 0]}
-            rotation={[0.15, 0, side * 0.55]}
-            scale={[sleeveW, 1, sleeveW]}
-            castShadow
-          >
-            <capsuleGeometry args={[0.095, 0.36, 8, 12]} />
-            <ClothMat color={outerC ?? topC} soft={!outerC} fur={isFur} />
-          </mesh>
-          <mesh
-            position={[side * 0.52 * shoulder, 0.72, 0.06]}
-            rotation={[0.35, 0, side * 0.35]}
-            scale={[sleeveW, 1, sleeveW]}
-            castShadow
-          >
-            <capsuleGeometry args={[0.08, 0.22, 8, 10]} />
-            <ClothMat color={outerC ?? topC} soft={!outerC} fur={isFur} />
-          </mesh>
-          {/* Hand */}
-          <mesh position={[side * 0.55 * shoulder, 0.55, 0.1]} castShadow>
-            <sphereGeometry args={[0.08, 14, 12]} />
-            <SkinMat color={appearance.skin} />
-          </mesh>
-          {/* Fingers */}
-          {[-0.035, 0, 0.035].map((oz, i) => (
-            <group key={i}>
-              <mesh position={[side * 0.55 * shoulder, 0.46, 0.1 + oz]} castShadow>
-                <capsuleGeometry args={[0.018, 0.05, 4, 6]} />
-                <SkinMat color={appearance.skin} />
-              </mesh>
-              <mesh position={[side * 0.55 * shoulder, 0.42, 0.12 + oz]}>
-                <boxGeometry args={[0.014, 0.01, 0.012]} />
-                <meshStandardMaterial color={appearance.nailColor || "#f8fafc"} roughness={0.35} />
-              </mesh>
-            </group>
-          ))}
-        </group>
-      ))}
+      {/* ——— ARMS (animated) ——— */}
+      <group ref={leftArm} position={[0, 1.32, 0]}>
+        <mesh
+          position={[-0.4 * shoulder, -0.27, 0]}
+          rotation={[0.15, 0, -0.55]}
+          scale={[sleeveW, 1, sleeveW]}
+          castShadow
+        >
+          <capsuleGeometry args={[0.095, 0.36, 8, 12]} />
+          <ClothMat color={outerC ?? topC} soft={!outerC} fur={isFur} />
+        </mesh>
+        <mesh
+          position={[-0.52 * shoulder, -0.6, 0.06]}
+          rotation={[0.35, 0, -0.35]}
+          scale={[sleeveW, 1, sleeveW]}
+          castShadow
+        >
+          <capsuleGeometry args={[0.08, 0.22, 8, 10]} />
+          <ClothMat color={outerC ?? topC} soft={!outerC} fur={isFur} />
+        </mesh>
+        <mesh position={[-0.55 * shoulder, -0.77, 0.1]} castShadow>
+          <sphereGeometry args={[0.08, 14, 12]} />
+          <SkinMat color={appearance.skin} />
+        </mesh>
+      </group>
+      <group ref={rightArm} position={[0, 1.32, 0]}>
+        <mesh
+          position={[0.4 * shoulder, -0.27, 0]}
+          rotation={[0.15, 0, 0.55]}
+          scale={[sleeveW, 1, sleeveW]}
+          castShadow
+        >
+          <capsuleGeometry args={[0.095, 0.36, 8, 12]} />
+          <ClothMat color={outerC ?? topC} soft={!outerC} fur={isFur} />
+        </mesh>
+        <mesh
+          position={[0.52 * shoulder, -0.6, 0.06]}
+          rotation={[0.35, 0, 0.35]}
+          scale={[sleeveW, 1, sleeveW]}
+          castShadow
+        >
+          <capsuleGeometry args={[0.08, 0.22, 8, 10]} />
+          <ClothMat color={outerC ?? topC} soft={!outerC} fur={isFur} />
+        </mesh>
+        <mesh position={[0.55 * shoulder, -0.77, 0.1]} castShadow>
+          <sphereGeometry args={[0.08, 14, 12]} />
+          <SkinMat color={appearance.skin} />
+        </mesh>
+      </group>
 
       {/* ——— NECK + HEAD ——— */}
       <mesh position={[0, 1.44, 0]} castShadow>

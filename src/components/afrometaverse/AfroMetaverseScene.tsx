@@ -9,6 +9,7 @@ import {
   useRoamStore,
   type TransportId,
 } from "@/stores/roamStore";
+
 import { useCharacterStore } from "@/stores/characterStore";
 import { StylizedCharacter } from "@/components/afrometaverse/characters/StylizedCharacter";
 
@@ -484,8 +485,18 @@ function SimpleVehicle({
 function PlayerAvatar({ transport }: { transport: TransportId }) {
   const appearance = useCharacterStore((s) => s.appearance);
   const equipped = useCharacterStore((s) => s.equipped);
+  const moveState = useRoamStore((s) => s.moveState);
   void transport;
-  return <StylizedCharacter appearance={appearance} equipped={equipped} scale={1} animate />;
+  return (
+    <StylizedCharacter
+      appearance={appearance}
+      equipped={equipped}
+      scale={1}
+      animate
+      detail
+      moveState={moveState}
+    />
+  );
 }
 
 function nearestDistrict(x: number, z: number): string | null {
@@ -514,6 +525,7 @@ function PlayerController({
   const mountedVehicleId = useRoamStore((s) => s.mountedVehicleId);
   const setPosition = useRoamStore((s) => s.setPosition);
   const setFacing = useRoamStore((s) => s.setFacing);
+  const setMoveState = useRoamStore((s) => s.setMoveState);
   const setNearDistrict = useRoamStore((s) => s.setNearDistrict);
   const setNearVehicle = useRoamStore((s) => s.setNearVehicle);
   const setInSafehouse = useRoamStore((s) => s.setInSafehouse);
@@ -552,10 +564,16 @@ function PlayerController({
     if (keys.current["s"] || keys.current["arrowdown"]) dz += 1;
     if (keys.current["a"] || keys.current["arrowleft"]) dx -= 1;
     if (keys.current["d"] || keys.current["arrowright"]) dx += 1;
+    const sprint = !!(keys.current["shift"]);
     if (dx !== 0 || dz !== 0) {
+      const isFoot = transport === "foot";
+      const speedMul = isFoot && sprint ? 1.65 : 1;
+      if (mountedVehicleId) setMoveState("ride");
+      else if (isFoot) setMoveState(sprint ? "run" : "walk");
+      else setMoveState("walk");
       const len = Math.hypot(dx, dz) || 1;
-      dx = (dx / len) * speed * dt;
-      dz = (dz / len) * speed * dt;
+      dx = (dx / len) * speed * speedMul * dt;
+      dz = (dz / len) * speed * speedMul * dt;
       let nextX = THREE.MathUtils.clamp(group.current.position.x + dx, BOUNDS.minX, BOUNDS.maxX);
       let nextZ = THREE.MathUtils.clamp(group.current.position.z + dz, BOUNDS.minZ, BOUNDS.maxZ);
       if (transport === "ferry") {
@@ -572,6 +590,10 @@ function PlayerController({
       const near = nearestDistrict(nextX, nextZ);
       setNearDistrict(near);
       onDistrictChange?.(near);
+    } else if (!mountedVehicleId) {
+      setMoveState("idle");
+    } else {
+      setMoveState("ride");
     }
     const px = group.current.position.x;
     const pz = group.current.position.z;
@@ -791,7 +813,7 @@ function NpcCrowd() {
           }}
           position={[n.x, 0, n.z]}
         >
-          <StylizedCharacter appearance={n.appearance} equipped={n.equipped} scale={0.95} />
+          <StylizedCharacter appearance={n.appearance} equipped={n.equipped} scale={0.95} animate moveState="walk" />
         </group>
       ))}
     </group>
