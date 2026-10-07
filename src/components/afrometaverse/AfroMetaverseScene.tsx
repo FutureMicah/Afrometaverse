@@ -485,7 +485,7 @@ function PlayerAvatar({ transport }: { transport: TransportId }) {
   const appearance = useCharacterStore((s) => s.appearance);
   const equipped = useCharacterStore((s) => s.equipped);
   void transport;
-  return <StylizedCharacter appearance={appearance} equipped={equipped} scale={1} />;
+  return <StylizedCharacter appearance={appearance} equipped={equipped} scale={1} animate />;
 }
 
 function nearestDistrict(x: number, z: number): string | null {

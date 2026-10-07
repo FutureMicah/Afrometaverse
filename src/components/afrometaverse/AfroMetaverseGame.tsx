@@ -368,6 +368,7 @@ export function AfroMetaverseGame() {
   const setHeight = useCharacterStore((s) => s.setHeight);
   const setSkin = useCharacterStore((s) => s.setSkin);
   const setHair = useCharacterStore((s) => s.setHair);
+  const setHairColor = useCharacterStore((s) => s.setHairColor);
   const equipItem = useCharacterStore((s) => s.equip);
   const ownItem = useCharacterStore((s) => s.ownItem);
   const canWear = useCharacterStore((s) => s.canWear);
@@ -1101,6 +1102,26 @@ export function AfroMetaverseGame() {
                     </button>
                   ))}
                 </div>
+                <div className="am-character-row">
+                  <span className="am-gear-label">Hair colour</span>
+                  {["#1a1a1a", "#3b2f2f", "#6b4423", "#a3e635", "#7c3aed", "#c4c4c4"].map((hex) => (
+                    <button
+                      key={hex}
+                      type="button"
+                      className={`am-skin-swatch ${appearance.hairColor === hex ? "am-skin-active" : ""}`}
+                      style={{ background: hex }}
+                      onClick={() => setHairColor(hex)}
+                      aria-label={`Hair ${hex}`}
+                    />
+                  ))}
+                </div>
+                <p className="am-panel-tip">
+                  Wearing: white tee starter energy ·{" "}
+                  {CLOTHING_CATALOG.find((c) => c.id === equipped.top)?.name ?? "Top"} ·{" "}
+                  {CLOTHING_CATALOG.find((c) => c.id === equipped.bottom)?.name ?? "Jeans"}
+                  {equipped.outer ? ` · ${CLOTHING_CATALOG.find((c) => c.id === equipped.outer)?.name}` : ""}
+                  {equipped.hat ? ` · ${CLOTHING_CATALOG.find((c) => c.id === equipped.hat)?.name}` : ""}
+                </p>
               </div>
 
                 className="am-city-wrap am-city-canvas"
