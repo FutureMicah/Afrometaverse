@@ -375,6 +375,8 @@ export function AfroMetaverseGame() {
   const ownItem = useCharacterStore((s) => s.ownItem);
   const canWear = useCharacterStore((s) => s.canWear);
 
+  const outfitMatch = useMemo(() => matchOutfit(equipped), [equipped]);
+
   useEffect(() => {
     hydrateCharacterStore();
   }, []);
