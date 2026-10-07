@@ -346,7 +346,51 @@ export function AfroMetaverseGame() {
   const inSafehouseId = useRoamStore((s) => s.inSafehouseId);
   const worldVehicles = useRoamStore((s) => s.worldVehicles);
   const enterNearestVehicle = useRoamStore((s) => s.enterNearestVehicle);
+
   const exitVehicle = useRoamStore((s) => s.exitVehicle);
+
+  // Client-side persistence for heat / gear (Cloud citizen row optional later)
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem("am-roam-v1");
+      if (!raw) return;
+      const data = JSON.parse(raw) as {
+        heatPoints?: number;
+        gear?: { equipped: string; unlocked: string[]; ammo: Record<string, number> };
+      };
+      const st = useRoamStore.getState();
+      if (typeof data.heatPoints === "number") {
+        st.coolHeat(100);
+        if (data.heatPoints > 0) st.addHeat(data.heatPoints);
+      }
+      if (data.gear?.equipped) {
+        for (const id of data.gear.unlocked ?? []) {
+          st.unlockGear(id as import("@/stores/roamStore").GearId);
+        }
+        st.equipGear(data.gear.equipped as import("@/stores/roamStore").GearId);
+      }
+    } catch {
+      /* ignore corrupt */
+    }
+  }, []);
+
+  useEffect(() => {
+    const unsub = useRoamStore.subscribe((s) => {
+      try {
+        localStorage.setItem(
+          "am-roam-v1",
+          JSON.stringify({
+            heatPoints: s.heatPoints,
+            gear: s.gear,
+          }),
+        );
+      } catch {
+        /* quota */
+      }
+    });
+    return unsub;
+  }, []);
+
   const setRoamMode = useRoamStore((s) => s.setMode);
   const setTransport = useRoamStore((s) => s.setTransport);
   const startMission = useRoamStore((s) => s.startMission);
@@ -848,6 +892,9 @@ export function AfroMetaverseGame() {
                   <button type="button" className="am-btn am-btn-ghost" onClick={() => coolHeat(15)}>
                     Lay low (−heat)
                   </button>
+                )}
+                {wantedLevel >= 2 && (
+                  <span className="am-chip am-kind am-kind-heat">Patrols active — keep distance or use a safehouse</span>
                 )}
               </div>
 

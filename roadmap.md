@@ -1,18 +1,18 @@
 # Roadmap — AfroMetaverse
 
-## Vehicle system (v1)
-- [x] Enter / exit (F or HUD)
-- [x] Foot, bicycle, scooter, keke, okada, taxi, ferry
-- [x] Parked world vehicles + proximity glow
-- [x] Drive with WASD while mounted
-- [x] Ferry water band constraint
-- [x] Safehouses cool heat over time
-- [x] NPC pedestrians (simple roam)
-- [x] AI traffic on paths
+## Done
+- [x] Free roam, nested missions, heat, gear, minimap
+- [x] Dense PH market + de-boxed city fabric
+- [x] Animals, traffic, click hotspots
+- [x] Vehicle enter/exit: foot, bike, scooter, keke, okada, taxi, ferry
+- [x] Safehouses cool heat
+- [x] NPC pedestrians
+- [x] Wanted patrols (spot player at 2+ stars)
+- [x] Extra street detail (wheelbarrow, drums, nets, bumps)
+- [x] Client persist heat/gear (localStorage)
 
-## Still open
-- [ ] Persist heat/gear/transport on citizen save
-- [ ] Patrol AI reacting to wanted level
-- [ ] Interiors
+## Open
+- [ ] Cloud citizen fields for heat/gear
+- [ ] Building interiors
 - [ ] GLTF photoreal assets
-- [ ] Cloud SQL / Realtime (user-owned)
+- [ ] Mobile touch controls

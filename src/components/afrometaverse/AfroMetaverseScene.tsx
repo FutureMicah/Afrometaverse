@@ -2717,7 +2717,169 @@ function LivingAmbience() {
 }
 
 
+
+function WantedPatrols() {
+  const wantedLevel = useRoamStore((s) => s.wantedLevel);
+  const playerPos = useRoamStore((s) => s.position);
+  const addHeat = useRoamStore((s) => s.addHeat);
+  const pushLog = useRoamStore((s) => s.pushLog);
+  const patrolCount = Math.min(5, wantedLevel + (wantedLevel > 0 ? 1 : 0));
+  const refs = useRef<(THREE.Group | null)[]>([]);
+  const alertCd = useRef(0);
+
+  const seeds = useMemo(
+    () =>
+      [
+        { x: 0, z: 0.2, phase: 0 },
+        { x: -3, z: 2.5, phase: 1.2 },
+        { x: 5, z: 1.5, phase: 2.1 },
+        { x: -5, z: -2, phase: 0.6 },
+        { x: 2, z: -2.5, phase: 1.7 },
+      ] as { x: number; z: number; phase: number }[],
+    [],
+  );
+
+  useFrame(({ clock }, dt) => {
+    if (patrolCount === 0) return;
+    const t = clock.getElapsedTime();
+    alertCd.current = Math.max(0, alertCd.current - dt);
+    for (let i = 0; i < patrolCount; i++) {
+      const g = refs.current[i];
+      const s = seeds[i];
+      if (!g || !s) continue;
+      // Sweep loops; speed up when wanted is high
+      const spd = 0.35 + wantedLevel * 0.08;
+      const ox = Math.sin(t * spd + s.phase) * (3.5 + wantedLevel * 0.4);
+      const oz = Math.cos(t * spd * 0.85 + s.phase) * (2.8 + wantedLevel * 0.3);
+      g.position.x = s.x + ox;
+      g.position.z = s.z + oz;
+      g.rotation.y = Math.atan2(ox, oz);
+
+      if (wantedLevel >= 2 && alertCd.current <= 0) {
+        const d = Math.hypot(playerPos[0] - g.position.x, playerPos[2] - g.position.z);
+        if (d < 2.2) {
+          addHeat(3 + wantedLevel);
+          pushLog("Patrol spotted you — heat up");
+          alertCd.current = 4.5;
+        }
+      }
+    }
+  });
+
+  if (patrolCount === 0) return null;
+
+  return (
+    <group>
+      {seeds.slice(0, patrolCount).map((s, i) => (
+        <group
+          key={i}
+          ref={(el) => {
+            refs.current[i] = el;
+          }}
+          position={[s.x, 0, s.z]}
+        >
+          {/* Patrol body — teal civic kit */}
+          <mesh position={[0, 0.5, 0]} castShadow>
+            <capsuleGeometry args={[0.16, 0.4, 4, 8]} />
+            <meshStandardMaterial color="#0f766e" />
+          </mesh>
+          <mesh position={[0, 0.95, 0]}>
+            <sphereGeometry args={[0.14, 8, 8]} />
+            <meshStandardMaterial color="#fde68a" />
+          </mesh>
+          {/* Shoulder flash */}
+          <mesh position={[0.12, 0.55, 0.1]}>
+            <boxGeometry args={[0.08, 0.12, 0.04]} />
+            <meshStandardMaterial color="#fbbf24" emissive="#f59e0b" emissiveIntensity={0.4} />
+          </mesh>
+          {wantedLevel >= 3 && (
+            <mesh position={[0, 1.35, 0]}>
+              <sphereGeometry args={[0.1, 8, 8]} />
+              <meshStandardMaterial color="#ef4444" emissive="#dc2626" emissiveIntensity={0.7} />
+            </mesh>
+          )}
+        </group>
+      ))}
+    </group>
+  );
+}
+
+function ExtraStreetDetail() {
+  return (
+    <group>
+      {/* Painted speed bumps */}
+      {[[-1.5, 2.4], [3.5, 0.15], [-4.0, -1.4]].map(([x, z], i) => (
+        <mesh key={`sb${i}`} position={[x, 0.07, z]} castShadow>
+          <boxGeometry args={[1.1, 0.08, 0.28]} />
+          <meshStandardMaterial color="#1f2937" />
+        </mesh>
+      ))}
+      {/* Market poly bags / hanging strings */}
+      {[-3.9, -3.2, -2.6].map((x, i) => (
+        <mesh key={`hang${i}`} position={[x, 1.35, 3.15]} rotation={[0.2, 0, 0.1 * i]}>
+          <planeGeometry args={[0.15, 0.4]} />
+          <meshStandardMaterial
+            color={["#ef4444", "#22c55e", "#3b82f6"][i]}
+            side={2}
+            transparent
+            opacity={0.85}
+          />
+        </mesh>
+      ))}
+      {/* Wheelbarrow near market */}
+      <group position={[-4.9, 0, 2.3]} rotation={[0, 0.6, 0]}>
+        <mesh position={[0, 0.25, 0]} castShadow>
+          <boxGeometry args={[0.55, 0.2, 0.4]} />
+          <meshStandardMaterial color="#b45309" />
+        </mesh>
+        <mesh position={[0.15, 0.18, 0.25]} rotation={[0, 0, Math.PI / 2]}>
+          <torusGeometry args={[0.14, 0.035, 5, 10]} />
+          <meshStandardMaterial color="#1f2937" />
+        </mesh>
+        <mesh position={[-0.2, 0.45, -0.1]} rotation={[0.4, 0, 0]}>
+          <cylinderGeometry args={[0.02, 0.02, 0.5, 4]} />
+          <meshStandardMaterial color="#5c4030" />
+        </mesh>
+      </group>
+      {/* Water drum street corner */}
+      <mesh position={[3.8, 0.45, 3.5]} castShadow>
+        <cylinderGeometry args={[0.28, 0.3, 0.9, 10]} />
+        <meshStandardMaterial color="#1d4ed8" metalness={0.2} roughness={0.6} />
+      </mesh>
+      {/* Mosque-style small dome accent near civic (civic architecture nod) */}
+      <group position={[-0.8, 0, -3.8]}>
+        <mesh position={[0, 0.9, 0]} castShadow>
+          <cylinderGeometry args={[0.55, 0.6, 1.8, 10]} />
+          <meshStandardMaterial color="#efe2c8" />
+        </mesh>
+        <mesh position={[0, 2.0, 0]}>
+          <sphereGeometry args={[0.5, 10, 8, 0, Math.PI * 2, 0, Math.PI / 2]} />
+          <meshStandardMaterial color="#c45c26" />
+        </mesh>
+      </group>
+      {/* More goats off-road */}
+      {/* handled in animals — extra roosters */}
+      {/* Billboard support cables */}
+      <mesh position={[1.8, 2.4, 4.1]} rotation={[0, 0, 0.4]}>
+        <cylinderGeometry args={[0.01, 0.01, 1.2, 4]} />
+        <meshStandardMaterial color="#44403c" />
+      </mesh>
+      {/* Drainage grate */}
+      <mesh position={[1.0, 0.05, 0.85]} rotation={[-Math.PI / 2, 0, 0]}>
+        <circleGeometry args={[0.2, 8]} />
+        <meshStandardMaterial color="#292524" />
+      </mesh>
+      {/* Fishing nets by creek */}
+      <mesh position={[-6.2, 0.6, -4.8]} rotation={[0.3, 0.5, 0.2]}>
+        <planeGeometry args={[0.8, 0.6]} />
+        <meshStandardMaterial color="#a8a29e" transparent opacity={0.45} side={2} wireframe />
+      </mesh>
+    </group>
+  );
+}
+
 function NpcCrowd() {
+
   const npcs = useMemo(
     () =>
       [
@@ -2846,6 +3008,8 @@ export function AfroMetaverseScene({
         <TrafficFlow />
         <ParkedVehicles />
         <NpcCrowd />
+        <WantedPatrols />
+        <ExtraStreetDetail />
         <CityHotspots onInteract={onInteract} />
       </group>
 
