@@ -9,6 +9,8 @@ import {
   useRoamStore,
   type TransportId,
 } from "@/stores/roamStore";
+import { CHARACTER_PRESETS, useCharacterStore } from "@/stores/characterStore";
+import { StylizedCharacter } from "@/components/afrometaverse/characters/StylizedCharacter";
 
 const DISTRICT_LAYOUT = {
   "town-market": { x: -3, z: 2.5, color: "#f59e0b", label: "Town Market", neon: "#fbbf24" },
@@ -480,31 +482,11 @@ function SimpleVehicle({
 }
 
 function PlayerAvatar({ transport }: { transport: TransportId }) {
-  const color =
-    transport === "okada"
-      ? "#f97316"
-      : transport === "taxi"
-        ? "#eab308"
-        : transport === "ferry"
-          ? "#0ea5e9"
-          : transport === "keke"
-            ? "#22c55e"
-            : transport === "scooter"
-              ? "#a855f7"
-              : "#f8fafc";
-  return (
-    <group>
-      <mesh castShadow position={[0, 0.55, 0]}>
-        <capsuleGeometry args={[0.28, 0.55, 6, 12]} />
-        <meshStandardMaterial color={color} emissive={color} emissiveIntensity={0.2} />
-      </mesh>
-      <mesh position={[0, 1.15, 0]}>
-        <sphereGeometry args={[0.22, 16, 16]} />
-        <meshStandardMaterial color="#fde68a" />
-      </mesh>
-      <pointLight position={[0, 1.4, 0]} intensity={0.4} color="#fef08a" distance={4} />
-    </group>
-  );
+  const presetId = useCharacterStore((s) => s.presetId);
+  const preset = CHARACTER_PRESETS.find((p) => p.id === presetId) ?? CHARACTER_PRESETS[0];
+  // On vehicle, tint is enough via vehicle mesh; on foot show full character
+  void transport;
+  return <StylizedCharacter preset={preset} scale={1} />;
 }
 
 function nearestDistrict(x: number, z: number): string | null {
@@ -765,11 +747,11 @@ function TrafficFlow() {
 function NpcCrowd() {
   const npcs = useMemo(
     () =>
-      Array.from({ length: 12 }, (_, i) => ({
-        x: (i % 6) * 2.2 - 5,
-        z: Math.floor(i / 6) * 3 - 1,
-        phase: i * 0.7,
-        color: [N.neonPink, N.neonCyan, N.neonLime, N.neonAmber, N.neonPurple, N.neonOrange][i % 6],
+      CHARACTER_PRESETS.map((p, i) => ({
+        preset: p,
+        x: (i % 4) * 2.8 - 4.2,
+        z: Math.floor(i / 4) * 3.2 - 0.5,
+        phase: i * 0.85,
       })),
     [],
   );
@@ -779,28 +761,25 @@ function NpcCrowd() {
     npcs.forEach((n, i) => {
       const g = refs.current[i];
       if (!g) return;
-      g.position.x = n.x + Math.sin(t * 0.45 + n.phase) * 1.1;
-      g.position.z = n.z + Math.cos(t * 0.4 + n.phase) * 0.7;
-      g.rotation.y = t * 0.3 + n.phase;
+      g.position.x = n.x + Math.sin(t * 0.4 + n.phase) * 0.9;
+      g.position.z = n.z + Math.cos(t * 0.35 + n.phase) * 0.55;
+      g.rotation.y = Math.atan2(
+        Math.cos(t * 0.4 + n.phase),
+        Math.sin(t * 0.35 + n.phase),
+      );
     });
   });
   return (
     <group>
       {npcs.map((n, i) => (
         <group
-          key={i}
+          key={n.preset.id}
           ref={(el) => {
             refs.current[i] = el;
           }}
+          position={[n.x, 0, n.z]}
         >
-          <mesh position={[0, 0.45, 0]} castShadow>
-            <capsuleGeometry args={[0.14, 0.32, 4, 8]} />
-            <meshStandardMaterial color={n.color} emissive={n.color} emissiveIntensity={0.25} />
-          </mesh>
-          <mesh position={[0, 0.88, 0]}>
-            <sphereGeometry args={[0.13, 8, 8]} />
-            <meshStandardMaterial color="#fde68a" />
-          </mesh>
+          <StylizedCharacter preset={n.preset} scale={0.95} />
         </group>
       ))}
     </group>

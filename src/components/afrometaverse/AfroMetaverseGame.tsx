@@ -40,6 +40,11 @@ import {
 import { useSocialStateStore } from "@/stores/socialStateStore";
 import { useWeatherStore } from "@/stores/weatherStore";
 import { useWorldStateStore } from "@/stores/worldStateStore";
+import {
+  CHARACTER_PRESETS,
+  hydrateCharacterStore,
+  useCharacterStore,
+} from "@/stores/characterStore";
 
 type ScreenId = "city" | "work" | "market" | "civic" | "social" | "learn";
 type WeatherId = "dry" | "rainy" | "harmattan";
@@ -971,6 +976,23 @@ export function AfroMetaverseGame() {
               )}
 
               <div
+              <div className="am-character-bar">
+                <span className="am-gear-label">Citizen look</span>
+                {CHARACTER_PRESETS.map((p) => (
+                  <button
+                    key={p.id}
+                    type="button"
+                    className={`am-chip am-transport-chip ${characterPresetId === p.id ? "am-transport-active" : ""}`}
+                    onClick={() => {
+                      setCharacterPreset(p.id);
+                      announce(`You are ${p.name}`);
+                    }}
+                  >
+                    {p.name}
+                  </button>
+                ))}
+              </div>
+
                 className="am-city-wrap am-city-canvas"
                 style={{
                   background: weather.sky,
