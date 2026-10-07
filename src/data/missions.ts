@@ -12,6 +12,8 @@ export type MissionDef = {
   heatOnSuccess: number;
   heatOnFail: number;
   requiredGear?: GearId;
+  /** Clothing catalog id granted on first completion */
+  rewardOutfit?: string;
   /** Nested structure: steps with optional sub-objectives */
   buildSteps: () => NonNullable<ActiveMission>["steps"];
 };
@@ -26,6 +28,7 @@ export const MISSIONS: MissionDef[] = [
     coins: 120,
     rep: 1,
     blurb: "Unload okra basins and mind the stall while Mama Ngo runs deliveries.",
+    rewardOutfit: "hat-cap",
     heatOnSuccess: 0,
     heatOnFail: 0,
     buildSteps: () => [
@@ -62,6 +65,7 @@ export const MISSIONS: MissionDef[] = [
     coins: 180,
     rep: 2,
     blurb: "Two crossings before dusk. Help passengers board and bail the deck.",
+    rewardOutfit: "top-black-tee",
     heatOnSuccess: 0,
     heatOnFail: 0,
     buildSteps: () => [
@@ -99,6 +103,7 @@ export const MISSIONS: MissionDef[] = [
     coins: 240,
     rep: 2,
     blurb: "Count crates against the manifest. Requires a steady hand and patience.",
+    rewardOutfit: "outer-grey-crew",
     heatOnSuccess: 0,
     heatOnFail: 0,
     buildSteps: () => [
@@ -136,6 +141,7 @@ export const MISSIONS: MissionDef[] = [
     coins: 420,
     rep: -1,
     blurb: "Move unmarked crates before the night supervisor returns. Quiet work. High risk.",
+    rewardOutfit: "acc-shades",
     heatOnSuccess: 18,
     heatOnFail: 35,
     requiredGear: "stun",
@@ -174,6 +180,7 @@ export const MISSIONS: MissionDef[] = [
     coins: 520,
     rep: -2,
     blurb: "Stop a convoy on the mangrove road. Bring a sidearm. Expect attention.",
+    rewardOutfit: "outer-coral-coat",
     heatOnSuccess: 40,
     heatOnFail: 55,
     requiredGear: "sidearm",

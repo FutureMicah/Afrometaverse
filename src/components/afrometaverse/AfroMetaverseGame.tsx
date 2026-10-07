@@ -645,10 +645,21 @@ export function AfroMetaverseGame() {
       if (def.kind === "heat" && !gear.unlocked.includes("carbine")) {
         unlockGear("carbine");
       }
+      let dropLine = "";
+      if (def.rewardOutfit) {
+        const piece = CLOTHING_CATALOG.find((c) => c.id === def.rewardOutfit);
+        if (piece && !ownedClothes.includes(piece.id)) {
+          ownItem(piece.id);
+          dropLine = ` · outfit drop: ${piece.name}`;
+        } else if (piece) {
+          dropLine = ` · ${piece.name} already owned`;
+        }
+      }
       clearMission();
       announce(
-        `${def.title} complete — +${def.coins} coins` +
-          (mission.heatOnSuccess > 0 ? ` · heat +${mission.heatOnSuccess}` : ""),
+        `${def.title} complete — +${coins} coins` +
+          (mission.heatOnSuccess > 0 ? ` · heat +${mission.heatOnSuccess}` : "") +
+          dropLine,
       );
       persist({
         completedJobs: nextJobs,
@@ -1126,6 +1137,48 @@ export function AfroMetaverseGame() {
                 </p>
               </div>
 
+              <div className="am-wardrobe">
+                <div className="am-character-head">
+                  <strong>Owned wardrobe</strong>
+                  <span className="am-panel-tip">Tap a piece to equip — preview updates on the turntable.</span>
+                </div>
+                <div className="am-wardrobe-grid">
+                  {CLOTHING_CATALOG.filter((c) => ownedClothes.includes(c.id)).map((item) => {
+                    const isOn =
+                      equipped.top === item.id ||
+                      equipped.bottom === item.id ||
+                      equipped.outer === item.id ||
+                      equipped.shoes === item.id ||
+                      equipped.accessory === item.id ||
+                      equipped.hat === item.id;
+                    return (
+                      <button
+                        key={item.id}
+                        type="button"
+                        className={`am-wardrobe-item ${isOn ? "am-wardrobe-on" : ""}`}
+                        onClick={() => {
+                          if (!canWear(item)) {
+                            announce("That piece does not match your gender.");
+                            return;
+                          }
+                          equipItem(item.id);
+                          announce(`Equipped ${item.name}`);
+                        }}
+                        title={item.blurb}
+                      >
+                        <span
+                          className="am-wardrobe-swatch"
+                          style={{ background: item.color }}
+                        />
+                        <span className="am-wardrobe-name">{item.name}</span>
+                        <span className="am-wardrobe-slot">{item.slot}</span>
+                        {isOn && <span className="am-chip am-transport-active">On</span>}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
                 className="am-city-wrap am-city-canvas"
                 style={{
                   background: weather.sky,
@@ -1297,7 +1350,13 @@ export function AfroMetaverseGame() {
                         </span>
                       </div>
                       <h2>{job.title}</h2>
-                      <p>{job.blurb}</p>
+                      <p>{job.blurb}
+                        {job.rewardOutfit && (
+                          <span className="am-panel-tip">
+                            {" "}
+                            Reward: {CLOTHING_CATALOG.find((c) => c.id === job.rewardOutfit)?.name ?? "outfit"}
+                          </span>
+                        )}</p>
                       {job.requiredGear && job.requiredGear !== "none" && (
                         <p className="am-panel-tip">Requires {GEAR_LABEL[job.requiredGear]}</p>
                       )}
