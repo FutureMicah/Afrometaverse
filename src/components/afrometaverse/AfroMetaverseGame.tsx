@@ -23,6 +23,8 @@ import {
 } from "lucide-react";
 import AfroMetaverseScene from "@/components/afrometaverse/AfroMetaverseScene";
 import { CharacterPreview } from "@/components/afrometaverse/characters/CharacterPreview";
+import { CharacterCreator } from "@/components/afrometaverse/characters/CharacterCreator";
+import { editsUnlockedAtLevel } from "@/lib/photoToCharacter";
 import AuthModal from "@/components/afrometaverse/AuthModal";
 import { MISSIONS, missionToActive } from "@/data/missions";
 import { useCitizenAuth } from "@/hooks/useCitizenAuth";
@@ -369,6 +371,8 @@ export function AfroMetaverseGame() {
   const exitVehicle = useRoamStore((s) => s.exitVehicle);
 
   const appearance = useCharacterStore((s) => s.appearance);
+  const setProfileComplete = useCharacterStore((s) => s.setProfileComplete);
+  const [showCreator, setShowCreator] = useState(false);
   const equipped = useCharacterStore((s) => s.equipped);
   const ownedClothes = useCharacterStore((s) => s.owned);
   const setGender = useCharacterStore((s) => s.setGender);
@@ -396,6 +400,12 @@ export function AfroMetaverseGame() {
 
   useEffect(() => {
     hydrateCharacterStore();
+    // After hydrate, open creator if profile not complete
+    const t = window.setTimeout(() => {
+      const a = useCharacterStore.getState().appearance;
+      if (!a.profileComplete) setShowCreator(true);
+    }, 400);
+    return () => window.clearTimeout(t);
   }, []);
 
   // Client-side persistence for heat / gear (Cloud citizen row optional later)
@@ -558,6 +568,7 @@ export function AfroMetaverseGame() {
   const avatarInitials = isAuthenticated ? progress.avatarInitials : "EO";
   const level = Math.min(99, 1 + Math.floor(reputation / 10));
   const levelLabel = `Level ${String(level).padStart(2, "0")}`;
+  const editUnlocks = useMemo(() => editsUnlockedAtLevel(level), [level]);
   const repPct = Math.min(100, (reputation % 10) * 10 || (reputation === 0 ? 0 : 100));
   const activeDistrict = DISTRICTS.find((d) => d.id === selectedDistrict) ?? null;
   const timeOfDay = TIME_OF_DAY.find((entry) => entry.key === weatherStore.state.timeOfDay) ?? TIME_OF_DAY[0];
@@ -1071,7 +1082,10 @@ export function AfroMetaverseGame() {
               <div className="am-character-panel">
                 <div className="am-character-head">
                   <strong>Your look</strong>
-                  <span className="am-panel-tip">Beginners wear a white tee and blue jeans. Drag the preview for 360° · scroll to zoom into stitches, laces, and jewellery.</span>
+                  <span className="am-panel-tip">
+                    Photo-built citizens start unique. Face marks unlock L2+, tailor fit L4+. Drag 360° · zoom for detail.
+                    {!editUnlocks.face && " · Level up for deeper face edits."}
+                  </span>
                 </div>
                 <CharacterPreview height={300} />
                 <div className="am-character-row">
@@ -1208,6 +1222,9 @@ export function AfroMetaverseGame() {
                 <div className="am-character-row">
                   <button type="button" className="am-btn am-btn-secondary" onClick={() => { randomizeDetails(); announce("Unique details rolled — every citizen is different."); }}>
                     Randomize unique details
+                  </button>
+                  <button type="button" className="am-btn am-btn-secondary" onClick={() => setShowCreator(true)}>
+                    Create from photos
                   </button>
                   <span className="am-panel-tip">Seed #{appearance.detailSeed}</span>
                 </div>

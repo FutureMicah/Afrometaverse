@@ -1786,3 +1786,135 @@
   line-height: 1.35;
   color: var(--am-ink-soft);
 }
+
+
+.am-creator-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: oklch(0.15 0.02 280 / 0.72);
+  backdrop-filter: blur(6px);
+}
+
+.am-creator-card {
+  width: min(520px, 100%);
+  max-height: min(92vh, 900px);
+  overflow: auto;
+  border-radius: 20px;
+  border: 1px solid var(--am-line);
+  background: var(--am-paper);
+  padding: 18px;
+  box-shadow: 0 24px 60px oklch(0.2 0.03 280 / 0.35);
+}
+
+.am-creator-head {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  margin-bottom: 14px;
+}
+
+.am-creator-uploads {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin: 14px 0;
+}
+
+.am-upload-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 16px;
+  border-radius: 16px;
+  border: 1px dashed var(--am-line);
+  background: oklch(0.98 0.01 80 / 0.8);
+  cursor: pointer;
+  text-align: left;
+}
+
+.am-upload-tile strong {
+  font-size: 14px;
+}
+
+.am-upload-tile span {
+  font-size: 12px;
+  color: var(--am-ink-soft);
+}
+
+.am-creator-photos {
+  display: flex;
+  gap: 10px;
+  margin: 10px 0;
+}
+
+.am-creator-thumb {
+  width: 72px;
+  height: 72px;
+  object-fit: cover;
+  border-radius: 12px;
+  border: 1px solid var(--am-line);
+}
+
+.am-photo-round {
+  border-radius: 999px !important;
+}
+
+.am-photo-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.am-photo-editor-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.am-photo-editor-stage {
+  height: 280px;
+  border-radius: 16px;
+  overflow: hidden;
+  background: #0a0a0f;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.am-photo-editor-frame {
+  width: 220px;
+  height: 220px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.am-photo-editor-frame img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+.am-photo-slider {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+}
+
+.am-photo-slider input[type="range"] {
+  width: 100%;
+}
+
+@media (max-width: 520px) {
+  .am-creator-uploads {
+    grid-template-columns: 1fr;
+  }
+}

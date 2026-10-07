@@ -613,6 +613,12 @@ export type CharacterAppearance = {
   hemPreference: "cropped" | "regular" | "long";
   /** Unique citizen seed for procedural tiny variants */
   detailSeed: number;
+  /** Passport face crop data URL — drives face texture when set */
+  facePhoto: string | null;
+  /** Full-body reference photo */
+  bodyPhoto: string | null;
+  /** True after photo onboarding or skip */
+  profileComplete: boolean;
 };
 
 const DEFAULT_APPEARANCE: CharacterAppearance = {
@@ -638,6 +644,9 @@ const DEFAULT_APPEARANCE: CharacterAppearance = {
   sleevePreference: "regular",
   hemPreference: "regular",
   detailSeed: 17,
+  facePhoto: null,
+  bodyPhoto: null,
+  profileComplete: false,
 };
 
 const DEFAULT_EQUIPPED: EquippedLoadout = {
@@ -676,6 +685,12 @@ interface CharacterState {
   setSleevePreference: (sleevePreference: CharacterAppearance["sleevePreference"]) => void;
   setHemPreference: (hemPreference: CharacterAppearance["hemPreference"]) => void;
   randomizeDetails: () => void;
+  applyFromPhotos: (opts: {
+    appearance: Partial<CharacterAppearance>;
+    facePhoto: string;
+    bodyPhoto: string;
+  }) => void;
+  setProfileComplete: (v: boolean) => void;
   equip: (itemId: string) => void;
   unequipSlot: (slot: ClothingSlot) => void;
   ownItem: (itemId: string) => void;
@@ -778,6 +793,22 @@ export const useCharacterStore = create<CharacterState>((set, get) => ({
   },
   setHemPreference: (hemPreference) => {
     set({ appearance: { ...get().appearance, hemPreference } });
+    get().persist();
+  },
+  applyFromPhotos: ({ appearance, facePhoto, bodyPhoto }) => {
+    set({
+      appearance: {
+        ...get().appearance,
+        ...appearance,
+        facePhoto,
+        bodyPhoto,
+        profileComplete: true,
+      },
+    });
+    get().persist();
+  },
+  setProfileComplete: (profileComplete) => {
+    set({ appearance: { ...get().appearance, profileComplete } });
     get().persist();
   },
   randomizeDetails: () => {

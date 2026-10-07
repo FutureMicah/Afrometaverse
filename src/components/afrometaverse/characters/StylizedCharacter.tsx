@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import {
@@ -30,6 +30,20 @@ export function StylizedCharacter({
 }: Props) {
   const root = useRef<THREE.Group>(null);
   const isFemale = appearance.gender === "female";
+  const [faceMap, setFaceMap] = useState<THREE.Texture | null>(null);
+
+  useEffect(() => {
+    if (!appearance.facePhoto) {
+      setFaceMap(null);
+      return;
+    }
+    const loader = new THREE.TextureLoader();
+    loader.load(appearance.facePhoto, (tex) => {
+      tex.colorSpace = THREE.SRGBColorSpace;
+      setFaceMap(tex);
+    });
+  }, [appearance.facePhoto]);
+
 
   const heightMul =
     appearance.height === "short" ? 0.9 : appearance.height === "tall" ? 1.1 : 1;
@@ -281,8 +295,19 @@ export function StylizedCharacter({
       </mesh>
       <mesh position={[0, 1.4, 0]} castShadow>
         <sphereGeometry args={[0.23, 20, 18]} />
-        <meshStandardMaterial color={appearance.skin} roughness={0.55} />
+        <meshStandardMaterial
+          color={appearance.skin}
+          map={faceMap ?? undefined}
+          roughness={0.55}
+        />
       </mesh>
+      {/* Photo face disc on front of head when texture present */}
+      {faceMap && (
+        <mesh position={[0, 1.4, 0.2]}>
+          <circleGeometry args={[0.18, 24]} />
+          <meshStandardMaterial map={faceMap} roughness={0.5} transparent opacity={0.92} />
+        </mesh>
+      )}
 
       {/* Face — always readable up close */}
       {/* Eyes — shape & colour unique per citizen */}
