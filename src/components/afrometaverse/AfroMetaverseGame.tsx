@@ -22,6 +22,7 @@ import {
   X,
 } from "lucide-react";
 import AfroMetaverseScene from "@/components/afrometaverse/AfroMetaverseScene";
+import { CharacterPreview } from "@/components/afrometaverse/characters/CharacterPreview";
 import AuthModal from "@/components/afrometaverse/AuthModal";
 import { MISSIONS, missionToActive } from "@/data/missions";
 import { useCitizenAuth } from "@/hooks/useCitizenAuth";
@@ -1035,8 +1036,9 @@ export function AfroMetaverseGame() {
               <div className="am-character-panel">
                 <div className="am-character-head">
                   <strong>Your look</strong>
-                  <span className="am-panel-tip">Beginners wear a white tee and blue jeans. Edit shape anytime; unlock fashion as you level up.</span>
+                  <span className="am-panel-tip">Beginners wear a white tee and blue jeans. Drag the preview for 360° · scroll to zoom into stitches, laces, and jewellery.</span>
                 </div>
+                <CharacterPreview height={300} />
                 <div className="am-character-row">
                   <span className="am-gear-label">Gender</span>
                   {(["female", "male"] as Gender[]).map((g) => (

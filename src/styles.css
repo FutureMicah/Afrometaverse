@@ -1641,3 +1641,33 @@
   border-color: var(--am-coral);
   box-shadow: 0 0 0 2px oklch(0.7 0.1 40 / 0.35);
 }
+
+
+.am-char-preview {
+  position: relative;
+  width: 100%;
+  border-radius: 16px;
+  overflow: hidden;
+  border: 1px solid var(--am-line);
+  background: #1a1520;
+  margin-bottom: 4px;
+  touch-action: none;
+}
+
+.am-char-preview-hint {
+  position: absolute;
+  left: 12px;
+  bottom: 10px;
+  z-index: 2;
+  font-size: 11px;
+  font-weight: 600;
+  color: oklch(0.95 0.02 80 / 0.75);
+  pointer-events: none;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
+}
+
+@media (max-width: 520px) {
+  .am-char-preview {
+    height: 240px !important;
+  }
+}
