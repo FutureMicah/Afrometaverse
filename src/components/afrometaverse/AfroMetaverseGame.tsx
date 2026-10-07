@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   BadgeCheck,
   Banknote,
@@ -52,6 +52,7 @@ import {
   type HairStyle,
   type HeightId,
 } from "@/stores/characterStore";
+import { matchOutfit, matchTierColor } from "@/lib/outfitMatching";
 
 type ScreenId = "city" | "work" | "market" | "civic" | "social" | "learn";
 type WeatherId = "dry" | "rainy" | "harmattan";
@@ -577,7 +578,11 @@ export function AfroMetaverseGame() {
     setBalance(nextBalance);
     ownItem(itemId);
     equipItem(itemId);
-    announce(`Bought ${item.name} for ${item.price} City Coins`);
+    const fit = matchOutfit(useCharacterStore.getState().equipped);
+    announce(
+      `Bought ${item.name} for ${item.price} City Coins` +
+        (fit.score >= 70 ? ` · look is ${fit.label}` : ""),
+    );
     persist({ balance: nextBalance });
   }
 
@@ -1137,10 +1142,55 @@ export function AfroMetaverseGame() {
                 </p>
               </div>
 
+              <div className="am-outfit-match">
+                <div className="am-outfit-match-top">
+                  <div>
+                    <strong>Outfit match</strong>
+                    <span className="am-panel-tip">Engine reads colour, style tags, and known sets.</span>
+                  </div>
+                  <div
+                    className="am-outfit-score"
+                    style={{ color: matchTierColor(outfitMatch.tier) }}
+                  >
+                    <span className="am-outfit-score-num">{outfitMatch.score}</span>
+                    <span className="am-outfit-score-label">{outfitMatch.label}</span>
+                  </div>
+                </div>
+                <div className="am-character-row">
+                  {outfitMatch.tags.map((t) => (
+                    <span key={t} className="am-chip">
+                      {t}
+                    </span>
+                  ))}
+                  {outfitMatch.bonuses.map((b) => (
+                    <span key={b} className="am-chip am-kind am-kind-legal">
+                      {b}
+                    </span>
+                  ))}
+                </div>
+                {outfitMatch.tips.length > 0 && (
+                  <ul className="am-outfit-tips">
+                    {outfitMatch.tips.map((tip) => (
+                      <li key={tip}>{tip}</li>
+                    ))}
+                  </ul>
+                )}
+                {(outfitMatch.repBonus > 0 || outfitMatch.coinFindBonus > 0) && (
+                  <p className="am-panel-tip">
+                    Sharp dressing bonus flavour:{" "}
+                    {outfitMatch.repBonus > 0 ? `+${outfitMatch.repBonus} rep presence` : ""}
+                    {outfitMatch.repBonus > 0 && outfitMatch.coinFindBonus > 0 ? " · " : ""}
+                    {outfitMatch.coinFindBonus > 0
+                      ? `+${outfitMatch.coinFindBonus}% chance flair on market finds`
+                      : ""}
+                  </p>
+                )}
+              </div>
+
               <div className="am-wardrobe">
                 <div className="am-character-head">
                   <strong>Owned wardrobe</strong>
-                  <span className="am-panel-tip">Tap a piece to equip — preview updates on the turntable.</span>
+                  <span className="am-panel-tip">Tap a piece to equip — match score updates with the turntable.</span>
                 </div>
                 <div className="am-wardrobe-grid">
                   {CLOTHING_CATALOG.filter((c) => ownedClothes.includes(c.id)).map((item) => {

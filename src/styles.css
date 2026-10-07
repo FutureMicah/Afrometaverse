@@ -1732,3 +1732,50 @@
   text-transform: uppercase;
   letter-spacing: 0.04em;
 }
+
+
+.am-outfit-match {
+  margin-top: 10px;
+  margin-bottom: 12px;
+  padding: 14px 16px;
+  border-radius: 16px;
+  border: 1px solid var(--am-line);
+  background: oklch(0.22 0.03 280 / 0.08);
+}
+
+.am-outfit-match-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.am-outfit-score {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  line-height: 1.1;
+}
+
+.am-outfit-score-num {
+  font-size: 28px;
+  font-weight: 750;
+}
+
+.am-outfit-score-label {
+  font-size: 12px;
+  font-weight: 650;
+  opacity: 0.9;
+}
+
+.am-outfit-tips {
+  margin: 8px 0 0;
+  padding-left: 18px;
+  color: var(--am-ink-soft);
+  font-size: 13px;
+}
+
+.am-outfit-tips li {
+  margin-bottom: 4px;
+}
