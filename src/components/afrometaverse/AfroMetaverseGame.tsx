@@ -360,6 +360,22 @@ export function AfroMetaverseGame() {
 
   const exitVehicle = useRoamStore((s) => s.exitVehicle);
 
+  const appearance = useCharacterStore((s) => s.appearance);
+  const equipped = useCharacterStore((s) => s.equipped);
+  const ownedClothes = useCharacterStore((s) => s.owned);
+  const setGender = useCharacterStore((s) => s.setGender);
+  const setBodyShape = useCharacterStore((s) => s.setBodyShape);
+  const setHeight = useCharacterStore((s) => s.setHeight);
+  const setSkin = useCharacterStore((s) => s.setSkin);
+  const setHair = useCharacterStore((s) => s.setHair);
+  const equipItem = useCharacterStore((s) => s.equip);
+  const ownItem = useCharacterStore((s) => s.ownItem);
+  const canWear = useCharacterStore((s) => s.canWear);
+
+  useEffect(() => {
+    hydrateCharacterStore();
+  }, []);
+
   // Client-side persistence for heat / gear (Cloud citizen row optional later)
   useEffect(() => {
     try {
@@ -530,7 +546,40 @@ export function AfroMetaverseGame() {
     socialState.feed[0] ??
     `${timeOfDay.label} conditions: ${weather.summary} ${weather.risk}`;
 
-  function go(next: ScreenId) {
+  function buyClothes(itemId: string) {
+    const item = CLOTHING_CATALOG.find((c) => c.id === itemId);
+    if (!item) return;
+    if (ownedClothes.includes(itemId)) {
+      if (!canWear(item)) {
+        announce("That piece does not match your character gender.");
+        return;
+      }
+      equipItem(itemId);
+      announce(`Equipped ${item.name}`);
+      return;
+    }
+    const level = Math.min(99, 1 + Math.floor(reputation / 10));
+    if (level < item.minLevel) {
+      announce(`Reach Level ${item.minLevel} to unlock ${item.name}`);
+      return;
+    }
+    if (balance < item.price) {
+      announce("Not enough City Coins for that piece.");
+      return;
+    }
+    if (!canWear(item)) {
+      announce("That piece is for a different gender presentation.");
+      return;
+    }
+    const nextBalance = balance - item.price;
+    setBalance(nextBalance);
+    ownItem(itemId);
+    equipItem(itemId);
+    announce(`Bought ${item.name} for ${item.price} City Coins`);
+    persist({ balance: nextBalance });
+  }
+
+    function go(next: ScreenId) {
     setScreen(next);
     setMobileNavOpen(false);
   }
