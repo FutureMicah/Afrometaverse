@@ -439,22 +439,9 @@ export function AfroMetaverseGame() {
                 <p>Tap a marker to visit a district. Every street has something for a citizen on the move.</p>
               </div>
               <div
-                className="am-city-wrap"
-                style={{
-                  background: weather.sky,
-                  boxShadow: `inset 0 0 0 1px rgba(255,255,255,0.08), 0 24px 50px ${weather.glow}`,
-                  height: 520,
-                  overflow: "hidden",
-                }}
+                className={`am-city-wrap am-city-weather-${weather.id}`}
+                style={{ height: 520, overflow: "hidden" }}
               >
-                <div
-                  style={{
-                    position: "absolute",
-                    inset: 0,
-                    background: `radial-gradient(circle at top, ${weather.glow}, transparent 45%)`,
-                    pointerEvents: "none",
-                  }}
-                />
                 <AfroMetaverseScene
                   weather={{
                     id: weatherStore.state.weatherId,
@@ -480,22 +467,7 @@ export function AfroMetaverseGame() {
                 ))}
               </div>
 
-              <div
-                className="am-weather-panel"
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  gap: 12,
-                  padding: "14px 16px",
-                  marginTop: 16,
-                  borderRadius: 18,
-                  background: "rgba(17, 24, 39, 0.7)",
-                  border: "1px solid rgba(148, 163, 184, 0.2)",
-                  color: "#f8fafc",
-                  backdropFilter: "blur(8px)",
-                }}
-              >
+              <div className="am-weather-panel">
                 <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
                   <span aria-hidden="true" style={{ fontSize: 28 }}>{weather.icon}</span>
                   <div>
@@ -520,7 +492,7 @@ export function AfroMetaverseGame() {
                   <span className="am-chip">{activeDistrict.tag}</span>
                   <p className="am-panel-blurb">{activeDistrict.blurb}</p>
                   <p className="am-panel-tip">{activeDistrict.tip}</p>
-                  <p className="am-panel-tip" style={{ color: "#bae6fd", marginTop: 8 }}>
+                  <p className="am-panel-tip am-district-weather-note">
                     {districtWeatherNote}
                   </p>
                   <div className="am-panel-actions">
