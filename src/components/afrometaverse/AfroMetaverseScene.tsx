@@ -9,7 +9,7 @@ import {
   useRoamStore,
   type TransportId,
 } from "@/stores/roamStore";
-import { CHARACTER_PRESETS, useCharacterStore } from "@/stores/characterStore";
+import { useCharacterStore } from "@/stores/characterStore";
 import { StylizedCharacter } from "@/components/afrometaverse/characters/StylizedCharacter";
 
 const DISTRICT_LAYOUT = {
@@ -482,11 +482,10 @@ function SimpleVehicle({
 }
 
 function PlayerAvatar({ transport }: { transport: TransportId }) {
-  const presetId = useCharacterStore((s) => s.presetId);
-  const preset = CHARACTER_PRESETS.find((p) => p.id === presetId) ?? CHARACTER_PRESETS[0];
-  // On vehicle, tint is enough via vehicle mesh; on foot show full character
+  const appearance = useCharacterStore((s) => s.appearance);
+  const equipped = useCharacterStore((s) => s.equipped);
   void transport;
-  return <StylizedCharacter preset={preset} scale={1} />;
+  return <StylizedCharacter appearance={appearance} equipped={equipped} scale={1} />;
 }
 
 function nearestDistrict(x: number, z: number): string | null {
@@ -745,16 +744,32 @@ function TrafficFlow() {
 }
 
 function NpcCrowd() {
-  const npcs = useMemo(
-    () =>
-      CHARACTER_PRESETS.map((p, i) => ({
-        preset: p,
-        x: (i % 4) * 2.8 - 4.2,
-        z: Math.floor(i / 4) * 3.2 - 0.5,
-        phase: i * 0.85,
-      })),
-    [],
-  );
+  const npcs = useMemo(() => {
+    const skins = ["#5c3317", "#8d5524", "#a0673f", "#c68642", "#d4a574", "#6b4423"];
+    const shapes = ["slim", "average", "curvy", "athletic", "broad"] as const;
+    return Array.from({ length: 8 }, (_, i) => ({
+      appearance: {
+        gender: (i % 2 === 0 ? "female" : "male") as "female" | "male",
+        bodyShape: shapes[i % shapes.length],
+        height: (["short", "average", "tall"] as const)[i % 3],
+        skin: skins[i % skins.length],
+        hair: (["braids", "short", "afro", "bob", "bun", "long"] as const)[i % 6],
+        hairColor: "#1a1a1a",
+        displayName: `Npc${i}`,
+      },
+      equipped: {
+        top: "top-white-tee",
+        bottom: "bottom-blue-jeans",
+        outer: null,
+        shoes: "shoes-basic",
+        accessory: null,
+        hat: null,
+      },
+      x: (i % 4) * 2.8 - 4.2,
+      z: Math.floor(i / 4) * 3.2 - 0.5,
+      phase: i * 0.85,
+    }));
+  }, []);
   const refs = useRef<(THREE.Group | null)[]>([]);
   useFrame(({ clock }) => {
     const t = clock.getElapsedTime();
@@ -763,23 +778,20 @@ function NpcCrowd() {
       if (!g) return;
       g.position.x = n.x + Math.sin(t * 0.4 + n.phase) * 0.9;
       g.position.z = n.z + Math.cos(t * 0.35 + n.phase) * 0.55;
-      g.rotation.y = Math.atan2(
-        Math.cos(t * 0.4 + n.phase),
-        Math.sin(t * 0.35 + n.phase),
-      );
+      g.rotation.y = t * 0.25 + n.phase;
     });
   });
   return (
     <group>
       {npcs.map((n, i) => (
         <group
-          key={n.preset.id}
+          key={i}
           ref={(el) => {
             refs.current[i] = el;
           }}
           position={[n.x, 0, n.z]}
         >
-          <StylizedCharacter preset={n.preset} scale={0.95} />
+          <StylizedCharacter appearance={n.appearance} equipped={n.equipped} scale={0.95} />
         </group>
       ))}
     </group>

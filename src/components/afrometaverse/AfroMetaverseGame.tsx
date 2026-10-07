@@ -41,9 +41,15 @@ import { useSocialStateStore } from "@/stores/socialStateStore";
 import { useWeatherStore } from "@/stores/weatherStore";
 import { useWorldStateStore } from "@/stores/worldStateStore";
 import {
-  CHARACTER_PRESETS,
+  BODY_SHAPE_LABEL,
+  CLOTHING_CATALOG,
+  SKIN_TONES,
   hydrateCharacterStore,
   useCharacterStore,
+  type BodyShape,
+  type Gender,
+  type HairStyle,
+  type HeightId,
 } from "@/stores/characterStore";
 
 type ScreenId = "city" | "work" | "market" | "civic" | "social" | "learn";
@@ -976,21 +982,76 @@ export function AfroMetaverseGame() {
               )}
 
               <div
-              <div className="am-character-bar">
-                <span className="am-gear-label">Citizen look</span>
-                {CHARACTER_PRESETS.map((p) => (
-                  <button
-                    key={p.id}
-                    type="button"
-                    className={`am-chip am-transport-chip ${characterPresetId === p.id ? "am-transport-active" : ""}`}
-                    onClick={() => {
-                      setCharacterPreset(p.id);
-                      announce(`You are ${p.name}`);
-                    }}
-                  >
-                    {p.name}
-                  </button>
-                ))}
+              <div className="am-character-panel">
+                <div className="am-character-head">
+                  <strong>Your look</strong>
+                  <span className="am-panel-tip">Beginners wear a white tee and blue jeans. Edit shape anytime; unlock fashion as you level up.</span>
+                </div>
+                <div className="am-character-row">
+                  <span className="am-gear-label">Gender</span>
+                  {(["female", "male"] as Gender[]).map((g) => (
+                    <button
+                      key={g}
+                      type="button"
+                      className={`am-chip am-transport-chip ${appearance.gender === g ? "am-transport-active" : ""}`}
+                      onClick={() => setGender(g)}
+                    >
+                      {g === "female" ? "Female" : "Male"}
+                    </button>
+                  ))}
+                </div>
+                <div className="am-character-row">
+                  <span className="am-gear-label">Body</span>
+                  {(["slim", "average", "curvy", "athletic", "broad"] as BodyShape[]).map((s) => (
+                    <button
+                      key={s}
+                      type="button"
+                      className={`am-chip am-transport-chip ${appearance.bodyShape === s ? "am-transport-active" : ""}`}
+                      onClick={() => setBodyShape(s)}
+                    >
+                      {BODY_SHAPE_LABEL[s]}
+                    </button>
+                  ))}
+                </div>
+                <div className="am-character-row">
+                  <span className="am-gear-label">Height</span>
+                  {(["short", "average", "tall"] as HeightId[]).map((h) => (
+                    <button
+                      key={h}
+                      type="button"
+                      className={`am-chip am-transport-chip ${appearance.height === h ? "am-transport-active" : ""}`}
+                      onClick={() => setHeight(h)}
+                    >
+                      {h}
+                    </button>
+                  ))}
+                </div>
+                <div className="am-character-row">
+                  <span className="am-gear-label">Skin</span>
+                  {SKIN_TONES.map((hex) => (
+                    <button
+                      key={hex}
+                      type="button"
+                      className={`am-skin-swatch ${appearance.skin === hex ? "am-skin-active" : ""}`}
+                      style={{ background: hex }}
+                      onClick={() => setSkin(hex)}
+                      aria-label={`Skin ${hex}`}
+                    />
+                  ))}
+                </div>
+                <div className="am-character-row">
+                  <span className="am-gear-label">Hair</span>
+                  {(["short", "afro", "braids", "bob", "bun", "long", "bald"] as HairStyle[]).map((h) => (
+                    <button
+                      key={h}
+                      type="button"
+                      className={`am-chip am-transport-chip ${appearance.hair === h ? "am-transport-active" : ""}`}
+                      onClick={() => setHair(h)}
+                    >
+                      {h}
+                    </button>
+                  ))}
+                </div>
               </div>
 
                 className="am-city-wrap am-city-canvas"
@@ -1241,6 +1302,55 @@ export function AfroMetaverseGame() {
                   );
                 })}
               </div>
+              
+              <div className="am-screen-head" style={{ marginTop: 28 }}>
+                <h2>Fashion stall</h2>
+                <p>
+                  New citizens start in a white T-shirt and blue jeans. Earn City Coins and level up to buy coats,
+                  hats, and ornaments. Equip anything you own.
+                </p>
+              </div>
+              <div className="am-cards">
+                {CLOTHING_CATALOG.filter((c) => c.price > 0).map((item) => {
+                  const owned = ownedClothes.includes(item.id);
+                  const level = Math.min(99, 1 + Math.floor(reputation / 10));
+                  const locked = level < item.minLevel;
+                  const genderBlock = !canWear(item);
+                  return (
+                    <article key={item.id} className={`am-card ${owned ? "am-card-done" : ""}`}>
+                      <div className="am-card-top">
+                        <span className="am-chip">{item.slot}</span>
+                        <span className="am-coins">
+                          <Banknote size={14} /> {item.price}
+                        </span>
+                      </div>
+                      <h2>{item.name}</h2>
+                      <p>{item.blurb}</p>
+                      <p className="am-panel-tip">
+                        Level {item.minLevel}+
+                        {item.gender !== "any" ? ` · ${item.gender}` : " · any"}
+                      </p>
+                      <div className="am-panel-actions">
+                        <button
+                          type="button"
+                          className={`am-btn ${owned ? "am-btn-secondary" : "am-btn-primary"}`}
+                          disabled={genderBlock || (!owned && locked)}
+                          onClick={() => buyClothes(item.id)}
+                        >
+                          {genderBlock
+                            ? "Wrong gender"
+                            : owned
+                              ? "Equip"
+                              : locked
+                                ? `Locked L${item.minLevel}`
+                                : "Buy"}
+                        </button>
+                      </div>
+                    </article>
+                  );
+                })}
+              </div>
+
               <p className="am-note">Market prices are invented for the simulation and match no real stall.</p>
             </section>
           )}

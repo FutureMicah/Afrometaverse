@@ -1602,3 +1602,42 @@
   align-items: center;
   margin-bottom: 12px;
 }
+
+
+.am-character-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 14px;
+  padding: 14px 16px;
+  border-radius: 16px;
+  border: 1px solid var(--am-line);
+  background: oklch(0.98 0.01 80 / 0.7);
+}
+
+.am-character-head {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.am-character-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.am-skin-swatch {
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  border: 2px solid transparent;
+  cursor: pointer;
+  padding: 0;
+}
+
+.am-skin-active {
+  border-color: var(--am-coral);
+  box-shadow: 0 0 0 2px oklch(0.7 0.1 40 / 0.35);
+}
