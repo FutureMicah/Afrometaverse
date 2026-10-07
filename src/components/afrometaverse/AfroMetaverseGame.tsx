@@ -44,13 +44,19 @@ import { useWorldStateStore } from "@/stores/worldStateStore";
 import {
   BODY_SHAPE_LABEL,
   CLOTHING_CATALOG,
+  GARMENT_DETAILS,
   SKIN_TONES,
   hydrateCharacterStore,
   useCharacterStore,
   type BodyShape,
+  type EyeShape,
+  type FaceMark,
   type Gender,
   type HairStyle,
   type HeightId,
+  type LipShape,
+  type NoseShape,
+  type Posture,
 } from "@/stores/characterStore";
 import { matchOutfit, matchTierColor } from "@/lib/outfitMatching";
 
@@ -374,6 +380,17 @@ export function AfroMetaverseGame() {
   const equipItem = useCharacterStore((s) => s.equip);
   const ownItem = useCharacterStore((s) => s.ownItem);
   const canWear = useCharacterStore((s) => s.canWear);
+  const setEyeShape = useCharacterStore((s) => s.setEyeShape);
+  const setNoseShape = useCharacterStore((s) => s.setNoseShape);
+  const setLipShape = useCharacterStore((s) => s.setLipShape);
+  const setFaceMark = useCharacterStore((s) => s.setFaceMark);
+  const setPiercings = useCharacterStore((s) => s.setPiercings);
+  const setGapTooth = useCharacterStore((s) => s.setGapTooth);
+  const setPosture = useCharacterStore((s) => s.setPosture);
+  const setNailColor = useCharacterStore((s) => s.setNailColor);
+  const setSleevePreference = useCharacterStore((s) => s.setSleevePreference);
+  const setHemPreference = useCharacterStore((s) => s.setHemPreference);
+  const randomizeDetails = useCharacterStore((s) => s.randomizeDetails);
 
   const outfitMatch = useMemo(() => matchOutfit(equipped), [equipped]);
 
@@ -1135,6 +1152,66 @@ export function AfroMetaverseGame() {
                     />
                   ))}
                 </div>
+
+                <div className="am-character-row">
+                  <span className="am-gear-label">Eyes</span>
+                  {(["almond", "round", "hooded", "wide"] as EyeShape[]).map((e) => (
+                    <button key={e} type="button" className={`am-chip am-transport-chip ${appearance.eyeShape === e ? "am-transport-active" : ""}`} onClick={() => setEyeShape(e)}>{e}</button>
+                  ))}
+                </div>
+                <div className="am-character-row">
+                  <span className="am-gear-label">Nose</span>
+                  {(["soft", "strong", "wide", "narrow"] as NoseShape[]).map((n) => (
+                    <button key={n} type="button" className={`am-chip am-transport-chip ${appearance.noseShape === n ? "am-transport-active" : ""}`} onClick={() => setNoseShape(n)}>{n}</button>
+                  ))}
+                </div>
+                <div className="am-character-row">
+                  <span className="am-gear-label">Lips</span>
+                  {(["full", "medium", "thin"] as LipShape[]).map((l) => (
+                    <button key={l} type="button" className={`am-chip am-transport-chip ${appearance.lipShape === l ? "am-transport-active" : ""}`} onClick={() => setLipShape(l)}>{l}</button>
+                  ))}
+                </div>
+                <div className="am-character-row">
+                  <span className="am-gear-label">Mark</span>
+                  {(["none", "cheek-mole", "brow-scar", "chin-dimple", "temple-birthmark", "freckles"] as FaceMark[]).map((f) => (
+                    <button key={f} type="button" className={`am-chip am-transport-chip ${appearance.faceMark === f ? "am-transport-active" : ""}`} onClick={() => setFaceMark(f)}>{f}</button>
+                  ))}
+                </div>
+                <div className="am-character-row">
+                  <span className="am-gear-label">Piercings</span>
+                  <button type="button" className={`am-chip am-transport-chip ${appearance.leftEarPiercing ? "am-transport-active" : ""}`} onClick={() => setPiercings({ leftEarPiercing: !appearance.leftEarPiercing })}>L ear</button>
+                  <button type="button" className={`am-chip am-transport-chip ${appearance.rightEarPiercing ? "am-transport-active" : ""}`} onClick={() => setPiercings({ rightEarPiercing: !appearance.rightEarPiercing })}>R ear</button>
+                  <button type="button" className={`am-chip am-transport-chip ${appearance.nosePiercing ? "am-transport-active" : ""}`} onClick={() => setPiercings({ nosePiercing: !appearance.nosePiercing })}>Nose</button>
+                  <button type="button" className={`am-chip am-transport-chip ${appearance.gapTooth ? "am-transport-active" : ""}`} onClick={() => setGapTooth(!appearance.gapTooth)}>Gap tooth</button>
+                </div>
+                <div className="am-character-row">
+                  <span className="am-gear-label">Posture</span>
+                  {(["upright", "relaxed", "confident", "shy"] as Posture[]).map((p) => (
+                    <button key={p} type="button" className={`am-chip am-transport-chip ${appearance.posture === p ? "am-transport-active" : ""}`} onClick={() => setPosture(p)}>{p}</button>
+                  ))}
+                </div>
+                <div className="am-character-row">
+                  <span className="am-gear-label">Nails</span>
+                  {["#f8fafc", "#fb7185", "#1a1a1a", "#fbbf24", "#c45c6a"].map((hex) => (
+                    <button key={hex} type="button" className={`am-skin-swatch ${appearance.nailColor === hex ? "am-skin-active" : ""}`} style={{ background: hex }} onClick={() => setNailColor(hex)} aria-label="Nail colour" />
+                  ))}
+                </div>
+                <div className="am-character-row">
+                  <span className="am-gear-label">Tailor fit</span>
+                  {(["fitted", "regular", "oversized"] as const).map((s) => (
+                    <button key={s} type="button" className={`am-chip am-transport-chip ${appearance.sleevePreference === s ? "am-transport-active" : ""}`} onClick={() => setSleevePreference(s)}>Sleeve {s}</button>
+                  ))}
+                  {(["cropped", "regular", "long"] as const).map((h) => (
+                    <button key={h} type="button" className={`am-chip am-transport-chip ${appearance.hemPreference === h ? "am-transport-active" : ""}`} onClick={() => setHemPreference(h)}>Hem {h}</button>
+                  ))}
+                </div>
+                <div className="am-character-row">
+                  <button type="button" className="am-btn am-btn-secondary" onClick={() => { randomizeDetails(); announce("Unique details rolled — every citizen is different."); }}>
+                    Randomize unique details
+                  </button>
+                  <span className="am-panel-tip">Seed #{appearance.detailSeed}</span>
+                </div>
+
                 <p className="am-panel-tip">
                   Wearing: white tee starter energy ·{" "}
                   {CLOTHING_CATALOG.find((c) => c.id === equipped.top)?.name ?? "Top"} ·{" "}
@@ -1224,6 +1301,12 @@ export function AfroMetaverseGame() {
                         />
                         <span className="am-wardrobe-name">{item.name}</span>
                         <span className="am-wardrobe-slot">{item.slot}</span>
+                        {GARMENT_DETAILS[item.id] && (
+                          <span className="am-wardrobe-meta">
+                            {GARMENT_DETAILS[item.id].fabric} · {GARMENT_DETAILS[item.id].stitch}
+                            {GARMENT_DETAILS[item.id].quirk ? ` · ${GARMENT_DETAILS[item.id].quirk}` : ""}
+                          </span>
+                        )}
                         {isOn && <span className="am-chip am-transport-active">On</span>}
                       </button>
                     );

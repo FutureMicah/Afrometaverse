@@ -1779,3 +1779,10 @@
 .am-outfit-tips li {
   margin-bottom: 4px;
 }
+
+
+.am-wardrobe-meta {
+  font-size: 10px;
+  line-height: 1.35;
+  color: var(--am-ink-soft);
+}

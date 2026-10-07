@@ -61,15 +61,29 @@ export function StylizedCharacter({
   const isSkirt = equipped.bottom === "bottom-skirt";
   const isFur = equipped.outer === "outer-pink-fur" || equipped.outer === "outer-coral-coat";
 
+  const postureLean =
+    appearance.posture === "confident"
+      ? 0.04
+      : appearance.posture === "shy"
+        ? -0.05
+        : appearance.posture === "upright"
+          ? 0.01
+          : 0;
+
   useFrame(({ clock }) => {
     if (!animate || !root.current) return;
     const t = clock.getElapsedTime();
     root.current.position.y = Math.sin(t * 1.6) * 0.012;
-    root.current.rotation.y = Math.sin(t * 0.45) * 0.03;
+    root.current.rotation.y = Math.sin(t * 0.45) * 0.03 + postureLean;
+    root.current.rotation.z = postureLean * 0.3;
   });
 
   return (
-    <group ref={root} scale={scale * heightMul}>
+    <group
+      ref={root}
+      scale={scale * heightMul}
+      position={[((appearance.detailSeed % 7) - 3) * 0.002, 0, 0]}
+    >
       {/* ——— Legs / jeans ——— */}
       {isSkirt ? (
         <mesh position={[0, 0.42, 0]} castShadow>
@@ -251,6 +265,10 @@ export function StylizedCharacter({
                 <capsuleGeometry args={[0.015, 0.04, 3, 5]} />
                 <meshStandardMaterial color={appearance.skin} />
               </mesh>
+              <mesh position={[sx * shoulder, 0.52, 0.07 + oz]}>
+                <boxGeometry args={[0.012, 0.008, 0.01]} />
+                <meshStandardMaterial color={appearance.nailColor || "#f8fafc"} />
+              </mesh>
             )),
           )}
         </>
@@ -267,22 +285,38 @@ export function StylizedCharacter({
       </mesh>
 
       {/* Face — always readable up close */}
-      <mesh position={[-0.07, 1.42, 0.19]}>
-        <sphereGeometry args={[0.04, 10, 10]} />
-        <meshStandardMaterial color="#f8fafc" />
-      </mesh>
-      <mesh position={[0.07, 1.42, 0.19]}>
-        <sphereGeometry args={[0.04, 10, 10]} />
-        <meshStandardMaterial color="#f8fafc" />
-      </mesh>
-      <mesh position={[-0.07, 1.42, 0.225]}>
-        <sphereGeometry args={[0.022, 8, 8]} />
-        <meshStandardMaterial color="#1a1a1a" />
-      </mesh>
-      <mesh position={[0.07, 1.42, 0.225]}>
-        <sphereGeometry args={[0.022, 8, 8]} />
-        <meshStandardMaterial color="#1a1a1a" />
-      </mesh>
+      {/* Eyes — shape & colour unique per citizen */}
+      {(() => {
+        const eyeR =
+          appearance.eyeShape === "wide"
+            ? 0.048
+            : appearance.eyeShape === "round"
+              ? 0.045
+              : appearance.eyeShape === "hooded"
+                ? 0.036
+                : 0.04;
+        const pupil = appearance.eyeColor || "#2c1810";
+        return (
+          <>
+            <mesh position={[-0.07, 1.42, 0.19]}>
+              <sphereGeometry args={[eyeR, 10, 10]} />
+              <meshStandardMaterial color="#f8fafc" />
+            </mesh>
+            <mesh position={[0.07, 1.42, 0.19]}>
+              <sphereGeometry args={[eyeR, 10, 10]} />
+              <meshStandardMaterial color="#f8fafc" />
+            </mesh>
+            <mesh position={[-0.07, 1.42, 0.225]}>
+              <sphereGeometry args={[eyeR * 0.55, 8, 8]} />
+              <meshStandardMaterial color={pupil} />
+            </mesh>
+            <mesh position={[0.07, 1.42, 0.225]}>
+              <sphereGeometry args={[eyeR * 0.55, 8, 8]} />
+              <meshStandardMaterial color={pupil} />
+            </mesh>
+          </>
+        );
+      })()}
       {/* Eye highlight */}
       {detail && (
         <>
@@ -297,14 +331,21 @@ export function StylizedCharacter({
         </>
       )}
       <mesh position={[-0.07, 1.48, 0.2]} rotation={[0, 0, 0.12]}>
-        <boxGeometry args={[0.09, 0.014, 0.02]} />
+        <boxGeometry args={[0.09, 0.01 + appearance.browStrength * 0.02, 0.02]} />
         <meshStandardMaterial color={appearance.hairColor} />
       </mesh>
       <mesh position={[0.07, 1.48, 0.2]} rotation={[0, 0, -0.12]}>
-        <boxGeometry args={[0.09, 0.014, 0.02]} />
+        <boxGeometry args={[0.09, 0.01 + appearance.browStrength * 0.02, 0.02]} />
         <meshStandardMaterial color={appearance.hairColor} />
       </mesh>
-      <mesh position={[0, 1.36, 0.22]}>
+      <mesh
+        position={[0, 1.36, appearance.noseShape === "strong" ? 0.24 : 0.22]}
+        scale={[
+          appearance.noseShape === "wide" ? 1.25 : appearance.noseShape === "narrow" ? 0.8 : 1,
+          appearance.noseShape === "strong" ? 1.2 : 1,
+          1,
+        ]}
+      >
         <sphereGeometry args={[0.035, 8, 8]} />
         <meshStandardMaterial color={appearance.skin} />
       </mesh>
@@ -322,9 +363,78 @@ export function StylizedCharacter({
         </>
       )}
       <mesh position={[0, 1.28, 0.2]}>
-        <boxGeometry args={[0.08, 0.025, 0.03]} />
+        <boxGeometry
+          args={[
+            appearance.lipShape === "full" ? 0.1 : appearance.lipShape === "thin" ? 0.06 : 0.08,
+            appearance.lipShape === "full" ? 0.032 : appearance.lipShape === "thin" ? 0.016 : 0.025,
+            0.03,
+          ]}
+        />
         <meshStandardMaterial color={isFemale ? "#c45c6a" : "#8b5a5a"} />
       </mesh>
+      {appearance.gapTooth && (
+        <mesh position={[0, 1.285, 0.22]}>
+          <boxGeometry args={[0.015, 0.02, 0.01]} />
+          <meshStandardMaterial color="#f8fafc" />
+        </mesh>
+      )}
+      {/* Face marks */}
+      {appearance.faceMark === "cheek-mole" && (
+        <mesh position={[0.12, 1.32, 0.18]}>
+          <sphereGeometry args={[0.012, 6, 6]} />
+          <meshStandardMaterial color="#5c3317" />
+        </mesh>
+      )}
+      {appearance.faceMark === "brow-scar" && (
+        <mesh position={[-0.1, 1.5, 0.18]} rotation={[0, 0, 0.4]}>
+          <boxGeometry args={[0.06, 0.008, 0.01]} />
+          <meshStandardMaterial color="#6b4423" />
+        </mesh>
+      )}
+      {appearance.faceMark === "chin-dimple" && (
+        <mesh position={[0, 1.22, 0.2]}>
+          <sphereGeometry args={[0.015, 6, 6]} />
+          <meshStandardMaterial color="#6b4423" transparent opacity={0.35} />
+        </mesh>
+      )}
+      {appearance.faceMark === "temple-birthmark" && (
+        <mesh position={[-0.18, 1.45, 0.05]}>
+          <sphereGeometry args={[0.03, 6, 6]} />
+          <meshStandardMaterial color="#7c2d12" transparent opacity={0.45} />
+        </mesh>
+      )}
+      {appearance.faceMark === "freckles" &&
+        [
+          [0.08, 1.34, 0.2],
+          [-0.09, 1.33, 0.19],
+          [0.04, 1.31, 0.21],
+          [-0.04, 1.35, 0.2],
+          [0.11, 1.3, 0.18],
+        ].map((p, i) => (
+          <mesh key={i} position={p as [number, number, number]}>
+            <sphereGeometry args={[0.006, 5, 5]} />
+            <meshStandardMaterial color="#6b4423" />
+          </mesh>
+        ))}
+      {/* Piercings */}
+      {appearance.leftEarPiercing && (
+        <mesh position={[-0.24, 1.34, 0.02]}>
+          <sphereGeometry args={[0.015, 6, 6]} />
+          <meshStandardMaterial color="#fbbf24" metalness={0.85} />
+        </mesh>
+      )}
+      {appearance.rightEarPiercing && (
+        <mesh position={[0.24, 1.34, 0.02]}>
+          <sphereGeometry args={[0.015, 6, 6]} />
+          <meshStandardMaterial color="#fbbf24" metalness={0.85} />
+        </mesh>
+      )}
+      {appearance.nosePiercing && (
+        <mesh position={[0.03, 1.35, 0.24]}>
+          <sphereGeometry args={[0.012, 6, 6]} />
+          <meshStandardMaterial color="#e5e7eb" metalness={0.9} />
+        </mesh>
+      )}
       {/* Ear */}
       <mesh position={[-0.22, 1.38, 0]}>
         <sphereGeometry args={[0.05, 8, 8]} />
