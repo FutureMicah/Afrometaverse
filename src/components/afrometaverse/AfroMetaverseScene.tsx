@@ -519,7 +519,10 @@ function PlayerController({
 }) {
   const keys = useRef<Record<string, boolean>>({});
   const group = useRef<THREE.Group>(null);
-  const { camera } = useThree();
+  const yawRef = useRef(0);
+  const pitchRef = useRef(0.35);
+  const pointerLocked = useRef(false);
+  const { camera, gl } = useThree();
   const mode = useRoamStore((s) => s.mode);
   const transport = useRoamStore((s) => s.transport);
   const mountedVehicleId = useRoamStore((s) => s.mountedVehicleId);
@@ -534,67 +537,144 @@ function PlayerController({
   const worldVehicles = useRoamStore((s) => s.worldVehicles);
   const position = useRoamStore((s) => s.position);
   const heatTick = useRef(0);
+  const jumpVel = useRef(0);
+  const grounded = useRef(true);
 
   useEffect(() => {
     const down = (e: KeyboardEvent) => {
       keys.current[e.key.toLowerCase()] = true;
+      if (e.code === "Space") {
+        e.preventDefault();
+        keys.current["space"] = true;
+      }
       if (e.key.toLowerCase() === "f" || e.key === "e") {
         const st = useRoamStore.getState();
         if (st.mountedVehicleId) st.exitVehicle();
         else st.enterNearestVehicle();
       }
+      // Click-to-lock hint: press R to request pointer lock
+      if (e.key.toLowerCase() === "r" && mode !== "orbit") {
+        gl.domElement.requestPointerLock?.();
+      }
     };
     const up = (e: KeyboardEvent) => {
       keys.current[e.key.toLowerCase()] = false;
+      if (e.code === "Space") keys.current["space"] = false;
+    };
+    const onLock = () => {
+      pointerLocked.current = document.pointerLockElement === gl.domElement;
+    };
+    const onMove = (e: MouseEvent) => {
+      if (mode === "orbit") return;
+      if (document.pointerLockElement !== gl.domElement) return;
+      const sens = 0.0022;
+      yawRef.current -= e.movementX * sens;
+      pitchRef.current = THREE.MathUtils.clamp(
+        pitchRef.current - e.movementY * sens,
+        0.12,
+        1.15,
+      );
+    };
+    const onClick = () => {
+      if (mode !== "orbit") gl.domElement.requestPointerLock?.();
     };
     window.addEventListener("keydown", down);
     window.addEventListener("keyup", up);
+    document.addEventListener("pointerlockchange", onLock);
+    document.addEventListener("mousemove", onMove);
+    gl.domElement.addEventListener("click", onClick);
     return () => {
       window.removeEventListener("keydown", down);
       window.removeEventListener("keyup", up);
+      document.removeEventListener("pointerlockchange", onLock);
+      document.removeEventListener("mousemove", onMove);
+      gl.domElement.removeEventListener("click", onClick);
+      if (document.pointerLockElement === gl.domElement) document.exitPointerLock?.();
     };
-  }, []);
+  }, [gl, mode]);
 
   useFrame((_, dt) => {
     if (mode === "orbit" || !group.current) return;
-    const speed = TRANSPORT_SPEED[transport] ?? 4;
-    let dx = 0;
-    let dz = 0;
-    if (keys.current["w"] || keys.current["arrowup"]) dz -= 1;
-    if (keys.current["s"] || keys.current["arrowdown"]) dz += 1;
-    if (keys.current["a"] || keys.current["arrowleft"]) dx -= 1;
-    if (keys.current["d"] || keys.current["arrowright"]) dx += 1;
+
+    const speedBase = TRANSPORT_SPEED[transport] ?? 4;
+    const isFoot = transport === "foot";
     const sprint = !!(keys.current["shift"]);
-    if (dx !== 0 || dz !== 0) {
-      const isFoot = transport === "foot";
-      const speedMul = isFoot && sprint ? 1.65 : 1;
-      if (mountedVehicleId) setMoveState("ride");
-      else if (isFoot) setMoveState(sprint ? "run" : "walk");
-      else setMoveState("walk");
-      const len = Math.hypot(dx, dz) || 1;
-      dx = (dx / len) * speed * speedMul * dt;
-      dz = (dz / len) * speed * speedMul * dt;
-      let nextX = THREE.MathUtils.clamp(group.current.position.x + dx, BOUNDS.minX, BOUNDS.maxX);
-      let nextZ = THREE.MathUtils.clamp(group.current.position.z + dz, BOUNDS.minZ, BOUNDS.maxZ);
+    const crouch = !!(keys.current["c"] || keys.current["control"]);
+
+    // COD-style: move relative to look yaw
+    let inputX = 0;
+    let inputZ = 0;
+    if (keys.current["w"] || keys.current["arrowup"]) inputZ -= 1;
+    if (keys.current["s"] || keys.current["arrowdown"]) inputZ += 1;
+    if (keys.current["a"] || keys.current["arrowleft"]) inputX -= 1;
+    if (keys.current["d"] || keys.current["arrowright"]) inputX += 1;
+
+    const moving = inputX !== 0 || inputZ !== 0;
+    let speedMul = 1;
+    if (isFoot && sprint && moving && !crouch) speedMul = 1.85;
+    if (isFoot && crouch) speedMul = 0.45;
+
+    if (mountedVehicleId) setMoveState("ride");
+    else if (!isFoot && moving) setMoveState("walk");
+    else if (isFoot && moving) setMoveState(sprint && !crouch ? "run" : "walk");
+    else setMoveState("idle");
+
+    if (moving) {
+      const len = Math.hypot(inputX, inputZ) || 1;
+      inputX /= len;
+      inputZ /= len;
+      const yaw = yawRef.current;
+      // Forward is -Z in look space
+      const forwardX = -Math.sin(yaw);
+      const forwardZ = -Math.cos(yaw);
+      const rightX = Math.cos(yaw);
+      const rightZ = -Math.sin(yaw);
+      const step = speedBase * speedMul * dt;
+      let nextX = group.current.position.x + (forwardX * -inputZ + rightX * inputX) * step;
+      let nextZ = group.current.position.z + (forwardZ * -inputZ + rightZ * inputX) * step;
+      nextX = THREE.MathUtils.clamp(nextX, BOUNDS.minX, BOUNDS.maxX);
+      nextZ = THREE.MathUtils.clamp(nextZ, BOUNDS.minZ, BOUNDS.maxZ);
       if (transport === "ferry") {
         nextZ = THREE.MathUtils.clamp(nextZ, -9, -2.5);
         nextX = THREE.MathUtils.clamp(nextX, -11, -2);
       }
       group.current.position.x = nextX;
       group.current.position.z = nextZ;
-      const yaw = Math.atan2(dx, dz);
-      group.current.rotation.y = yaw;
-      setPosition([nextX, 0.6, nextZ]);
-      setFacing(yaw);
-      if (mountedVehicleId) updateMountedVehiclePose([nextX, 0, nextZ], yaw);
+      // Body faces move direction when strafing mixed, else look yaw
+      const faceYaw = Math.atan2(
+        forwardX * -inputZ + rightX * inputX,
+        forwardZ * -inputZ + rightZ * inputX,
+      );
+      group.current.rotation.y = faceYaw;
+      setPosition([nextX, group.current.position.y, nextZ]);
+      setFacing(faceYaw);
+      if (mountedVehicleId) updateMountedVehiclePose([nextX, 0, nextZ], faceYaw);
       const near = nearestDistrict(nextX, nextZ);
       setNearDistrict(near);
       onDistrictChange?.(near);
-    } else if (!mountedVehicleId) {
-      setMoveState("idle");
     } else {
-      setMoveState("ride");
+      group.current.rotation.y = yawRef.current;
+      setFacing(yawRef.current);
     }
+
+    // Jump (foot only)
+    if (isFoot && !mountedVehicleId) {
+      if (keys.current["space"] && grounded.current) {
+        jumpVel.current = 4.2;
+        grounded.current = false;
+      }
+      jumpVel.current -= 14 * dt;
+      let y = group.current.position.y + jumpVel.current * dt;
+      if (y <= (crouch ? 0.35 : 0.55)) {
+        y = crouch ? 0.35 : 0.55;
+        jumpVel.current = 0;
+        grounded.current = true;
+      }
+      group.current.position.y = y;
+    } else {
+      group.current.position.y = 0.55;
+    }
+
     const px = group.current.position.x;
     const pz = group.current.position.z;
     let bestV: string | null = null;
@@ -622,15 +702,24 @@ function PlayerController({
       const house = SAFEHOUSES.find((x) => x.id === sh);
       if (house) coolHeat(house.coolRate * 0.15);
     }
+
+    // Third-person COD-style camera: over-shoulder follow from look yaw/pitch
     const target = group.current.position;
-    const camOffset = new THREE.Vector3(0, mountedVehicleId ? 7.5 : 6.8, mountedVehicleId ? 11 : 9.5);
-    camera.position.lerp(target.clone().add(camOffset), 1 - Math.pow(0.001, dt));
-    camera.lookAt(target.x, target.y + 1.3, target.z);
+    const dist = mountedVehicleId ? 9.5 : crouch ? 5.5 : 6.8;
+    const height = mountedVehicleId ? 4.2 : crouch ? 2.8 : 3.4;
+    const cy = yawRef.current;
+    const cp = pitchRef.current;
+    const camX = target.x + Math.sin(cy) * Math.cos(cp) * dist;
+    const camY = target.y + height + Math.sin(cp) * dist * 0.35;
+    const camZ = target.z + Math.cos(cy) * Math.cos(cp) * dist;
+    camera.position.lerp(new THREE.Vector3(camX, camY, camZ), 1 - Math.pow(0.0008, dt));
+    camera.lookAt(target.x, target.y + (crouch ? 1.0 : 1.35), target.z);
   });
 
   useEffect(() => {
     if (group.current && mode !== "orbit") {
       group.current.position.set(position[0], position[1], position[2]);
+      yawRef.current = useRoamStore.getState().facing;
     }
   }, [mode]); // eslint-disable-line react-hooks/exhaustive-deps
 

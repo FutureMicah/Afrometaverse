@@ -373,6 +373,8 @@ export function AfroMetaverseGame() {
   const appearance = useCharacterStore((s) => s.appearance);
   const setProfileComplete = useCharacterStore((s) => s.setProfileComplete);
   const [showCreator, setShowCreator] = useState(false);
+  const [cityFullscreen, setCityFullscreen] = useState(false);
+  const cityWrapRef = useRef<HTMLDivElement>(null);
   const equipped = useCharacterStore((s) => s.equipped);
   const ownedClothes = useCharacterStore((s) => s.owned);
   const setGender = useCharacterStore((s) => s.setGender);
@@ -451,6 +453,18 @@ export function AfroMetaverseGame() {
   }, []);
 
   const setRoamMode = useRoamStore((s) => s.setMode);
+
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape" && cityFullscreen) {
+        setCityFullscreen(false);
+        setRoamMode("orbit");
+        if (document.pointerLockElement) document.exitPointerLock();
+      }
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [cityFullscreen, setRoamMode]);
   const setTransport = useRoamStore((s) => s.setTransport);
   const startMission = useRoamStore((s) => s.startMission);
   const completeStep = useRoamStore((s) => s.completeStep);
@@ -919,7 +933,7 @@ export function AfroMetaverseGame() {
                 <h1>Port Harcourt, Day {cityDay}</h1>
                 <p>
                   {roamMode === "orbit"
-                    ? "Four hubs, filled streets, empty lots and build sites — room for the city to grow. Free roam with WASD."
+                    ? "Click the map or Play full screen for COD-style move: WASD, mouse look, Shift sprint, C crouch, Space jump, F vehicle. Esc exits full screen."
                     : "WASD / arrows to move. Reach the glowing district to advance your mission."}
                 </p>
               </div>
@@ -931,6 +945,17 @@ export function AfroMetaverseGame() {
                   onClick={() => setRoamMode(roamMode === "orbit" ? "walk" : "orbit")}
                 >
                   {roamMode === "orbit" ? "Enter free roam" : "Exit free roam"}
+                </button>
+                <button
+                  type="button"
+                  className="am-btn am-btn-primary"
+                  onClick={() => {
+                    setCityFullscreen(true);
+                    setRoamMode("walk");
+                    announce("Full map — click canvas for mouse look · Esc to exit");
+                  }}
+                >
+                  Play full screen
                 </button>
                 {(
                   [
@@ -960,6 +985,24 @@ export function AfroMetaverseGame() {
                     {TRANSPORT_LABEL[t]}
                   </button>
                 ))}
+                {cityFullscreen && (
+                  <div className="am-fs-hud">
+                    <span className="am-fs-hint">
+                      WASD move · Mouse look · Shift sprint · C crouch · Space jump · F vehicle · Esc exit
+                    </span>
+                    <button
+                      type="button"
+                      className="am-btn am-btn-secondary am-fs-exit"
+                      onClick={() => {
+                        setCityFullscreen(false);
+                        setRoamMode("orbit");
+                        if (document.pointerLockElement) document.exitPointerLock();
+                      }}
+                    >
+                      Exit full screen
+                    </button>
+                  </div>
+                )}
                 {roamMode !== "orbit" && (
                   <button
                     type="button"
@@ -1331,14 +1374,21 @@ export function AfroMetaverseGame() {
                 </div>
               </div>
 
-                className="am-city-wrap am-city-canvas"
+                className={`am-city-wrap am-city-canvas ${cityFullscreen ? "am-city-fullscreen" : ""}`}
                 style={{
                   background: weather.sky,
                   boxShadow: `inset 0 0 0 1px oklch(1 0 0 / 0.08), 0 24px 50px ${weather.glow}`,
                 }}
               >
                 <div
-                  className="am-city-overlay"
+                  className={`am-city-overlay ${cityFullscreen ? "am-city-overlay-fs" : ""}`}
+                  onClick={() => {
+                    if (!cityFullscreen) {
+                      setCityFullscreen(true);
+                      setRoamMode("walk");
+                      announce("Full map active — click scene for mouse aim");
+                    }
+                  }}
                   style={{
                     background: `radial-gradient(circle at top, ${weather.glow}, transparent 45%)`,
                   }}
