@@ -172,17 +172,18 @@
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  background: var(--am-cream);
+  background:
+    radial-gradient(ellipse at 50% -12%, var(--am-violet), transparent 42%),
+    var(--am-cream);
   color: var(--am-ink);
-  font-family: "Avenir Next", "Segoe UI", system-ui, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 
 .am-shell h1,
 .am-shell h2,
 .am-brand-text strong,
 .am-citizen-head strong {
-  font-family: Georgia, "Times New Roman", serif;
-  letter-spacing: -0.01em;
+  font-family: inherit;
 }
 
 /* ---------- Top bar ---------- */
@@ -193,8 +194,9 @@
   justify-content: space-between;
   gap: 16px;
   padding: 14px 22px;
-  background: var(--am-paper);
+  background: oklch(0.14 0.03 285 / 0.96);
   border-bottom: 1px solid var(--am-line);
+  box-shadow: 0 6px 26px oklch(0.06 0.03 285 / 0.35);
   position: sticky;
   top: 0;
   z-index: 40;
@@ -213,12 +215,13 @@
   width: 42px;
   height: 42px;
   border-radius: 14px;
-  background: var(--am-forest);
-  color: var(--am-forest-ink);
-  font-family: Georgia, serif;
+  background: var(--am-coral);
+  color: var(--am-forest-deep);
+  font-family: inherit;
   font-size: 20px;
   font-weight: 700;
   flex: none;
+  box-shadow: var(--am-neon-shadow);
 }
 
 .am-brand-text {
@@ -279,7 +282,8 @@
 }
 
 .am-bell:hover {
-  background: var(--am-gold-soft);
+  background: var(--am-violet);
+  border-color: var(--am-coral);
 }
 
 .am-citizen-chip {
@@ -289,7 +293,7 @@
   padding: 6px 12px 6px 6px;
   border-radius: 999px;
   border: 1px solid var(--am-line);
-  background: var(--am-paper);
+  background: oklch(0.18 0.03 285 / 0.9);
 }
 
 .am-citizen-avatar {
@@ -299,7 +303,7 @@
   height: 32px;
   border-radius: 50%;
   background: var(--am-coral);
-  color: oklch(0.99 0.01 90);
+  color: var(--am-forest-deep);
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.04em;
@@ -335,6 +339,7 @@
   flex: 1;
   padding: 22px;
   align-items: start;
+  background: radial-gradient(ellipse at 50% 0%, oklch(0.25 0.065 315 / 0.2), transparent 48%);
 }
 
 /* ---------- Left rail ---------- */
@@ -344,9 +349,10 @@
   flex-direction: column;
   gap: 6px;
   padding: 14px;
-  border-radius: 18px;
+  border-radius: 8px;
   background: var(--am-forest);
   box-shadow: var(--am-shadow);
+  border: 1px solid var(--am-line);
   position: sticky;
   top: 84px;
 }
@@ -368,11 +374,12 @@
 }
 
 .am-rail-btn:hover {
-  background: oklch(1 0 0 / 0.1);
+  background: var(--am-violet);
 }
 
 .am-rail-btn-active {
-  background: oklch(1 0 0 / 0.16);
+  background: var(--am-violet);
+  box-shadow: inset 3px 0 0 var(--am-coral);
   font-weight: 600;
 }
 
@@ -390,11 +397,11 @@
 .am-rail-note {
   margin: 10px 4px 0;
   padding-top: 10px;
-  border-top: 1px solid oklch(1 0 0 / 0.14);
+  border-top: 1px solid var(--am-line);
   font-size: 11px;
   text-transform: uppercase;
   letter-spacing: 0.12em;
-  color: oklch(1 0 0 / 0.55);
+  color: var(--am-ink-soft);
 }
 
 /* ---------- Main column ---------- */
@@ -410,6 +417,8 @@
 .am-screen-head h1 {
   font-size: 28px;
   margin: 0 0 6px;
+  color: var(--am-ink);
+  text-shadow: 0 0 26px oklch(0.76 0.26 330 / 0.2);
 }
 
 .am-screen-head p {
@@ -422,11 +431,25 @@
 
 .am-city-wrap {
   position: relative;
-  border-radius: 20px;
+  border-radius: 8px;
   overflow: hidden;
-  border: 1px solid var(--am-line);
-  box-shadow: var(--am-shadow);
+  border: 1px solid oklch(0.76 0.26 330 / 0.4);
+  box-shadow: var(--am-shadow), 0 0 32px oklch(0.76 0.26 330 / 0.12);
   background: var(--am-gold-soft);
+  isolation: isolate;
+}
+
+.am-city-wrap::after {
+  position: absolute;
+  z-index: 1;
+  inset: 0;
+  content: "";
+  pointer-events: none;
+  background: linear-gradient(180deg, oklch(0.13 0.08 315 / 0.22), transparent 48%, oklch(0.1 0.04 285 / 0.32));
+}
+
+.am-city-wrap canvas {
+  filter: brightness(0.72) saturate(1.35) contrast(1.08);
 }
 
 .am-city-img {
@@ -444,12 +467,13 @@
   padding: 7px 11px;
   border-radius: 999px;
   border: 1px solid var(--am-paper);
-  background: oklch(0.27 0.03 65 / 0.82);
+  z-index: 2;
+  background: oklch(0.13 0.03 285 / 0.95);
   color: var(--am-forest-ink);
   font-size: 12px;
   font-weight: 600;
   cursor: pointer;
-  box-shadow: 0 6px 16px oklch(0.2 0.03 65 / 0.35);
+  box-shadow: 0 6px 18px oklch(0.06 0.03 285 / 0.68);
   transition: transform 160ms ease, background 160ms ease;
 }
 
@@ -459,7 +483,45 @@
 
 .am-marker-active {
   background: var(--am-coral);
+  color: var(--am-forest-deep);
   border-color: var(--am-paper);
+  box-shadow: 0 0 18px oklch(0.76 0.26 330 / 0.62);
+}
+
+.am-weather-panel {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  margin-top: 16px;
+  border: 1px solid var(--am-line);
+  border-radius: 8px;
+  background: var(--am-paper);
+  color: var(--am-ink);
+  box-shadow: var(--am-shadow);
+}
+
+.am-weather-panel > div {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.am-weather-panel > div:last-child {
+  display: block;
+  text-align: right;
+}
+
+.am-weather-icon { font-size: 28px; }
+.am-weather-label { font-size: 12px; text-transform: uppercase; opacity: 0.75; }
+.am-weather-name { font-size: 18px; }
+.am-weather-time { font-size: 12px; opacity: 0.75; }
+.am-weather-temp { font-size: 24px; }
+
+.am-district-weather-note {
+  margin-top: 8px;
+  color: var(--am-blue);
 }
 
 /* Panel / cards */
@@ -467,10 +529,11 @@
 .am-panel {
   margin-top: 16px;
   padding: 18px 20px;
-  border-radius: 18px;
+  border-radius: 8px;
   background: var(--am-paper);
   border: 1px solid var(--am-line);
   box-shadow: var(--am-shadow);
+  border-top: 2px solid var(--am-coral);
   animation: am-rise 220ms ease;
 }
 
@@ -511,7 +574,7 @@
   padding: 4px 10px;
   border-radius: 999px;
   background: var(--am-mint-soft);
-  color: oklch(0.38 0.06 165);
+  color: var(--am-mint);
   font-size: 11px;
   font-weight: 700;
   text-transform: uppercase;
@@ -547,7 +610,7 @@
   flex-direction: column;
   gap: 10px;
   padding: 18px;
-  border-radius: 18px;
+  border-radius: 8px;
   background: var(--am-paper);
   border: 1px solid var(--am-line);
   box-shadow: var(--am-shadow);
@@ -597,7 +660,7 @@
   gap: 5px;
   font-size: 13px;
   font-weight: 700;
-  color: oklch(0.45 0.09 70);
+  color: var(--am-gold);
   background: var(--am-gold-soft);
   padding: 4px 10px;
   border-radius: 999px;
@@ -633,7 +696,7 @@
   justify-content: center;
   gap: 7px;
   padding: 10px 16px;
-  border-radius: 12px;
+  border-radius: 6px;
   border: 1px solid transparent;
   font-size: 13.5px;
   font-weight: 600;
@@ -647,7 +710,8 @@
 
 .am-btn-primary {
   background: var(--am-coral);
-  color: oklch(0.99 0.01 90);
+  color: var(--am-forest-deep);
+  box-shadow: 0 0 14px oklch(0.76 0.26 330 / 0.22);
 }
 
 .am-btn-primary:hover:not(:disabled) {
@@ -658,6 +722,7 @@
   background: var(--am-forest);
   color: var(--am-forest-ink);
   width: 100%;
+  border: 1px solid var(--am-line);
 }
 
 .am-btn-secondary:hover:not(:disabled) {
@@ -671,14 +736,14 @@
 }
 
 .am-btn-ghost:hover:not(:disabled) {
-  background: var(--am-gold-soft);
+  background: var(--am-violet);
 }
 
 /* Compose + feed */
 
 .am-compose {
   padding: 16px 18px;
-  border-radius: 18px;
+  border-radius: 8px;
   background: var(--am-paper);
   border: 1px solid var(--am-line);
   box-shadow: var(--am-shadow);
@@ -718,7 +783,7 @@
 
 .am-post {
   padding: 14px 16px;
-  border-radius: 16px;
+  border-radius: 8px;
   background: var(--am-paper);
   border: 1px solid var(--am-line);
   animation: am-rise 220ms ease;
@@ -794,7 +859,7 @@
   flex-direction: column;
   gap: 14px;
   padding: 18px;
-  border-radius: 18px;
+  border-radius: 8px;
   background: var(--am-paper);
   border: 1px solid var(--am-line);
   box-shadow: var(--am-shadow);
@@ -843,7 +908,7 @@
   display: flex;
   align-items: center;
   gap: 7px;
-  font-family: Georgia, serif;
+  font-family: inherit;
   font-size: 26px;
   font-weight: 700;
 }
@@ -900,7 +965,7 @@
 
 .am-stats dd {
   margin: 4px 0 0;
-  font-family: Georgia, serif;
+  font-family: inherit;
   font-size: 18px;
   font-weight: 700;
 }
@@ -920,8 +985,9 @@
 
 .am-pulse {
   padding: 12px 14px;
-  border-radius: 14px;
+  border-radius: 6px;
   background: var(--am-blue-soft);
+  border-left: 2px solid var(--am-blue);
 }
 
 .am-pulse-title {
@@ -957,10 +1023,11 @@
   max-width: min(480px, calc(100vw - 32px));
   padding: 12px 18px;
   border-radius: 14px;
-  background: oklch(0.27 0.03 65 / 0.94);
+  background: oklch(0.18 0.04 300 / 0.98);
   color: var(--am-forest-ink);
   font-size: 13.5px;
-  box-shadow: 0 12px 30px oklch(0.2 0.03 65 / 0.4);
+  box-shadow: var(--am-shadow), var(--am-neon-shadow);
+  border: 1px solid var(--am-line);
   animation: am-toast-in 220ms ease;
   z-index: 60;
 }
@@ -1043,6 +1110,12 @@
   .am-cards {
     grid-template-columns: 1fr;
   }
+}
+
+@media (max-width: 600px) {
+  .am-city-wrap { height: 380px !important; }
+  .am-marker { gap: 4px; padding: 6px 8px; font-size: 11px; }
+  .am-weather-panel { padding: 12px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
