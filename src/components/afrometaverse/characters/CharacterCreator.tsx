@@ -1,9 +1,10 @@
 import { useRef, useState } from "react";
-import { Camera, IdCard, User, Wand2 } from "lucide-react";
+import { Camera, IdCard, Sparkles, User, Wand2 } from "lucide-react";
 import { analyzePhotosToAppearance } from "@/lib/photoToCharacter";
 import { useCharacterStore, type Gender } from "@/stores/characterStore";
 import { CharacterPreview } from "./CharacterPreview";
 import { PhotoImageEditor } from "./PhotoImageEditor";
+import { Avatar3DStudio } from "./Avatar3DStudio";
 
 type Props = {
   open: boolean;
@@ -12,7 +13,7 @@ type Props = {
   onSkip?: () => void;
 };
 
-type Step = "upload" | "edit-face" | "edit-body" | "review";
+type Step = "choose" | "upload" | "edit-face" | "edit-body" | "review" | "ai-studio";
 
 /**
  * Account profile character creation:
@@ -22,7 +23,7 @@ type Step = "upload" | "edit-face" | "edit-body" | "review";
  * 4) Review on turntable, then enter city (further edits unlock by level)
  */
 export function CharacterCreator({ open, displayName, onComplete, onSkip }: Props) {
-  const [step, setStep] = useState<Step>("upload");
+  const [step, setStep] = useState<Step>("choose");
   const [faceRaw, setFaceRaw] = useState<string | null>(null);
   const [bodyRaw, setBodyRaw] = useState<string | null>(null);
   const [facePhoto, setFacePhoto] = useState<string | null>(null);
@@ -31,6 +32,7 @@ export function CharacterCreator({ open, displayName, onComplete, onSkip }: Prop
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notes, setNotes] = useState<string[]>([]);
+  const [aiAvatarUrl, setAiAvatarUrl] = useState<string | null>(null);
 
   const applyFromPhotos = useCharacterStore((s) => s.applyFromPhotos);
   const appearance = useCharacterStore((s) => s.appearance);
@@ -105,6 +107,71 @@ export function CharacterCreator({ open, displayName, onComplete, onSkip }: Prop
             </p>
           </div>
         </div>
+
+        {step === "choose" && (
+          <div className="am-creator-body">
+            <p className="am-panel-tip">
+              Choose how to build your citizen. Both paths keep your real likeness.
+            </p>
+            <div className="am-character-row" style={{ flexDirection: "column", gap: 10 }}>
+              <button
+                type="button"
+                className="am-chip am-transport-chip"
+                style={{ width: "100%", justifyContent: "flex-start", padding: "12px 14px", gap: 10 }}
+                onClick={() => setStep("upload")}
+              >
+                <Camera size={18} />
+                <div style={{ textAlign: "left" }}>
+                  <strong>Procedural from photos</strong>
+                  <div className="am-panel-tip" style={{ margin: 0 }}>
+                    Face + body photos → unique 3D mesh you can equip and level up.
+                  </div>
+                </div>
+              </button>
+              <button
+                type="button"
+                className="am-chip am-transport-chip"
+                style={{ width: "100%", justifyContent: "flex-start", padding: "12px 14px", gap: 10 }}
+                onClick={() => setStep("ai-studio")}
+              >
+                <Sparkles size={18} />
+                <div style={{ textAlign: "left" }}>
+                  <strong>AI 3D Avatar Studio</strong>
+                  <div className="am-panel-tip" style={{ margin: 0 }}>
+                    One selfie → Pixar / Memoji / clay / anime style portrait (sign-in required).
+                  </div>
+                </div>
+              </button>
+            </div>
+            {onSkip && (
+              <button type="button" className="am-chip" onClick={onSkip} style={{ marginTop: 8 }}>
+                Skip for now
+              </button>
+            )}
+          </div>
+        )}
+
+        {step === "ai-studio" && (
+          <div className="am-creator-body">
+            <Avatar3DStudio
+              onSave={(url) => {
+                setAiAvatarUrl(url);
+                // Store as face photo reference so the rest of the game can use it
+                applyFromPhotos({
+                  appearance: {
+                    ...appearance,
+                    displayName: displayName ?? appearance.displayName,
+                  },
+                  facePhoto: url,
+                  bodyPhoto: url,
+                });
+                setNotes(["AI 3D avatar applied from your selfie."]);
+                setStep("review");
+              }}
+              onCancel={() => setStep("choose")}
+            />
+          </div>
+        )}
 
         {step === "upload" && (
           <div className="am-creator-body">
@@ -204,10 +271,21 @@ export function CharacterCreator({ open, displayName, onComplete, onSkip }: Prop
               This citizen is unique to your photos. Basic edits are open now; face marks, tailor
               fit, and advanced details unlock as you level up in Port Harcourt.
             </p>
-            <CharacterPreview height={280} />
+            {aiAvatarUrl ? (
+              <img
+                src={aiAvatarUrl}
+                alt="AI 3D avatar"
+                className="am-avatar-preview-img"
+                style={{ maxHeight: 280, margin: "0 auto", display: "block" }}
+              />
+            ) : (
+              <CharacterPreview height={280} />
+            )}
             <div className="am-creator-photos">
               {facePhoto && <img src={facePhoto} alt="Face ref" className="am-creator-thumb am-photo-round" />}
-              {bodyPhoto && <img src={bodyPhoto} alt="Body ref" className="am-creator-thumb" />}
+              {bodyPhoto && bodyPhoto !== facePhoto && (
+                <img src={bodyPhoto} alt="Body ref" className="am-creator-thumb" />
+              )}
             </div>
             <ul className="am-outfit-tips">
               {notes.map((n) => (
@@ -222,7 +300,8 @@ export function CharacterCreator({ open, displayName, onComplete, onSkip }: Prop
                 type="button"
                 className="am-btn am-btn-secondary"
                 onClick={() => {
-                  setStep("upload");
+                  setAiAvatarUrl(null);
+                  setStep("choose");
                 }}
               >
                 Rebuild

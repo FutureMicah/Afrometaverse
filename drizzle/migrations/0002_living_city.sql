@@ -196,6 +196,21 @@ $$;
 grant execute on function public.resolve_votes_for_day(integer) to authenticated;
 grant execute on function public.resolve_votes_for_day(integer) to anon;
 
--- Realtime: enable replication for feed + presence (run in dashboard if needed)
--- alter publication supabase_realtime add table public.town_posts;
--- alter publication supabase_realtime add table public.presence;
+-- ============================================================
+-- Realtime: enable replication for live feed + presence
+-- These lines make town_posts and presence broadcast changes
+-- to connected clients (useCityLive subscriptions).
+-- Safe to re-run; IF NOT EXISTS is not available on publications
+-- so we ignore errors if already added.
+-- ============================================================
+do $$
+begin
+  alter publication supabase_realtime add table public.town_posts;
+exception when duplicate_object then null;
+end $$;
+
+do $$
+begin
+  alter publication supabase_realtime add table public.presence;
+exception when duplicate_object then null;
+end $$;

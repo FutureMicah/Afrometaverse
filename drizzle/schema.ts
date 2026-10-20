@@ -1,4 +1,4 @@
-import { pgTable, uuid, text, integer, jsonb, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, uuid, text, integer, jsonb, timestamp, boolean, primaryKey } from "drizzle-orm/pg-core";
 
 /**
  * Citizen progress — one row per authenticated user.
@@ -19,3 +19,71 @@ export const citizens = pgTable("citizens", {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
+
+/**
+ * Town Square posts — realtime social feed.
+ * See drizzle/migrations/0002_living_city.sql
+ */
+export const townPosts = pgTable("town_posts", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  authorId: uuid("author_id"),
+  authorName: text("author_name").notNull(),
+  body: text("body").notNull(),
+  likes: integer("likes").notNull().default(0),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+/**
+ * Presence heartbeats — who is currently in the city.
+ */
+export const presence = pgTable("presence", {
+  userId: uuid("user_id").primaryKey(),
+  displayName: text("display_name").notNull(),
+  districtId: text("district_id"),
+  lastSeen: timestamp("last_seen", { withTimezone: true }).notNull().defaultNow(),
+});
+
+/**
+ * Scheduled city events (notices, weather, market, civic, celebration).
+ */
+export const cityEvents = pgTable("city_events", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  title: text("title").notNull(),
+  body: text("body").notNull(),
+  eventType: text("event_type").notNull().default("notice"),
+  startsOnDay: integer("starts_on_day").notNull(),
+  endsOnDay: integer("ends_on_day").notNull(),
+  isActive: boolean("is_active").notNull().default(true),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+/**
+ * Civic vote proposals for the current season.
+ */
+export const voteProposals = pgTable("vote_proposals", {
+  id: text("id").primaryKey(),
+  season: text("season").notNull().default("003"),
+  title: text("title").notNull(),
+  blurb: text("blurb").notNull(),
+  voteCount: integer("vote_count").notNull().default(0),
+  status: text("status").notNull().default("open"),
+  closesOnDay: integer("closes_on_day").notNull().default(7),
+  outcomeNote: text("outcome_note"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+/**
+ * One vote per citizen per season.
+ */
+export const citizenVotes = pgTable(
+  "citizen_votes",
+  {
+    citizenId: uuid("citizen_id").notNull(),
+    proposalId: text("proposal_id").notNull(),
+    season: text("season").notNull().default("003"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => ({
+    pk: primaryKey({ columns: [t.citizenId, t.season] }),
+  }),
+);
