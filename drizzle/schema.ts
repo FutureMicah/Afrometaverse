@@ -16,6 +16,21 @@ export const citizens = pgTable("citizens", {
   votedFor: text("voted_for"),
   doneCourses: jsonb("done_courses").$type<string[]>().notNull().default([]),
   likedPosts: jsonb("liked_posts").$type<string[]>().notNull().default([]),
+  /** 0–100 heat; wanted stars derived client-side */
+  heatPoints: integer("heat_points").notNull().default(0),
+  /** GearLoadout JSON: equipped, unlocked[], ammo{} */
+  gear: jsonb("gear")
+    .$type<{
+      equipped: string;
+      unlocked: string[];
+      ammo: Record<string, number>;
+    }>()
+    .notNull()
+    .default({
+      equipped: "none",
+      unlocked: ["none", "stun"],
+      ammo: { sidearm: 0, carbine: 0, stun: 12 },
+    }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });

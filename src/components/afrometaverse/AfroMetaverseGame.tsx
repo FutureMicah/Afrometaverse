@@ -410,7 +410,7 @@ export function AfroMetaverseGame() {
     return () => window.clearTimeout(t);
   }, []);
 
-  // Client-side persistence for heat / gear (Cloud citizen row optional later)
+  // Heat / gear: always mirror to localStorage; cloud when signed in
   useEffect(() => {
     try {
       const raw = localStorage.getItem("am-roam-v1");
@@ -436,6 +436,7 @@ export function AfroMetaverseGame() {
   }, []);
 
   useEffect(() => {
+    let cloudTimer: number | undefined;
     const unsub = useRoamStore.subscribe((s) => {
       try {
         localStorage.setItem(
@@ -448,9 +449,24 @@ export function AfroMetaverseGame() {
       } catch {
         /* quota */
       }
+      if (!isAuthenticated) return;
+      if (cloudTimer) window.clearTimeout(cloudTimer);
+      cloudTimer = window.setTimeout(() => {
+        void saveProgress({
+          heatPoints: s.heatPoints,
+          gear: {
+            equipped: s.gear.equipped,
+            unlocked: [...s.gear.unlocked],
+            ammo: { ...s.gear.ammo },
+          },
+        });
+      }, 700);
     });
-    return unsub;
-  }, []);
+    return () => {
+      unsub();
+      if (cloudTimer) window.clearTimeout(cloudTimer);
+    };
+  }, [isAuthenticated, saveProgress]);
 
   const setRoamMode = useRoamStore((s) => s.setMode);
 
@@ -530,6 +546,30 @@ export function AfroMetaverseGame() {
     setVotedFor(progress.votedFor);
     setDoneCourses(progress.doneCourses);
     setLikedPosts(progress.likedPosts);
+    // Cloud heat / gear override localStorage once per session
+    {
+      const st = useRoamStore.getState();
+      st.coolHeat(100);
+      if (progress.heatPoints > 0) st.addHeat(progress.heatPoints);
+      if (progress.gear?.equipped) {
+        for (const id of progress.gear.unlocked ?? []) {
+          st.unlockGear(id as import("@/stores/roamStore").GearId);
+        }
+        st.equipGear(progress.gear.equipped as import("@/stores/roamStore").GearId);
+        // restore ammo counts
+        const g = st.gear;
+        useRoamStore.setState({
+          gear: {
+            ...g,
+            ammo: {
+              sidearm: progress.gear.ammo?.sidearm ?? g.ammo.sidearm,
+              carbine: progress.gear.ammo?.carbine ?? g.ammo.carbine,
+              stun: progress.gear.ammo?.stun ?? g.ammo.stun,
+            },
+          },
+        });
+      }
+    }
     if (progress.cityDay > 1) {
       useWeatherStore.getState().setDay(progress.cityDay);
       useWorldStateStore.getState().updateWorldState(progress.cityDay);

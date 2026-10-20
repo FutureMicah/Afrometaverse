@@ -27,6 +27,8 @@ export type Database = {
           voted_for: string | null
           done_courses: string[]
           liked_posts: string[]
+          heat_points: number
+          gear: Json
           created_at: string
           updated_at: string
         }
@@ -42,6 +44,8 @@ export type Database = {
           voted_for?: string | null
           done_courses?: string[]
           liked_posts?: string[]
+          heat_points?: number
+          gear?: Json
           created_at?: string
           updated_at?: string
         }
@@ -57,6 +61,8 @@ export type Database = {
           voted_for?: string | null
           done_courses?: string[]
           liked_posts?: string[]
+          heat_points?: number
+          gear?: Json
           created_at?: string
           updated_at?: string
         }

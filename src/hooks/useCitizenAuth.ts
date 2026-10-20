@@ -5,6 +5,12 @@ import type { Tables } from "@/integrations/supabase/types";
 
 export type CitizenRow = Tables<"citizens">;
 
+export type CitizenGear = {
+  equipped: string;
+  unlocked: string[];
+  ammo: Record<string, number>;
+};
+
 export type CitizenProgress = {
   displayName: string;
   avatarInitials: string;
@@ -16,6 +22,14 @@ export type CitizenProgress = {
   votedFor: string | null;
   doneCourses: string[];
   likedPosts: string[];
+  heatPoints: number;
+  gear: CitizenGear;
+};
+
+const DEFAULT_GEAR: CitizenGear = {
+  equipped: "none",
+  unlocked: ["none", "stun"],
+  ammo: { sidearm: 0, carbine: 0, stun: 12 },
 };
 
 const DEFAULT_PROGRESS: CitizenProgress = {
@@ -29,7 +43,24 @@ const DEFAULT_PROGRESS: CitizenProgress = {
   votedFor: null,
   doneCourses: [],
   likedPosts: [],
+  heatPoints: 0,
+  gear: DEFAULT_GEAR,
 };
+
+function parseGear(raw: unknown): CitizenGear {
+  if (!raw || typeof raw !== "object") return { ...DEFAULT_GEAR, ammo: { ...DEFAULT_GEAR.ammo } };
+  const g = raw as Record<string, unknown>;
+  const ammoIn = (g.ammo && typeof g.ammo === "object" ? g.ammo : {}) as Record<string, number>;
+  return {
+    equipped: typeof g.equipped === "string" ? g.equipped : "none",
+    unlocked: Array.isArray(g.unlocked) ? g.unlocked.map(String) : ["none", "stun"],
+    ammo: {
+      sidearm: Number(ammoIn.sidearm) || 0,
+      carbine: Number(ammoIn.carbine) || 0,
+      stun: Number(ammoIn.stun) || 0,
+    },
+  };
+}
 
 function rowToProgress(row: CitizenRow): CitizenProgress {
   return {
@@ -43,6 +74,8 @@ function rowToProgress(row: CitizenRow): CitizenProgress {
     votedFor: row.voted_for,
     doneCourses: Array.isArray(row.done_courses) ? row.done_courses : [],
     likedPosts: Array.isArray(row.liked_posts) ? row.liked_posts : [],
+    heatPoints: typeof row.heat_points === "number" ? row.heat_points : 0,
+    gear: parseGear(row.gear),
   };
 }
 
@@ -266,6 +299,8 @@ export function useCitizenAuth() {
         voted_for: merged.votedFor,
         done_courses: merged.doneCourses,
         liked_posts: merged.likedPosts,
+        heat_points: merged.heatPoints,
+        gear: merged.gear,
         updated_at: new Date().toISOString(),
       })
       .eq("id", u.id);

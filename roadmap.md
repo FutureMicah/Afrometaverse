@@ -14,7 +14,7 @@
 
 ## Open
 - [ ] Run 0002_living_city.sql in Lovable Cloud / Supabase (see instructions below)
-- [ ] Cloud citizen fields for heat/gear
+- [x] Cloud citizen fields for heat/gear (0003_citizen_roam.sql + client sync)
 - [ ] Building interiors
 - [ ] GLTF photoreal assets
 - [ ] Mobile touch controls
