@@ -94,19 +94,23 @@ const TOWERS: TowerSpec[] = [
   { x: 6.0, z: -2.5, w: 1.1, d: 1.0, h: 5.0, hue: N.towerDark, neon: N.neonPink },
 ];
 
-function NightSky() {
+/** Daylight village sky — no neon city yet; players grow this settlement later */
+function VillageDaySky() {
   return (
     <>
-      <color attach="background" args={["#0b0618"]} />
-      <fog attach="fog" args={["#1a0a2e", 18, 42]} />
-      <ambientLight intensity={0.22} />
-      <hemisphereLight args={["#4c1d95", "#0f172a", 0.35]} />
-      <directionalLight position={[6, 14, 4]} intensity={0.35} color="#c4b5fd" castShadow />
-      <pointLight position={[-3, 3, 2.5]} intensity={1.2} color={N.neonAmber} distance={12} />
-      <pointLight position={[5.5, 4, 2.5]} intensity={1.0} color={N.neonOrange} distance={14} />
-      <pointLight position={[0, 5, -1.5]} intensity={0.9} color={N.neonCyan} distance={12} />
-      <pointLight position={[-5.5, 3, -3.5]} intensity={0.8} color={N.neonPurple} distance={10} />
-      <pointLight position={[0, 8, 0]} intensity={0.4} color="#e879f9" distance={20} />
+      <color attach="background" args={["#c5d6e8"]} />
+      <fog attach="fog" args={["#d4c4a8", 22, 55]} />
+      <ambientLight intensity={0.55} />
+      <hemisphereLight args={["#e8f0f8", "#8a6a3c", 0.45]} />
+      <directionalLight
+        position={[10, 18, 6]}
+        intensity={1.15}
+        color="#fff4e0"
+        castShadow
+        shadow-mapSize-width={1024}
+        shadow-mapSize-height={1024}
+      />
+      <directionalLight position={[-6, 8, -4]} intensity={0.25} color="#a8c4e0" />
     </>
   );
 }
@@ -206,27 +210,6 @@ function NeonRoads() {
           </group>
         );
       })}
-      {/* Elevated ring — keep as night accent road */}
-      <mesh position={[0, 3.2, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <ringGeometry args={[7.5, 8.2, 48]} />
-        <meshStandardMaterial color="#1e1b2e" emissive="#7c3aed" emissiveIntensity={0.15} />
-      </mesh>
-      <mesh position={[0, 2.9, 8]} castShadow>
-        <boxGeometry args={[0.35, 2.9, 0.35]} />
-        <meshStandardMaterial color="#2a2a35" />
-      </mesh>
-      <mesh position={[0, 2.9, -8]} castShadow>
-        <boxGeometry args={[0.35, 2.9, 0.35]} />
-        <meshStandardMaterial color="#2a2a35" />
-      </mesh>
-      <mesh position={[8, 2.9, 0]} castShadow>
-        <boxGeometry args={[0.35, 2.9, 0.35]} />
-        <meshStandardMaterial color="#2a2a35" />
-      </mesh>
-      <mesh position={[-8, 2.9, 0]} castShadow>
-        <boxGeometry args={[0.35, 2.9, 0.35]} />
-        <meshStandardMaterial color="#2a2a35" />
-      </mesh>
     </group>
   );
 }
@@ -402,26 +385,181 @@ function MarketNeonLane() {
   );
 }
 
-function NeonWater() {
+
+/** Simple mud / thatch / zinc hut — starting village fabric (players develop the city later) */
+function VillageHut({
+  x,
+  z,
+  rot = 0,
+  w = 1.1,
+  d = 1.0,
+  h = 0.85,
+  style = "thatch",
+  wall = "#c4a06a",
+}: {
+  x: number;
+  z: number;
+  rot?: number;
+  w?: number;
+  d?: number;
+  h?: number;
+  style?: "thatch" | "zinc" | "round";
+  wall?: string;
+}) {
+  const roofColor = style === "zinc" ? "#8a9aaa" : style === "round" ? "#6b5340" : "#8b6914";
+  return (
+    <group position={[x, 0, z]} rotation={[0, rot, 0]}>
+      {/* walls */}
+      <mesh castShadow receiveShadow position={[0, h / 2, 0]}>
+        {style === "round" ? (
+          <cylinderGeometry args={[w * 0.55, w * 0.58, h, 10]} />
+        ) : (
+          <boxGeometry args={[w, h, d]} />
+        )}
+        <meshStandardMaterial color={wall} roughness={0.95} />
+      </mesh>
+      {/* door void suggestion */}
+      <mesh position={[0, h * 0.35, d / 2 + 0.01]}>
+        <planeGeometry args={[0.28, h * 0.55]} />
+        <meshStandardMaterial color="#2a1c10" roughness={1} />
+      </mesh>
+      {/* roof */}
+      {style === "round" ? (
+        <mesh castShadow position={[0, h + 0.35, 0]}>
+          <coneGeometry args={[w * 0.72, 0.7, 10]} />
+          <meshStandardMaterial color={roofColor} roughness={0.9} />
+        </mesh>
+      ) : (
+        <mesh castShadow position={[0, h + 0.22, 0]} rotation={[0, 0, 0]}>
+          <boxGeometry args={[w * 1.15, 0.12, d * 1.2]} />
+          <meshStandardMaterial color={roofColor} roughness={style === "zinc" ? 0.55 : 0.92} metalness={style === "zinc" ? 0.35 : 0} />
+        </mesh>
+      )}
+      {style === "thatch" && (
+        <mesh position={[0, h + 0.38, 0]}>
+          <boxGeometry args={[w * 1.05, 0.18, d * 1.05]} />
+          <meshStandardMaterial color="#a07830" roughness={1} />
+        </mesh>
+      )}
+    </group>
+  );
+}
+
+/** Starting settlement clusters around the four hubs — grows into city via player progress later */
+function StartingVillage() {
+  const huts: Array<{
+    x: number;
+    z: number;
+    rot?: number;
+    style?: "thatch" | "zinc" | "round";
+    wall?: string;
+    w?: number;
+    d?: number;
+    h?: number;
+  }> = [
+    // Town market compound
+    { x: -4.2, z: 3.6, style: "thatch", wall: "#c9a66b" },
+    { x: -2.8, z: 4.2, style: "zinc", wall: "#b8956a", w: 1.3, d: 1.1 },
+    { x: -5.0, z: 2.2, style: "thatch", wall: "#b8895c", rot: 0.4 },
+    { x: -3.6, z: 1.6, style: "round", wall: "#d2b48c", w: 1.2, h: 0.9 },
+    { x: -1.9, z: 3.0, style: "zinc", wall: "#a89070", rot: -0.3 },
+    // Civic / centre
+    { x: -1.2, z: -2.4, style: "thatch", wall: "#c4a06a" },
+    { x: 1.4, z: -2.8, style: "zinc", wall: "#b0a090", w: 1.4, d: 1.2, h: 1.0 },
+    { x: 0.2, z: -3.6, style: "round", wall: "#d4b896", w: 1.15 },
+    { x: 2.2, z: -1.4, style: "thatch", wall: "#c9a66b", rot: 0.5 },
+    { x: -2.0, z: -1.2, style: "zinc", wall: "#9a8b78" },
+    // Creekside
+    { x: -6.6, z: -2.6, style: "round", wall: "#c4a06a", w: 1.25 },
+    { x: -7.4, z: -4.0, style: "thatch", wall: "#b8895c", rot: 0.2 },
+    { x: -5.2, z: -4.2, style: "zinc", wall: "#a89070" },
+    { x: -7.8, z: -1.6, style: "thatch", wall: "#d2b48c", rot: -0.5 },
+    // Port / edge
+    { x: 5.2, z: 3.4, style: "zinc", wall: "#8a8070", w: 1.5, d: 1.2, h: 1.05 },
+    { x: 6.6, z: 2.4, style: "thatch", wall: "#c4a06a" },
+    { x: 4.6, z: 1.6, style: "zinc", wall: "#9a8b78", rot: 0.3 },
+    { x: 7.2, z: 3.8, style: "round", wall: "#b8956a", w: 1.1 },
+    // Path-side dwellings
+    { x: 1.6, z: 2.4, style: "thatch", wall: "#c9a66b", rot: 0.15 },
+    { x: -0.8, z: 1.2, style: "zinc", wall: "#a89070" },
+    { x: 3.8, z: -0.6, style: "thatch", wall: "#b8895c" },
+    { x: -4.4, z: -0.4, style: "round", wall: "#d2b48c", w: 1.0 },
+  ];
+
+  return (
+    <group>
+      {huts.map((h, i) => (
+        <VillageHut key={i} {...h} />
+      ))}
+      {/* simple stick fences near market */}
+      {[
+        [-3.0, 5.0],
+        [-2.4, 5.0],
+        [-1.8, 5.0],
+        [-5.6, 3.0],
+        [-5.6, 2.4],
+      ].map(([fx, fz], i) => (
+        <mesh key={`f${i}`} position={[fx, 0.35, fz]} castShadow>
+          <boxGeometry args={[0.06, 0.7, 0.06]} />
+          <meshStandardMaterial color="#5c4030" roughness={1} />
+        </mesh>
+      ))}
+      {/* drying racks / market tables */}
+      {[
+        [-3.5, 3.2],
+        [-2.5, 3.5],
+        [-4.0, 2.8],
+      ].map(([mx, mz], i) => (
+        <group key={`m${i}`} position={[mx, 0, mz]}>
+          <mesh position={[0, 0.45, 0]} castShadow>
+            <boxGeometry args={[0.9, 0.06, 0.45]} />
+            <meshStandardMaterial color="#6b5340" roughness={0.9} />
+          </mesh>
+          <mesh position={[-0.35, 0.22, 0.15]}>
+            <boxGeometry args={[0.06, 0.44, 0.06]} />
+            <meshStandardMaterial color="#4a3728" />
+          </mesh>
+          <mesh position={[0.35, 0.22, 0.15]}>
+            <boxGeometry args={[0.06, 0.44, 0.06]} />
+            <meshStandardMaterial color="#4a3728" />
+          </mesh>
+          <mesh position={[-0.35, 0.22, -0.15]}>
+            <boxGeometry args={[0.06, 0.44, 0.06]} />
+            <meshStandardMaterial color="#4a3728" />
+          </mesh>
+          <mesh position={[0.35, 0.22, -0.15]}>
+            <boxGeometry args={[0.06, 0.44, 0.06]} />
+            <meshStandardMaterial color="#4a3728" />
+          </mesh>
+        </group>
+      ))}
+    </group>
+  );
+}
+
+function CreekWater() {
   const ref = useRef<THREE.Mesh>(null);
   useFrame(({ clock }) => {
     if (ref.current) {
-      ref.current.position.y = 0.04 + Math.sin(clock.getElapsedTime() * 0.9) * 0.02;
+      ref.current.position.y = 0.03 + Math.sin(clock.getElapsedTime() * 0.6) * 0.012;
     }
   });
   return (
     <group position={[-5.5, 0, -5.4]}>
-      <mesh ref={ref} rotation={[-Math.PI / 2, 0, 0]}>
-        <circleGeometry args={[4.5, 28]} />
+      <mesh ref={ref} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+        <circleGeometry args={[3.8, 28]} />
         <meshStandardMaterial
-          color={N.water}
-          emissive="#0369a1"
-          emissiveIntensity={0.25}
+          color="#3d4a33"
           transparent
-          opacity={0.85}
-          roughness={0.2}
-          metalness={0.3}
+          opacity={0.88}
+          roughness={0.35}
+          metalness={0.05}
         />
+      </mesh>
+      {/* muddy bank ring */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.02, 0]}>
+        <ringGeometry args={[3.7, 4.4, 28]} />
+        <meshStandardMaterial color={N.earth} roughness={1} />
       </mesh>
     </group>
   );
@@ -1095,45 +1233,44 @@ export function AfroMetaverseScene({
 }) {
   const mode = useRoamStore((s) => s.mode);
   const nearDistrictId = useRoamStore((s) => s.nearDistrictId);
-  void weather; // night cyber look is intentional regardless of day weather UI
+  void weather;
 
   return (
     <Canvas
       shadows
-      camera={{ position: [0, 11, 16], fov: 45 }}
-      style={{ width: "100%", height: "100%", background: "#0b0618" }}
+      camera={{ position: [0, 10, 15], fov: 45 }}
+      style={{ width: "100%", height: "100%", background: "#c5d6e8" }}
       tabIndex={0}
     >
-      <NightSky />
+      <VillageDaySky />
       <NeonGround />
       <NeonRoads />
-      <StreetLampsNeon />
-      <NeonWater />
-      <PortNeon />
-      <MarketNeonLane />
+      <CreekWater />
+      <StartingVillage />
 
-      {TOWERS.map((spec, i) => (
-        <NeonTower key={i} spec={{ ...spec, neon: spec.neon || N.neonCyan }} />
-      ))}
-
+      {/* Soft district markers — no neon towers; village grows into city later */}
       {Object.entries(DISTRICT_LAYOUT).map(([id, info]) => (
-        <DistrictHubNeon
-          key={id}
-          position={[info.x, 0, info.z]}
-          color={info.color}
-          neon={info.neon}
-          active={selectedDistrict === id}
-          near={nearDistrictId === id}
-          label={info.label}
-        />
+        <group key={id} position={[info.x, 0, info.z]}>
+          <mesh position={[0, 0.02, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+            <circleGeometry args={[selectedDistrict === id || nearDistrictId === id ? 1.1 : 0.75, 20]} />
+            <meshStandardMaterial
+              color={info.color}
+              transparent
+              opacity={selectedDistrict === id ? 0.45 : nearDistrictId === id ? 0.3 : 0.18}
+              roughness={1}
+            />
+          </mesh>
+          <mesh position={[0, 0.9, 0]} castShadow>
+            <cylinderGeometry args={[0.06, 0.08, 1.8, 6]} />
+            <meshStandardMaterial color="#5c4030" roughness={1} />
+          </mesh>
+          <mesh position={[0, 1.85, 0]}>
+            <boxGeometry args={[0.55, 0.28, 0.06]} />
+            <meshStandardMaterial color={info.color} roughness={0.7} />
+          </mesh>
+        </group>
       ))}
 
-      <NeonSign x={-4.2} y={3.2} z={4.9} w={1.4} h={0.4} color={N.neonPink} />
-      <NeonSign x={2.8} y={6.5} z={-0.2} w={1.2} h={0.35} color={N.neonCyan} rot={0.3} />
-      <NeonSign x={7.2} y={4.0} z={1.0} w={1.5} h={0.4} color={N.neonOrange} rot={-0.4} />
-      <NeonSign x={-6.5} y={3.5} z={-2.5} w={1.1} h={0.3} color={N.neonPurple} rot={0.6} />
-
-      <TrafficFlow />
       <ParkedVehicles />
       <NpcCrowd />
       <WantedPatrols />
@@ -1144,11 +1281,11 @@ export function AfroMetaverseScene({
         <OrbitControls
           enablePan={false}
           enableZoom
-          minDistance={10}
-          maxDistance={28}
-          minPolarAngle={Math.PI / 5}
-          maxPolarAngle={Math.PI / 2.05}
-          target={[0, 2, 0]}
+          minDistance={8}
+          maxDistance={26}
+          minPolarAngle={Math.PI / 6}
+          maxPolarAngle={Math.PI / 2.1}
+          target={[0, 1.2, 0]}
         />
       )}
     </Canvas>
