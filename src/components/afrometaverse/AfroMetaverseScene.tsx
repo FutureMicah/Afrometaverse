@@ -121,13 +121,14 @@ function VillageDaySky() {
       <hemisphereLight args={["#dfe8f0", "#7a5a32", 0.5]} />
       <directionalLight
         position={[12, 20, 8]}
-        intensity={1.25}
+        intensity={1.45}
         color="#ffe8c8"
         castShadow
-        shadow-mapSize-width={1024}
-        shadow-mapSize-height={1024}
+        shadow-mapSize-width={2048}
+        shadow-mapSize-height={2048}
       />
-      <directionalLight position={[-8, 6, -5]} intensity={0.28} color="#9eb6c8" />
+      <directionalLight position={[-8, 6, -5]} intensity={0.42} color="#9eb6c8" />
+      <directionalLight position={[0, 8, -12]} intensity={0.35} color="#f5d0fe" />
     </>
   );
 }
@@ -1492,7 +1493,7 @@ function NpcCrowd() {
           }}
           position={[n.x, 0, n.z]}
         >
-          <StylizedCharacter appearance={n.appearance} equipped={n.equipped} scale={0.95} animate moveState="walk" />
+          <StylizedCharacter appearance={n.appearance} equipped={n.equipped} scale={0.95} animate detail moveState="walk" />
         </group>
       ))}
     </group>

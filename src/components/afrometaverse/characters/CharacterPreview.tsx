@@ -28,7 +28,7 @@ export function CharacterPreview({ appearance, equipped, height = 340 }: Props) 
       <Canvas
         shadows
         camera={{ position: [0, 1.35, 3.1], fov: 32 }}
-        gl={{ antialias: true, toneMappingExposure: 1.15 }}
+        gl={{ antialias: true, toneMappingExposure: 1.28 }}
         dpr={[1, 2]}
         style={{ width: "100%", height: "100%", borderRadius: 16 }}
       >
@@ -36,11 +36,11 @@ export function CharacterPreview({ appearance, equipped, height = 340 }: Props) 
         <fog attach="fog" args={["#14101c", 6, 14]} />
 
         {/* Studio triple light */}
-        <ambientLight intensity={0.35} />
+        <ambientLight intensity={0.42} />
         <hemisphereLight args={["#f5e6d3", "#1a1025", 0.45]} />
         <directionalLight
           position={[3.5, 5.5, 2.5]}
-          intensity={1.35}
+          intensity={1.55}
           color="#fff5eb"
           castShadow
           shadow-mapSize={[1024, 1024]}
