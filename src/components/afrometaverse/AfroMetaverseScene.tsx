@@ -22,11 +22,20 @@ const DISTRICT_LAYOUT = {
 
 const BOUNDS = { minX: -14, maxX: 14, minZ: -11, maxZ: 12 };
 
-/** Neon night palette — cyber-Afro densification */
+/** Ground + road palette tuned to PH laterite / village dirt refs */
 const N = {
   asphalt: "#1a1a22",
   asphaltLine: "#a78bfa",
   sidewalk: "#2a2a35",
+  /** Red laterite carriageway (refs: rural PH roads) */
+  laterite: "#b4532a",
+  lateriteDark: "#8a3a1c",
+  lateriteLight: "#d4a574",
+  dust: "#c4a574",
+  earth: "#6b4a2e",
+  earthDeep: "#3d2a18",
+  grassEdge: "#4a5c28",
+  grassDry: "#7a8a3a",
   towerDark: "#12121a",
   towerMid: "#1e1e2e",
   towerWarm: "#2a1f28",
@@ -105,47 +114,99 @@ function NightSky() {
 function NeonGround() {
   return (
     <>
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.02, 0]} receiveShadow>
-        <planeGeometry args={[60, 60]} />
-        <meshStandardMaterial color="#0d0d14" />
+      {/* Far earth bed */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.04, 0]} receiveShadow>
+        <planeGeometry args={[70, 70]} />
+        <meshStandardMaterial color={N.earthDeep} roughness={1} />
       </mesh>
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.01, 0]} receiveShadow>
+      {/* Mid laterite plain */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.01, 0]} receiveShadow>
+        <planeGeometry args={[42, 36]} />
+        <meshStandardMaterial color={N.earth} roughness={0.95} />
+      </mesh>
+      {/* Dusty city floor under blocks */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.005, 0]} receiveShadow>
         <planeGeometry args={[28, 24]} />
-        <meshStandardMaterial color={N.asphalt} />
+        <meshStandardMaterial color={N.dust} roughness={0.92} />
       </mesh>
     </>
   );
 }
 
+/** Laterite / red-dirt roads — dual tracks, soft shoulders, no neon centre lines */
 function NeonRoads() {
   const segs = [
-    { x: 0, z: 0.2, w: 26, d: 1.3 },
-    { x: 0, z: 4.8, w: 18, d: 1.0 },
-    { x: 0, z: -2.8, w: 20, d: 1.0 },
-    { x: -3.2, z: 1.0, w: 1.0, d: 14 },
-    { x: 2.8, z: 0.5, w: 1.0, d: 13 },
-    { x: 5.5, z: 1.5, w: 0.95, d: 10 },
-    { x: -5.5, z: -1.2, w: 0.9, d: 11 },
+    { x: 0, z: 0.2, w: 26, d: 2.0 },
+    { x: 0, z: 4.8, w: 18, d: 1.55 },
+    { x: 0, z: -2.8, w: 20, d: 1.55 },
+    { x: -3.2, z: 1.0, w: 1.55, d: 14 },
+    { x: 2.8, z: 0.5, w: 1.55, d: 13 },
+    { x: 5.5, z: 1.5, w: 1.45, d: 10 },
+    { x: -5.5, z: -1.2, w: 1.4, d: 11 },
   ];
   return (
     <group>
-      {segs.map((r, i) => (
-        <group key={i}>
-          <mesh position={[r.x, 0.03, r.z]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
-            <planeGeometry args={[r.w, r.d]} />
-            <meshStandardMaterial color={N.asphalt} />
-          </mesh>
-          <mesh position={[r.x, 0.04, r.z]} rotation={[-Math.PI / 2, 0, 0]}>
-            <planeGeometry args={[r.w * 0.92, 0.04]} />
-            <meshStandardMaterial
-              color={N.asphaltLine}
-              emissive={N.asphaltLine}
-              emissiveIntensity={0.55}
-            />
-          </mesh>
-        </group>
-      ))}
-      {/* Elevated ring road */}
+      {segs.map((r, i) => {
+        const alongX = r.w >= r.d;
+        const shoulderW = alongX ? r.w + 0.7 : r.w + 0.55;
+        const shoulderD = alongX ? r.d + 0.55 : r.d + 0.7;
+        // dual tyre ruts
+        const rutOffset = alongX ? r.d * 0.18 : r.w * 0.18;
+        const rutW = alongX ? r.w * 0.96 : 0.22;
+        const rutD = alongX ? 0.22 : r.d * 0.96;
+        return (
+          <group key={i}>
+            {/* Soft dust shoulder */}
+            <mesh position={[r.x, 0.02, r.z]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+              <planeGeometry args={[shoulderW, shoulderD]} />
+              <meshStandardMaterial color={N.dust} roughness={0.98} />
+            </mesh>
+            {/* Main laterite bed */}
+            <mesh position={[r.x, 0.035, r.z]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+              <planeGeometry args={[r.w, r.d]} />
+              <meshStandardMaterial color={N.laterite} roughness={0.9} />
+            </mesh>
+            {/* Darker compacted centre */}
+            <mesh position={[r.x, 0.038, r.z]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+              <planeGeometry args={[r.w * 0.72, r.d * 0.72]} />
+              <meshStandardMaterial color={N.lateriteDark} roughness={0.88} />
+            </mesh>
+            {/* Tyre tracks */}
+            <mesh
+              position={alongX ? [r.x, 0.04, r.z - rutOffset] : [r.x - rutOffset, 0.04, r.z]}
+              rotation={[-Math.PI / 2, 0, 0]}
+              receiveShadow
+            >
+              <planeGeometry args={[rutW, rutD]} />
+              <meshStandardMaterial color={N.lateriteDark} roughness={0.95} />
+            </mesh>
+            <mesh
+              position={alongX ? [r.x, 0.04, r.z + rutOffset] : [r.x + rutOffset, 0.04, r.z]}
+              rotation={[-Math.PI / 2, 0, 0]}
+              receiveShadow
+            >
+              <planeGeometry args={[rutW, rutD]} />
+              <meshStandardMaterial color={N.lateriteDark} roughness={0.95} />
+            </mesh>
+            {/* Sparse dry grass edge strips */}
+            <mesh
+              position={alongX ? [r.x, 0.041, r.z - r.d * 0.55] : [r.x - r.w * 0.55, 0.041, r.z]}
+              rotation={[-Math.PI / 2, 0, 0]}
+            >
+              <planeGeometry args={alongX ? [r.w * 0.9, 0.12] : [0.12, r.d * 0.9]} />
+              <meshStandardMaterial color={N.grassDry} roughness={1} />
+            </mesh>
+            <mesh
+              position={alongX ? [r.x, 0.041, r.z + r.d * 0.55] : [r.x + r.w * 0.55, 0.041, r.z]}
+              rotation={[-Math.PI / 2, 0, 0]}
+            >
+              <planeGeometry args={alongX ? [r.w * 0.9, 0.12] : [0.12, r.d * 0.9]} />
+              <meshStandardMaterial color={N.grassEdge} roughness={1} />
+            </mesh>
+          </group>
+        );
+      })}
+      {/* Elevated ring — keep as night accent road */}
       <mesh position={[0, 3.2, 0]} rotation={[-Math.PI / 2, 0, 0]}>
         <ringGeometry args={[7.5, 8.2, 48]} />
         <meshStandardMaterial color="#1e1b2e" emissive="#7c3aed" emissiveIntensity={0.15} />
