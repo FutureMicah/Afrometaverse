@@ -13,6 +13,8 @@ import {
   LogIn,
   LogOut,
   MapPin,
+  Maximize2,
+  Minimize2,
   Megaphone,
   Send,
   ShoppingBag,
@@ -963,7 +965,7 @@ export function AfroMetaverseGame() {
               </button>
             );
           })}
-          <p className="am-rail-note">Season 01 · Day {cityDay}</p>
+          <p className="am-rail-note">Season 01 · Day {cityDay} · Build 21-Oct terrain+FS</p>
         </nav>
 
         <main className="am-main">
@@ -973,7 +975,7 @@ export function AfroMetaverseGame() {
                 <h1>Port Harcourt, Day {cityDay}</h1>
                 <p>
                   {roamMode === "orbit"
-                    ? "Click the map or Play full screen for COD-style move: WASD, mouse look, Shift sprint, C crouch, Space jump, F vehicle. Esc exits full screen."
+                    ? "Play full screen for COD-style move: WASD, mouse look, V = eyes/shoulder cam, Shift sprint, C crouch, Space jump, F vehicle. Esc exits."
                     : "WASD / arrows to move. Reach the glowing district to advance your mission."}
                 </p>
               </div>
@@ -1025,24 +1027,6 @@ export function AfroMetaverseGame() {
                     {TRANSPORT_LABEL[t]}
                   </button>
                 ))}
-                {cityFullscreen && (
-                  <div className="am-fs-hud">
-                    <span className="am-fs-hint">
-                      WASD move · Mouse look · Shift sprint · C crouch · Space jump · F vehicle · Esc exit
-                    </span>
-                    <button
-                      type="button"
-                      className="am-btn am-btn-secondary am-fs-exit"
-                      onClick={() => {
-                        setCityFullscreen(false);
-                        setRoamMode("orbit");
-                        if (document.pointerLockElement) document.exitPointerLock();
-                      }}
-                    >
-                      Exit full screen
-                    </button>
-                  </div>
-                )}
                 {roamMode !== "orbit" && (
                   <button
                     type="button"
@@ -1422,17 +1406,64 @@ export function AfroMetaverseGame() {
               >
                 <div
                   className={`am-city-overlay ${cityFullscreen ? "am-city-overlay-fs" : ""}`}
-                  onClick={() => {
-                    if (!cityFullscreen) {
-                      setCityFullscreen(true);
-                      setRoamMode("walk");
-                      announce("Full map active — click scene for mouse aim");
-                    }
-                  }}
                   style={{
                     background: `radial-gradient(circle at top, ${weather.glow}, transparent 45%)`,
+                    pointerEvents: "none",
                   }}
                 />
+                {/* COD-style expand / shrink controls on the city view */}
+                <div className="am-city-view-controls">
+                  {!cityFullscreen ? (
+                    <button
+                      type="button"
+                      className="am-city-view-btn am-city-view-expand"
+                      title="Play full screen"
+                      aria-label="Expand city to full screen"
+                      onClick={() => {
+                        setCityFullscreen(true);
+                        setRoamMode("walk");
+                        announce("Full screen play — WASD · mouse look · Esc to shrink");
+                      }}
+                    >
+                      <Maximize2 size={18} />
+                      <span>Full screen</span>
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      className="am-city-view-btn am-city-view-shrink"
+                      title="Exit full screen"
+                      aria-label="Shrink city view"
+                      onClick={() => {
+                        setCityFullscreen(false);
+                        setRoamMode("orbit");
+                        if (document.pointerLockElement) document.exitPointerLock();
+                        announce("Windowed city — other panels visible");
+                      }}
+                    >
+                      <Minimize2 size={18} />
+                      <span>Shrink</span>
+                    </button>
+                  )}
+                </div>
+                {cityFullscreen && (
+                  <div className="am-fs-hud">
+                    <span className="am-fs-hint">
+                      WASD · Mouse look · V first/third person · Shift sprint · C crouch · Space jump · F vehicle · Esc shrink
+                    </span>
+                    <button
+                      type="button"
+                      className="am-btn am-btn-secondary am-fs-exit"
+                      onClick={() => {
+                        setCityFullscreen(false);
+                        setRoamMode("orbit");
+                        if (document.pointerLockElement) document.exitPointerLock();
+                      }}
+                    >
+                      <Minimize2 size={14} /> Shrink view
+                    </button>
+                  </div>
+                )}
                 <AfroMetaverseScene
                   weather={{
                     id: weatherStore.state.weatherId,

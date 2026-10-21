@@ -12,6 +12,23 @@ import {
 
 import { useCharacterStore } from "@/stores/characterStore";
 import { StylizedCharacter } from "@/components/afrometaverse/characters/StylizedCharacter";
+import {
+  HeritageTerrain,
+  BiomeFlora,
+  LivingWater,
+} from "@/components/afrometaverse/HeritageTerrain";
+import {
+  YorubaCompound,
+  IgboCompound,
+  VillageHearth,
+} from "@/components/afrometaverse/HeritageArchitecture";
+import {
+  DustMotes,
+  SpiritFireflies,
+  SavannahGrass,
+  LightningFlash,
+  SacredGroveMist,
+} from "@/components/afrometaverse/AtmosphericLife";
 
 const DISTRICT_LAYOUT = {
   "town-market": { x: -3, z: 2.5, color: "#f59e0b", label: "Town Market", neon: "#fbbf24" },
@@ -22,11 +39,20 @@ const DISTRICT_LAYOUT = {
 
 const BOUNDS = { minX: -14, maxX: 14, minZ: -11, maxZ: 12 };
 
-/** Neon night palette — cyber-Afro densification */
+/** Ground + road palette tuned to PH laterite / village dirt refs */
 const N = {
   asphalt: "#1a1a22",
   asphaltLine: "#a78bfa",
   sidewalk: "#2a2a35",
+  /** Red laterite carriageway (refs: rural PH roads) */
+  laterite: "#b4532a",
+  lateriteDark: "#8a3a1c",
+  lateriteLight: "#d4a574",
+  dust: "#c4a574",
+  earth: "#6b4a2e",
+  earthDeep: "#3d2a18",
+  grassEdge: "#4a5c28",
+  grassDry: "#7a8a3a",
   towerDark: "#12121a",
   towerMid: "#1e1e2e",
   towerWarm: "#2a1f28",
@@ -85,19 +111,24 @@ const TOWERS: TowerSpec[] = [
   { x: 6.0, z: -2.5, w: 1.1, d: 1.0, h: 5.0, hue: N.towerDark, neon: N.neonPink },
 ];
 
-function NightSky() {
+/** Daylight village sky — no neon city yet; players grow this settlement later */
+function VillageDaySky() {
   return (
     <>
-      <color attach="background" args={["#0b0618"]} />
-      <fog attach="fog" args={["#1a0a2e", 18, 42]} />
-      <ambientLight intensity={0.22} />
-      <hemisphereLight args={["#4c1d95", "#0f172a", 0.35]} />
-      <directionalLight position={[6, 14, 4]} intensity={0.35} color="#c4b5fd" castShadow />
-      <pointLight position={[-3, 3, 2.5]} intensity={1.2} color={N.neonAmber} distance={12} />
-      <pointLight position={[5.5, 4, 2.5]} intensity={1.0} color={N.neonOrange} distance={14} />
-      <pointLight position={[0, 5, -1.5]} intensity={0.9} color={N.neonCyan} distance={12} />
-      <pointLight position={[-5.5, 3, -3.5]} intensity={0.8} color={N.neonPurple} distance={10} />
-      <pointLight position={[0, 8, 0]} intensity={0.4} color="#e879f9" distance={20} />
+      <color attach="background" args={["#b8c9d4"]} />
+      <fog attach="fog" args={["#cbb892", 16, 48]} />
+      <ambientLight intensity={0.62} />
+      <hemisphereLight args={["#dfe8f0", "#7a5a32", 0.5]} />
+      <directionalLight
+        position={[12, 20, 8]}
+        intensity={1.45}
+        color="#ffe8c8"
+        castShadow
+        shadow-mapSize-width={2048}
+        shadow-mapSize-height={2048}
+      />
+      <directionalLight position={[-8, 6, -5]} intensity={0.42} color="#9eb6c8" />
+      <directionalLight position={[0, 8, -12]} intensity={0.35} color="#f5d0fe" />
     </>
   );
 }
@@ -105,67 +136,109 @@ function NightSky() {
 function NeonGround() {
   return (
     <>
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.02, 0]} receiveShadow>
-        <planeGeometry args={[60, 60]} />
-        <meshStandardMaterial color="#0d0d14" />
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.04, 0]} receiveShadow>
+        <planeGeometry args={[80, 80]} />
+        <meshStandardMaterial color={N.earthDeep} roughness={1} />
       </mesh>
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.01, 0]} receiveShadow>
-        <planeGeometry args={[28, 24]} />
-        <meshStandardMaterial color={N.asphalt} />
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.015, 0]} receiveShadow>
+        <planeGeometry args={[48, 42]} />
+        <meshStandardMaterial color={N.earth} roughness={0.95} />
       </mesh>
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.002, 0]} receiveShadow>
+        <planeGeometry args={[30, 26]} />
+        <meshStandardMaterial color={N.dust} roughness={0.92} />
+      </mesh>
+      {/* outer savannah grass belts */}
+      {(
+        [
+          [0, 14, 18, 6],
+          [0, -14, 18, 6],
+          [16, 0, 6, 22],
+          [-16, 0, 6, 22],
+        ] as const
+      ).map(([x, z, w, d], i) => (
+        <mesh key={i} rotation={[-Math.PI / 2, 0, 0]} position={[x, 0.008, z]} receiveShadow>
+          <planeGeometry args={[w, d]} />
+          <meshStandardMaterial color={i % 2 ? N.grassEdge : N.grassDry} roughness={1} />
+        </mesh>
+      ))}
     </>
   );
 }
 
+/** Laterite / red-dirt roads — dual tracks, soft shoulders, no neon centre lines */
 function NeonRoads() {
   const segs = [
-    { x: 0, z: 0.2, w: 26, d: 1.3 },
-    { x: 0, z: 4.8, w: 18, d: 1.0 },
-    { x: 0, z: -2.8, w: 20, d: 1.0 },
-    { x: -3.2, z: 1.0, w: 1.0, d: 14 },
-    { x: 2.8, z: 0.5, w: 1.0, d: 13 },
-    { x: 5.5, z: 1.5, w: 0.95, d: 10 },
-    { x: -5.5, z: -1.2, w: 0.9, d: 11 },
+    { x: 0, z: 0.2, w: 26, d: 2.0 },
+    { x: 0, z: 4.8, w: 18, d: 1.55 },
+    { x: 0, z: -2.8, w: 20, d: 1.55 },
+    { x: -3.2, z: 1.0, w: 1.55, d: 14 },
+    { x: 2.8, z: 0.5, w: 1.55, d: 13 },
+    { x: 5.5, z: 1.5, w: 1.45, d: 10 },
+    { x: -5.5, z: -1.2, w: 1.4, d: 11 },
   ];
   return (
     <group>
-      {segs.map((r, i) => (
-        <group key={i}>
-          <mesh position={[r.x, 0.03, r.z]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
-            <planeGeometry args={[r.w, r.d]} />
-            <meshStandardMaterial color={N.asphalt} />
-          </mesh>
-          <mesh position={[r.x, 0.04, r.z]} rotation={[-Math.PI / 2, 0, 0]}>
-            <planeGeometry args={[r.w * 0.92, 0.04]} />
-            <meshStandardMaterial
-              color={N.asphaltLine}
-              emissive={N.asphaltLine}
-              emissiveIntensity={0.55}
-            />
-          </mesh>
-        </group>
-      ))}
-      {/* Elevated ring road */}
-      <mesh position={[0, 3.2, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <ringGeometry args={[7.5, 8.2, 48]} />
-        <meshStandardMaterial color="#1e1b2e" emissive="#7c3aed" emissiveIntensity={0.15} />
-      </mesh>
-      <mesh position={[0, 2.9, 8]} castShadow>
-        <boxGeometry args={[0.35, 2.9, 0.35]} />
-        <meshStandardMaterial color="#2a2a35" />
-      </mesh>
-      <mesh position={[0, 2.9, -8]} castShadow>
-        <boxGeometry args={[0.35, 2.9, 0.35]} />
-        <meshStandardMaterial color="#2a2a35" />
-      </mesh>
-      <mesh position={[8, 2.9, 0]} castShadow>
-        <boxGeometry args={[0.35, 2.9, 0.35]} />
-        <meshStandardMaterial color="#2a2a35" />
-      </mesh>
-      <mesh position={[-8, 2.9, 0]} castShadow>
-        <boxGeometry args={[0.35, 2.9, 0.35]} />
-        <meshStandardMaterial color="#2a2a35" />
-      </mesh>
+      {segs.map((r, i) => {
+        const alongX = r.w >= r.d;
+        const shoulderW = alongX ? r.w + 0.7 : r.w + 0.55;
+        const shoulderD = alongX ? r.d + 0.55 : r.d + 0.7;
+        // dual tyre ruts
+        const rutOffset = alongX ? r.d * 0.18 : r.w * 0.18;
+        const rutW = alongX ? r.w * 0.96 : 0.22;
+        const rutD = alongX ? 0.22 : r.d * 0.96;
+        return (
+          <group key={i}>
+            {/* Soft dust shoulder */}
+            <mesh position={[r.x, 0.02, r.z]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+              <planeGeometry args={[shoulderW, shoulderD]} />
+              <meshStandardMaterial color={N.dust} roughness={0.98} />
+            </mesh>
+            {/* Main laterite bed */}
+            <mesh position={[r.x, 0.035, r.z]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+              <planeGeometry args={[r.w, r.d]} />
+              <meshStandardMaterial color={N.laterite} roughness={0.9} />
+            </mesh>
+            {/* Darker compacted centre */}
+            <mesh position={[r.x, 0.038, r.z]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+              <planeGeometry args={[r.w * 0.72, r.d * 0.72]} />
+              <meshStandardMaterial color={N.lateriteDark} roughness={0.88} />
+            </mesh>
+            {/* Tyre tracks */}
+            <mesh
+              position={alongX ? [r.x, 0.04, r.z - rutOffset] : [r.x - rutOffset, 0.04, r.z]}
+              rotation={[-Math.PI / 2, 0, 0]}
+              receiveShadow
+            >
+              <planeGeometry args={[rutW, rutD]} />
+              <meshStandardMaterial color={N.lateriteDark} roughness={0.95} />
+            </mesh>
+            <mesh
+              position={alongX ? [r.x, 0.04, r.z + rutOffset] : [r.x + rutOffset, 0.04, r.z]}
+              rotation={[-Math.PI / 2, 0, 0]}
+              receiveShadow
+            >
+              <planeGeometry args={[rutW, rutD]} />
+              <meshStandardMaterial color={N.lateriteDark} roughness={0.95} />
+            </mesh>
+            {/* Sparse dry grass edge strips */}
+            <mesh
+              position={alongX ? [r.x, 0.041, r.z - r.d * 0.55] : [r.x - r.w * 0.55, 0.041, r.z]}
+              rotation={[-Math.PI / 2, 0, 0]}
+            >
+              <planeGeometry args={alongX ? [r.w * 0.9, 0.12] : [0.12, r.d * 0.9]} />
+              <meshStandardMaterial color={N.grassDry} roughness={1} />
+            </mesh>
+            <mesh
+              position={alongX ? [r.x, 0.041, r.z + r.d * 0.55] : [r.x + r.w * 0.55, 0.041, r.z]}
+              rotation={[-Math.PI / 2, 0, 0]}
+            >
+              <planeGeometry args={alongX ? [r.w * 0.9, 0.12] : [0.12, r.d * 0.9]} />
+              <meshStandardMaterial color={N.grassEdge} roughness={1} />
+            </mesh>
+          </group>
+        );
+      })}
     </group>
   );
 }
@@ -341,26 +414,544 @@ function MarketNeonLane() {
   );
 }
 
-function NeonWater() {
+
+/** Simple mud / thatch / zinc hut — starting village fabric (players develop the city later) */
+function VillageHut({
+  x,
+  z,
+  rot = 0,
+  w = 1.15,
+  d = 1.05,
+  h = 0.95,
+  style = "thatch",
+  wall = "#c4a06a",
+}: {
+  x: number;
+  z: number;
+  rot?: number;
+  w?: number;
+  d?: number;
+  h?: number;
+  style?: "thatch" | "zinc" | "round";
+  wall?: string;
+}) {
+  const thatch = "#7a5c28";
+  const thatchDark = "#5c4218";
+  const zinc = "#7d8b96";
+  const door = "#2a1c10";
+  const isRound = style === "round";
+  const roofY = h + (isRound ? 0.42 : 0.28);
+
+  return (
+    <group position={[x, 0, z]} rotation={[0, rot, 0]}>
+      {/* packed earth pad under hut */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.01, 0]} receiveShadow>
+        <circleGeometry args={[Math.max(w, d) * 0.75, 12]} />
+        <meshStandardMaterial color="#a87848" roughness={1} />
+      </mesh>
+
+      {/* walls */}
+      <mesh castShadow receiveShadow position={[0, h / 2, 0]}>
+        {isRound ? (
+          <cylinderGeometry args={[w * 0.52, w * 0.55, h, 12]} />
+        ) : (
+          <boxGeometry args={[w, h, d]} />
+        )}
+        <meshStandardMaterial color={wall} roughness={0.98} />
+      </mesh>
+
+      {/* plaster band near base */}
+      <mesh position={[0, 0.12, 0]}>
+        {isRound ? (
+          <cylinderGeometry args={[w * 0.56, w * 0.56, 0.18, 12]} />
+        ) : (
+          <boxGeometry args={[w * 1.04, 0.18, d * 1.04]} />
+        )}
+        <meshStandardMaterial color="#d4b896" roughness={1} />
+      </mesh>
+
+      {/* door frame + dark opening */}
+      <mesh position={[0, h * 0.38, isRound ? w * 0.52 : d / 2 + 0.015]} castShadow>
+        <boxGeometry args={[0.32, h * 0.62, 0.04]} />
+        <meshStandardMaterial color={door} roughness={1} />
+      </mesh>
+      <mesh position={[0, h * 0.72, isRound ? w * 0.54 : d / 2 + 0.03]}>
+        <boxGeometry args={[0.38, 0.06, 0.05]} />
+        <meshStandardMaterial color="#4a3420" roughness={1} />
+      </mesh>
+
+      {/* small window */}
+      {!isRound && (
+        <mesh position={[w * 0.35, h * 0.55, d / 2 + 0.012]}>
+          <planeGeometry args={[0.18, 0.16]} />
+          <meshStandardMaterial color="#1a1208" roughness={1} />
+        </mesh>
+      )}
+
+      {/* roof */}
+      {isRound ? (
+        <>
+          <mesh castShadow position={[0, roofY, 0]}>
+            <coneGeometry args={[w * 0.78, 0.85, 12]} />
+            <meshStandardMaterial color={thatch} roughness={0.95} />
+          </mesh>
+          <mesh position={[0, roofY + 0.28, 0]}>
+            <coneGeometry args={[w * 0.35, 0.35, 8]} />
+            <meshStandardMaterial color={thatchDark} roughness={1} />
+          </mesh>
+        </>
+      ) : style === "zinc" ? (
+        <>
+          {/* simple gable: two tilted slabs */}
+          <mesh
+            castShadow
+            position={[0, roofY + 0.05, d * 0.18]}
+            rotation={[0.45, 0, 0]}
+          >
+            <boxGeometry args={[w * 1.2, 0.06, d * 0.7]} />
+            <meshStandardMaterial color={zinc} roughness={0.5} metalness={0.4} />
+          </mesh>
+          <mesh
+            castShadow
+            position={[0, roofY + 0.05, -d * 0.18]}
+            rotation={[-0.45, 0, 0]}
+          >
+            <boxGeometry args={[w * 1.2, 0.06, d * 0.7]} />
+            <meshStandardMaterial color={zinc} roughness={0.55} metalness={0.35} />
+          </mesh>
+          <mesh position={[0, roofY + 0.22, 0]}>
+            <boxGeometry args={[w * 1.22, 0.05, 0.08]} />
+            <meshStandardMaterial color="#5a6570" metalness={0.5} roughness={0.45} />
+          </mesh>
+        </>
+      ) : (
+        <>
+          {/* thick thatch gable */}
+          <mesh
+            castShadow
+            position={[0, roofY + 0.08, d * 0.16]}
+            rotation={[0.42, 0, 0]}
+          >
+            <boxGeometry args={[w * 1.25, 0.22, d * 0.75]} />
+            <meshStandardMaterial color={thatch} roughness={0.98} />
+          </mesh>
+          <mesh
+            castShadow
+            position={[0, roofY + 0.08, -d * 0.16]}
+            rotation={[-0.42, 0, 0]}
+          >
+            <boxGeometry args={[w * 1.25, 0.22, d * 0.75]} />
+            <meshStandardMaterial color={thatchDark} roughness={0.98} />
+          </mesh>
+          <mesh position={[0, roofY + 0.28, 0]}>
+            <boxGeometry args={[w * 1.15, 0.12, 0.15]} />
+            <meshStandardMaterial color="#6b4e20" roughness={1} />
+          </mesh>
+        </>
+      )}
+    </group>
+  );
+}
+
+function VillageTree({
+  x,
+  z,
+  scale = 1,
+  kind = "acacia",
+}: {
+  x: number;
+  z: number;
+  scale?: number;
+  kind?: "acacia" | "broad" | "palm";
+}) {
+  const s = scale;
+  if (kind === "palm") {
+    return (
+      <group position={[x, 0, z]} scale={[s, s, s]}>
+        <mesh castShadow position={[0, 1.1, 0]}>
+          <cylinderGeometry args={[0.07, 0.11, 2.2, 6]} />
+          <meshStandardMaterial color="#5c4030" roughness={1} />
+        </mesh>
+        {[0, 1, 2, 3, 4].map((i) => {
+          const a = (i / 5) * Math.PI * 2;
+          return (
+            <mesh
+              key={i}
+              castShadow
+              position={[Math.cos(a) * 0.35, 2.15, Math.sin(a) * 0.35]}
+              rotation={[0.6, a, 0]}
+            >
+              <boxGeometry args={[0.12, 0.04, 0.9]} />
+              <meshStandardMaterial color="#3a6b28" roughness={0.9} />
+            </mesh>
+          );
+        })}
+      </group>
+    );
+  }
+  const trunkH = kind === "broad" ? 1.8 : 1.45;
+  return (
+    <group position={[x, 0, z]} scale={[s, s, s]}>
+      <mesh castShadow position={[0, trunkH / 2, 0]}>
+        <cylinderGeometry args={[0.09, 0.14, trunkH, 7]} />
+        <meshStandardMaterial color="#3f2a18" roughness={1} />
+      </mesh>
+      <mesh castShadow position={[0, trunkH + 0.15, 0]}>
+        <sphereGeometry args={[kind === "broad" ? 0.85 : 0.6, 9, 9]} />
+        <meshStandardMaterial color="#355528" roughness={0.88} />
+      </mesh>
+      <mesh castShadow position={[0.35, trunkH + 0.35, 0.15]}>
+        <sphereGeometry args={[0.45, 8, 8]} />
+        <meshStandardMaterial color="#4a6b30" roughness={0.9} />
+      </mesh>
+      <mesh castShadow position={[-0.3, trunkH + 0.25, -0.2]}>
+        <sphereGeometry args={[0.4, 8, 8]} />
+        <meshStandardMaterial color="#2a451c" roughness={0.92} />
+      </mesh>
+      {kind === "broad" && (
+        <mesh castShadow position={[0.1, trunkH + 0.55, -0.25]}>
+          <sphereGeometry args={[0.5, 8, 8]} />
+          <meshStandardMaterial color="#3d5c28" roughness={0.9} />
+        </mesh>
+      )}
+    </group>
+  );
+}
+
+function Bush({ x, z, scale = 1 }: { x: number; z: number; scale?: number }) {
+  return (
+    <group position={[x, 0, z]} scale={[scale, scale, scale]}>
+      <mesh castShadow position={[0, 0.28, 0]}>
+        <sphereGeometry args={[0.32, 7, 7]} />
+        <meshStandardMaterial color="#3a5a28" roughness={0.95} />
+      </mesh>
+      <mesh castShadow position={[0.18, 0.22, 0.1]}>
+        <sphereGeometry args={[0.22, 6, 6]} />
+        <meshStandardMaterial color="#4a6b32" roughness={0.95} />
+      </mesh>
+      <mesh castShadow position={[-0.14, 0.2, -0.08]}>
+        <sphereGeometry args={[0.2, 6, 6]} />
+        <meshStandardMaterial color="#2f4a20" roughness={0.95} />
+      </mesh>
+    </group>
+  );
+}
+
+function Rock({ x, z, scale = 1 }: { x: number; z: number; scale?: number }) {
+  return (
+    <mesh
+      castShadow
+      receiveShadow
+      position={[x, 0.12 * scale, z]}
+      scale={[scale, scale * 0.7, scale]}
+      rotation={[0.1, scale * 2.1, 0.05]}
+    >
+      <dodecahedronGeometry args={[0.35, 0]} />
+      <meshStandardMaterial color="#7a6a58" roughness={0.95} />
+    </mesh>
+  );
+}
+
+function GrainStack({ x, z }: { x: number; z: number }) {
+  return (
+    <group position={[x, 0, z]}>
+      <mesh castShadow position={[0, 0.35, 0]}>
+        <cylinderGeometry args={[0.35, 0.42, 0.7, 10]} />
+        <meshStandardMaterial color="#c4a05a" roughness={1} />
+      </mesh>
+      <mesh position={[0, 0.75, 0]}>
+        <coneGeometry args={[0.38, 0.25, 10]} />
+        <meshStandardMaterial color="#a88840" roughness={1} />
+      </mesh>
+    </group>
+  );
+}
+
+function ClayPot({ x, z, s = 1 }: { x: number; z: number; s?: number }) {
+  return (
+    <mesh castShadow position={[x, 0.12 * s, z]} scale={[s, s, s]}>
+      <sphereGeometry args={[0.12, 8, 8]} />
+      <meshStandardMaterial color="#8a5a3a" roughness={0.85} />
+    </mesh>
+  );
+}
+
+function CompoundWall({
+  x,
+  z,
+  radius = 2.2,
+  segments = 10,
+}: {
+  x: number;
+  z: number;
+  radius?: number;
+  segments?: number;
+}) {
+  const posts = Array.from({ length: segments }, (_, i) => {
+    const a = (i / segments) * Math.PI * 2;
+    return [x + Math.cos(a) * radius, z + Math.sin(a) * radius] as const;
+  });
+  return (
+    <group>
+      {posts.map(([px, pz], i) => {
+        const [qx, qz] = posts[(i + 1) % posts.length];
+        const mx = (px + qx) / 2;
+        const mz = (pz + qz) / 2;
+        const len = Math.hypot(qx - px, qz - pz);
+        const ang = Math.atan2(qx - px, qz - pz);
+        return (
+          <mesh
+            key={i}
+            position={[mx, 0.4, mz]}
+            rotation={[0, ang, 0]}
+            castShadow
+            receiveShadow
+          >
+            <boxGeometry args={[0.14, 0.85, len * 0.95]} />
+            <meshStandardMaterial color="#c9a66b" roughness={0.98} />
+          </mesh>
+        );
+      })}
+    </group>
+  );
+}
+
+/** Dense bush corridors along laterite roads (matches rural PH road refs) */
+function RoadsideFlora() {
+  const bushes: Array<[number, number, number]> = [];
+  // along main E-W road
+  for (let x = -12; x <= 12; x += 1.1) {
+    bushes.push([x, 1.35, 0.7 + (Math.abs(x) % 3) * 0.08]);
+    bushes.push([x + 0.4, -1.0, 0.65 + (Math.abs(x) % 2) * 0.1]);
+  }
+  // market road
+  for (let x = -8; x <= 6; x += 1.3) {
+    bushes.push([x, 5.7, 0.75]);
+    bushes.push([x + 0.5, 4.0, 0.6]);
+  }
+  // south road
+  for (let x = -8; x <= 7; x += 1.25) {
+    bushes.push([x, -3.7, 0.7]);
+    bushes.push([x, -2.0, 0.55]);
+  }
+  // N-S roads
+  for (let z = -8; z <= 8; z += 1.2) {
+    bushes.push([-4.1, z, 0.65]);
+    bushes.push([-2.3, z + 0.3, 0.6]);
+    bushes.push([1.9, z, 0.7]);
+    bushes.push([3.6, z + 0.2, 0.55]);
+    bushes.push([4.6, z, 0.6]);
+    bushes.push([6.4, z + 0.15, 0.65]);
+    bushes.push([-6.4, z, 0.7]);
+    bushes.push([-4.7, z + 0.25, 0.55]);
+  }
+
+  return (
+    <group>
+      {bushes.map(([x, z, sc], i) => (
+        <Bush key={i} x={x} z={z} scale={sc} />
+      ))}
+    </group>
+  );
+}
+
+/** Starting settlement — denser, more lived-in village */
+function StartingVillage() {
+  const huts: Array<{
+    x: number;
+    z: number;
+    rot?: number;
+    style?: "thatch" | "zinc" | "round";
+    wall?: string;
+    w?: number;
+    d?: number;
+    h?: number;
+  }> = [
+    // Market compound
+    { x: -4.4, z: 3.8, style: "thatch", wall: "#c9a66b", w: 1.25, d: 1.1 },
+    { x: -3.0, z: 4.4, style: "zinc", wall: "#b8956a", w: 1.35, d: 1.15, h: 1.05 },
+    { x: -5.2, z: 2.6, style: "thatch", wall: "#b8895c", rot: 0.35, w: 1.2 },
+    { x: -3.5, z: 2.0, style: "round", wall: "#d2b48c", w: 1.35, h: 1.0 },
+    { x: -2.0, z: 3.2, style: "zinc", wall: "#a89070", rot: -0.25 },
+    { x: -4.8, z: 4.6, style: "round", wall: "#c4a06a", w: 1.1, h: 0.9 },
+    { x: -5.5, z: 3.5, style: "thatch", wall: "#c9a66b", rot: 0.6, w: 1.05 },
+    // Civic
+    { x: -1.4, z: -2.6, style: "thatch", wall: "#c4a06a", w: 1.3, d: 1.15 },
+    { x: 1.5, z: -3.0, style: "zinc", wall: "#b0a090", w: 1.45, d: 1.25, h: 1.1 },
+    { x: 0.15, z: -3.8, style: "round", wall: "#d4b896", w: 1.3, h: 1.05 },
+    { x: 2.4, z: -1.6, style: "thatch", wall: "#c9a66b", rot: 0.45 },
+    { x: -2.2, z: -1.4, style: "zinc", wall: "#9a8b78", w: 1.2 },
+    { x: 0.6, z: -2.0, style: "thatch", wall: "#b8895c", rot: -0.2 },
+    { x: -0.5, z: -3.2, style: "round", wall: "#c4a06a", w: 1.15 },
+    // Creekside
+    { x: -6.8, z: -2.8, style: "round", wall: "#c4a06a", w: 1.4, h: 1.05 },
+    { x: -7.6, z: -4.2, style: "thatch", wall: "#b8895c", rot: 0.2, w: 1.25 },
+    { x: -5.4, z: -4.4, style: "zinc", wall: "#a89070", w: 1.2 },
+    { x: -8.0, z: -1.8, style: "thatch", wall: "#d2b48c", rot: -0.45 },
+    { x: -6.2, z: -1.5, style: "round", wall: "#c9a66b", w: 1.15 },
+    { x: -7.0, z: -5.0, style: "thatch", wall: "#b8895c", w: 1.1 },
+    // Port edge
+    { x: 5.4, z: 3.6, style: "zinc", wall: "#8a8070", w: 1.55, d: 1.25, h: 1.1 },
+    { x: 6.8, z: 2.5, style: "thatch", wall: "#c4a06a", w: 1.2 },
+    { x: 4.7, z: 1.7, style: "zinc", wall: "#9a8b78", rot: 0.3, w: 1.3 },
+    { x: 7.4, z: 3.9, style: "round", wall: "#b8956a", w: 1.2 },
+    { x: 6.0, z: 4.5, style: "thatch", wall: "#b8895c", rot: 0.15 },
+    { x: 8.0, z: 2.8, style: "zinc", wall: "#8a8070", w: 1.15 },
+    // Path-side
+    { x: 1.7, z: 2.5, style: "thatch", wall: "#c9a66b", rot: 0.12 },
+    { x: -0.9, z: 1.3, style: "zinc", wall: "#a89070" },
+    { x: 3.9, z: -0.5, style: "thatch", wall: "#b8895c" },
+    { x: -4.5, z: -0.3, style: "round", wall: "#d2b48c", w: 1.05 },
+    { x: 2.8, z: 1.2, style: "round", wall: "#c4a06a", w: 1.0 },
+  ];
+
+  const trees: Array<[number, number, number, "acacia" | "broad" | "palm"]> = [
+    [-6.5, 4.5, 1.15, "broad"],
+    [-1.5, 5.5, 1.0, "acacia"],
+    [2.8, 5.2, 1.25, "broad"],
+    [8.2, 1.2, 1.05, "acacia"],
+    [7.8, -2.2, 1.2, "broad"],
+    [3.5, -4.8, 0.95, "acacia"],
+    [-3.8, -5.2, 1.1, "broad"],
+    [-8.8, -3.2, 1.3, "broad"],
+    [-8.5, 0.8, 0.9, "acacia"],
+    [0.8, 0.2, 0.75, "acacia"],
+    [4.2, 2.2, 0.85, "palm"],
+    [-2.8, 0.4, 0.8, "acacia"],
+    [8.8, 4.2, 1.15, "broad"],
+    [-0.2, -5.5, 1.05, "broad"],
+    [-9.2, -5.0, 1.2, "palm"],
+    [9.0, -0.5, 1.0, "palm"],
+    [-5.0, 6.0, 1.1, "broad"],
+    [5.5, -3.5, 0.95, "acacia"],
+    [-10, -1.0, 1.15, "broad"],
+    [1.5, 6.2, 1.0, "acacia"],
+  ];
+
+  return (
+    <group>
+      {huts.map((h, i) => (
+        <VillageHut key={i} {...h} />
+      ))}
+
+      <CompoundWall x={-3.8} z={3.4} radius={2.5} segments={12} />
+      <CompoundWall x={0.2} z={-2.6} radius={2.7} segments={12} />
+      <CompoundWall x={-6.8} z={-3.2} radius={2.35} segments={11} />
+      <CompoundWall x={6.2} z={3.2} radius={2.4} segments={11} />
+
+      {trees.map(([tx, tz, sc, kind], i) => (
+        <VillageTree key={`t${i}`} x={tx} z={tz} scale={sc} kind={kind} />
+      ))}
+
+      <RoadsideFlora />
+
+      {/* rocks near creek and slopes */}
+      <Rock x={-4.2} z={-5.8} scale={1.2} />
+      <Rock x={-3.5} z={-6.2} scale={0.8} />
+      <Rock x={-7.5} z={-5.5} scale={1.4} />
+      <Rock x={8.5} z={-3.0} scale={1.1} />
+      <Rock x={-9.0} z={2.0} scale={0.9} />
+      <Rock x={2.0} z={6.0} scale={0.7} />
+      <Rock x={9.2} z={5.0} scale={1.0} />
+
+      <GrainStack x={-3.2} z={2.8} />
+      <GrainStack x={-4.6} z={3.2} />
+      <GrainStack x={-6.0} z={-3.6} />
+      <GrainStack x={1.0} z={-2.2} />
+      <GrainStack x={5.8} z={2.0} />
+      <GrainStack x={-7.2} z={-2.2} />
+
+      <ClayPot x={-4.0} z={3.5} />
+      <ClayPot x={-4.15} z={3.35} s={0.8} />
+      <ClayPot x={-1.0} z={-2.3} />
+      <ClayPot x={-6.4} z={-2.5} s={1.15} />
+      <ClayPot x={5.0} z={3.2} />
+      <ClayPot x={0.4} z={-3.4} s={0.9} />
+      <ClayPot x={-3.2} z={1.9} s={0.85} />
+      <ClayPot x={6.5} z={2.2} />
+
+      {Array.from({ length: 8 }, (_, i) => (
+        <mesh key={`f${i}`} position={[-3.2 + i * 0.35, 0.38, 5.15]} castShadow>
+          <boxGeometry args={[0.05, 0.76, 0.05]} />
+          <meshStandardMaterial color="#5c4030" roughness={1} />
+        </mesh>
+      ))}
+      <mesh position={[-1.95, 0.55, 5.15]}>
+        <boxGeometry args={[2.6, 0.04, 0.04]} />
+        <meshStandardMaterial color="#6b4e32" roughness={1} />
+      </mesh>
+
+      {[
+        [-3.4, 3.15],
+        [-2.4, 3.45],
+        [-4.0, 2.7],
+        [-2.9, 2.5],
+      ].map(([mx, mz], i) => (
+        <group key={`m${i}`} position={[mx, 0, mz]}>
+          <mesh position={[0, 0.48, 0]} castShadow>
+            <boxGeometry args={[0.95, 0.05, 0.48]} />
+            <meshStandardMaterial color="#6b5340" roughness={0.9} />
+          </mesh>
+          {(
+            [
+              [-0.38, 0.15],
+              [0.38, 0.15],
+              [-0.38, -0.15],
+              [0.38, -0.15],
+            ] as const
+          ).map(([lx, lz], j) => (
+            <mesh key={j} position={[lx, 0.24, lz]}>
+              <boxGeometry args={[0.05, 0.48, 0.05]} />
+              <meshStandardMaterial color="#4a3728" />
+            </mesh>
+          ))}
+        </group>
+      ))}
+
+      {[
+        [-5.5, 1.5],
+        [-1.0, 4.0],
+        [2.0, -4.2],
+        [7.0, 0.5],
+        [-7.5, -0.5],
+        [3.0, 1.0],
+        [-8.0, 3.0],
+        [4.5, -2.5],
+        [0.0, 5.5],
+        [-2.0, -4.5],
+      ].map(([gx, gz], i) => (
+        <mesh key={`g${i}`} rotation={[-Math.PI / 2, 0, 0]} position={[gx, 0.02, gz]}>
+          <circleGeometry args={[1.0 + (i % 3) * 0.25, 10]} />
+          <meshStandardMaterial color={i % 2 ? N.grassDry : N.grassEdge} roughness={1} />
+        </mesh>
+      ))}
+    </group>
+  );
+}
+
+function CreekWater() {
   const ref = useRef<THREE.Mesh>(null);
   useFrame(({ clock }) => {
     if (ref.current) {
-      ref.current.position.y = 0.04 + Math.sin(clock.getElapsedTime() * 0.9) * 0.02;
+      ref.current.position.y = 0.03 + Math.sin(clock.getElapsedTime() * 0.6) * 0.012;
     }
   });
   return (
     <group position={[-5.5, 0, -5.4]}>
-      <mesh ref={ref} rotation={[-Math.PI / 2, 0, 0]}>
-        <circleGeometry args={[4.5, 28]} />
+      <mesh ref={ref} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+        <circleGeometry args={[3.8, 28]} />
         <meshStandardMaterial
-          color={N.water}
-          emissive="#0369a1"
-          emissiveIntensity={0.25}
+          color="#3d4a33"
           transparent
-          opacity={0.85}
-          roughness={0.2}
-          metalness={0.3}
+          opacity={0.88}
+          roughness={0.35}
+          metalness={0.05}
         />
+      </mesh>
+      {/* muddy bank ring */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.02, 0]}>
+        <ringGeometry args={[3.7, 4.4, 28]} />
+        <meshStandardMaterial color={N.earth} roughness={1} />
       </mesh>
     </group>
   );
@@ -539,6 +1130,9 @@ function PlayerController({
   const heatTick = useRef(0);
   const jumpVel = useRef(0);
   const grounded = useRef(true);
+  /** third = over-shoulder COD cam · first = through the eyes */
+  const firstPerson = useRef(false);
+  const fovRef = useRef(50);
 
   useEffect(() => {
     const down = (e: KeyboardEvent) => {
@@ -556,6 +1150,13 @@ function PlayerController({
       if (e.key.toLowerCase() === "r" && mode !== "orbit") {
         gl.domElement.requestPointerLock?.();
       }
+      // V toggles first-person (eyes) vs third-person (over shoulder)
+      if (e.key.toLowerCase() === "v" && mode !== "orbit") {
+        firstPerson.current = !firstPerson.current;
+        // reset pitch comfort when switching
+        if (firstPerson.current) pitchRef.current = 0;
+        else pitchRef.current = 0.28;
+      }
     };
     const up = (e: KeyboardEvent) => {
       keys.current[e.key.toLowerCase()] = false;
@@ -567,12 +1168,15 @@ function PlayerController({
     const onMove = (e: MouseEvent) => {
       if (mode === "orbit") return;
       if (document.pointerLockElement !== gl.domElement) return;
-      const sens = 0.0022;
+      const sens = firstPerson.current ? 0.0026 : 0.0022;
       yawRef.current -= e.movementX * sens;
+      // third-person: limited orbit pitch · first-person: look nearly straight up/down
+      const pMin = firstPerson.current ? -1.25 : 0.08;
+      const pMax = firstPerson.current ? 1.35 : 1.2;
       pitchRef.current = THREE.MathUtils.clamp(
         pitchRef.current - e.movementY * sens,
-        0.12,
-        1.15,
+        pMin,
+        pMax,
       );
     };
     const onClick = () => {
@@ -703,17 +1307,66 @@ function PlayerController({
       if (house) coolHeat(house.coolRate * 0.15);
     }
 
-    // Third-person COD-style camera: over-shoulder follow from look yaw/pitch
+    // Camera: third-person over-shoulder OR first-person eyes
     const target = group.current.position;
-    const dist = mountedVehicleId ? 9.5 : crouch ? 5.5 : 6.8;
-    const height = mountedVehicleId ? 4.2 : crouch ? 2.8 : 3.4;
     const cy = yawRef.current;
     const cp = pitchRef.current;
-    const camX = target.x + Math.sin(cy) * Math.cos(cp) * dist;
-    const camY = target.y + height + Math.sin(cp) * dist * 0.35;
-    const camZ = target.z + Math.cos(cy) * Math.cos(cp) * dist;
-    camera.position.lerp(new THREE.Vector3(camX, camY, camZ), 1 - Math.pow(0.0008, dt));
-    camera.lookAt(target.x, target.y + (crouch ? 1.0 : 1.35), target.z);
+    const sprinting = !!(keys.current["shift"] && isFoot && moving && !crouch);
+    const fp = firstPerson.current && !mountedVehicleId;
+
+    // Hide body mesh in first-person so you don't see your own head
+    if (group.current) {
+      group.current.visible = !fp;
+    }
+
+    let desired = new THREE.Vector3();
+    let look = new THREE.Vector3();
+
+    if (fp) {
+      // Eyes height (crouch lower)
+      const eyeY = target.y + (crouch ? 1.05 : 1.62);
+      desired.set(target.x, eyeY, target.z);
+      // Look direction from yaw/pitch (FPS style)
+      const lookDist = 12;
+      look.set(
+        target.x - Math.sin(cy) * Math.cos(cp) * lookDist,
+        eyeY + Math.sin(cp) * lookDist,
+        target.z - Math.cos(cy) * Math.cos(cp) * lookDist,
+      );
+      // Snap closer in FPS for responsive feel
+      camera.position.lerp(desired, 1 - Math.pow(0.00002, dt));
+    } else {
+      // Third-person COD-style: distance + height + right-shoulder offset
+      const dist = mountedVehicleId ? 9.5 : crouch ? 5.2 : sprinting ? 7.4 : 6.6;
+      const height = mountedVehicleId ? 4.2 : crouch ? 2.6 : 3.35;
+      const shoulder = mountedVehicleId ? 0.35 : 0.55; // offset to the right
+      // Back vector from yaw/pitch
+      const backX = Math.sin(cy) * Math.cos(cp);
+      const backZ = Math.cos(cy) * Math.cos(cp);
+      // Right vector (perpendicular on XZ)
+      const rightX = Math.cos(cy);
+      const rightZ = -Math.sin(cy);
+      desired.set(
+        target.x + backX * dist + rightX * shoulder,
+        target.y + height + Math.sin(cp) * dist * 0.32,
+        target.z + backZ * dist + rightZ * shoulder,
+      );
+      look.set(target.x + rightX * shoulder * 0.35, target.y + (crouch ? 1.05 : 1.4), target.z + rightZ * shoulder * 0.35);
+      // Stronger follow lag = weightier COD feel
+      const lag = sprinting ? 0.0025 : 0.0012;
+      camera.position.lerp(desired, 1 - Math.pow(lag, dt));
+    }
+
+    camera.lookAt(look.x, look.y, look.z);
+
+    // FOV: sprint widen, FPS slightly tighter, ADS-ready base
+    const baseFov = fp ? 68 : 48;
+    const targetFov = baseFov + (sprinting && !fp ? 8 : 0) + (mountedVehicleId ? 4 : 0);
+    fovRef.current = THREE.MathUtils.lerp(fovRef.current, targetFov, 1 - Math.pow(0.002, dt));
+    if ("fov" in camera) {
+      (camera as THREE.PerspectiveCamera).fov = fovRef.current;
+      (camera as THREE.PerspectiveCamera).updateProjectionMatrix();
+    }
   });
 
   useEffect(() => {
@@ -902,7 +1555,7 @@ function NpcCrowd() {
           }}
           position={[n.x, 0, n.z]}
         >
-          <StylizedCharacter appearance={n.appearance} equipped={n.equipped} scale={0.95} animate moveState="walk" />
+          <StylizedCharacter appearance={n.appearance} equipped={n.equipped} scale={0.95} animate detail moveState="walk" />
         </group>
       ))}
     </group>
@@ -1034,45 +1687,73 @@ export function AfroMetaverseScene({
 }) {
   const mode = useRoamStore((s) => s.mode);
   const nearDistrictId = useRoamStore((s) => s.nearDistrictId);
-  void weather; // night cyber look is intentional regardless of day weather UI
+  const wetness = weather?.rainIntensity ?? 0;
+  const dust = weather?.dustIntensity ?? 0;
 
   return (
     <Canvas
       shadows
-      camera={{ position: [0, 11, 16], fov: 45 }}
-      style={{ width: "100%", height: "100%", background: "#0b0618" }}
+      camera={{ position: [0, 10, 15], fov: 45 }}
+      style={{ width: "100%", height: "100%", background: "#b8c9d4" }}
       tabIndex={0}
     >
-      <NightSky />
-      <NeonGround />
+      <VillageDaySky />
+      {/* Multi-biome heritage terrain (Day 2) — single draw call + climate tint */}
+      <HeritageTerrain wetness={wetness} dust={dust} />
+      {/* Keep a soft local dust pad under the village for road contrast */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.001, 0]} receiveShadow>
+        <planeGeometry args={[28, 24]} />
+        <meshStandardMaterial color={N.dust} roughness={0.92} transparent opacity={0.55} />
+      </mesh>
       <NeonRoads />
-      <StreetLampsNeon />
-      <NeonWater />
-      <PortNeon />
-      <MarketNeonLane />
+      <LivingWater type="pond" position={[-5.5, 0, -5.4]} radius={3.8} />
+      <BiomeFlora count={160} />
+      <StartingVillage />
 
-      {TOWERS.map((spec, i) => (
-        <NeonTower key={i} spec={{ ...spec, neon: spec.neon || N.neonCyan }} />
-      ))}
+      {/* Day 6 — tribal compounds + hearth */}
+      <YorubaCompound
+        position={[-9.5, 0, 4.5]}
+        climateIntensity={wetness}
+        windIntensity={0.35 + dust * 0.4}
+      />
+      <IgboCompound
+        position={[9.0, 0, -4.5]}
+        climateIntensity={wetness}
+        windIntensity={0.35 + dust * 0.4}
+      />
+      <VillageHearth position={[-3.6, 0, 3.0]} />
+      <VillageHearth position={[0.3, 0, -2.6]} />
 
+      {/* Day 1 atmospheric life */}
+      <DustMotes count={90} active={dust > 0.25 || wetness < 0.3} />
+      <SpiritFireflies count={36} active={dust < 0.5} />
+      <SavannahGrass count={200} windIntensity={0.35 + dust * 0.5} />
+      <LightningFlash active={wetness > 0.55} />
+      <SacredGroveMist position={[10, 0.6, -9]} />
+
+      {/* Soft district markers — no neon towers; village grows into city later */}
       {Object.entries(DISTRICT_LAYOUT).map(([id, info]) => (
-        <DistrictHubNeon
-          key={id}
-          position={[info.x, 0, info.z]}
-          color={info.color}
-          neon={info.neon}
-          active={selectedDistrict === id}
-          near={nearDistrictId === id}
-          label={info.label}
-        />
+        <group key={id} position={[info.x, 0, info.z]}>
+          <mesh position={[0, 0.02, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+            <circleGeometry args={[selectedDistrict === id || nearDistrictId === id ? 1.1 : 0.75, 20]} />
+            <meshStandardMaterial
+              color={info.color}
+              transparent
+              opacity={selectedDistrict === id ? 0.45 : nearDistrictId === id ? 0.3 : 0.18}
+              roughness={1}
+            />
+          </mesh>
+          <mesh position={[0, 0.9, 0]} castShadow>
+            <cylinderGeometry args={[0.06, 0.08, 1.8, 6]} />
+            <meshStandardMaterial color="#5c4030" roughness={1} />
+          </mesh>
+          <mesh position={[0, 1.85, 0]}>
+            <boxGeometry args={[0.55, 0.28, 0.06]} />
+            <meshStandardMaterial color={info.color} roughness={0.7} />
+          </mesh>
+        </group>
       ))}
 
-      <NeonSign x={-4.2} y={3.2} z={4.9} w={1.4} h={0.4} color={N.neonPink} />
-      <NeonSign x={2.8} y={6.5} z={-0.2} w={1.2} h={0.35} color={N.neonCyan} rot={0.3} />
-      <NeonSign x={7.2} y={4.0} z={1.0} w={1.5} h={0.4} color={N.neonOrange} rot={-0.4} />
-      <NeonSign x={-6.5} y={3.5} z={-2.5} w={1.1} h={0.3} color={N.neonPurple} rot={0.6} />
-
-      <TrafficFlow />
       <ParkedVehicles />
       <NpcCrowd />
       <WantedPatrols />
@@ -1083,11 +1764,11 @@ export function AfroMetaverseScene({
         <OrbitControls
           enablePan={false}
           enableZoom
-          minDistance={10}
-          maxDistance={28}
-          minPolarAngle={Math.PI / 5}
-          maxPolarAngle={Math.PI / 2.05}
-          target={[0, 2, 0]}
+          minDistance={8}
+          maxDistance={26}
+          minPolarAngle={Math.PI / 6}
+          maxPolarAngle={Math.PI / 2.1}
+          target={[0, 1.2, 0]}
         />
       )}
     </Canvas>
