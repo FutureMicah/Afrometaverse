@@ -381,20 +381,20 @@ export function StylizedCharacter({
       {/* ——— TORSO ——— */}
       <group ref={torso}>
       <mesh position={[0, 1.05, 0]} castShadow>
-        <capsuleGeometry args={[0.27 * waist, 0.4, 12, 28]} />
+        <capsuleGeometry args={[0.27 * waist, 0.4, 16, 36]} />
         <ClothMat color={topC} soft={isSoftTop} />
       </mesh>
       <mesh position={[0, 1.18, 0.06]} castShadow>
-        <sphereGeometry args={[0.24 * chest, 24, 20]} />
+        <sphereGeometry args={[0.24 * chest, 32, 28]} />
         <ClothMat color={topC} soft={isSoftTop} />
       </mesh>
       {/* Shoulders */}
       <mesh position={[-0.2 * shoulder, 1.32, 0]} castShadow>
-        <sphereGeometry args={[0.14 * shoulder, 20, 16]} />
+        <sphereGeometry args={[0.14 * shoulder, 28, 22]} />
         <ClothMat color={outerC ?? topC} soft={!outerC} fur={isFur} />
       </mesh>
       <mesh position={[0.2 * shoulder, 1.32, 0]} castShadow>
-        <sphereGeometry args={[0.14 * shoulder, 20, 16]} />
+        <sphereGeometry args={[0.14 * shoulder, 28, 22]} />
         <ClothMat color={outerC ?? topC} soft={!outerC} fur={isFur} />
       </mesh>
       <mesh position={[0, 1.34, 0]}>
@@ -438,6 +438,32 @@ export function StylizedCharacter({
       <mesh position={[0, 0.8, 0.05]}>
         <torusGeometry args={[0.285 * waist, 0.012, 8, 24]} />
         <ClothMat color={topC} soft />
+      </mesh>
+      {/* side body soft folds */}
+      <mesh position={[-0.22 * waist, 1.05, 0.05]} castShadow scale={[0.55, 1.1, 0.7]}>
+        <sphereGeometry args={[0.12, 16, 14]} />
+        <ClothMat color={topC} soft={isSoftTop} />
+      </mesh>
+      <mesh position={[0.22 * waist, 1.05, 0.05]} castShadow scale={[0.55, 1.1, 0.7]}>
+        <sphereGeometry args={[0.12, 16, 14]} />
+        <ClothMat color={topC} soft={isSoftTop} />
+      </mesh>
+      {/* shirt buttons */}
+      {[1.28, 1.16, 1.04, 0.92].map((y, i) => (
+        <mesh key={`btn-${i}`} position={[0, y, 0.24 * chest]} castShadow>
+          <sphereGeometry args={[0.018, 10, 10]} />
+          <meshStandardMaterial color="#e7e5e4" metalness={0.15} roughness={0.4} />
+        </mesh>
+      ))}
+      {/* placket line */}
+      <mesh position={[0, 1.1, 0.235]}>
+        <boxGeometry args={[0.02, 0.45, 0.008]} />
+        <meshStandardMaterial color="#000000" transparent opacity={0.12} />
+      </mesh>
+      {/* back volume */}
+      <mesh position={[0, 1.12, -0.12]} castShadow scale={[0.95, 1.05, 0.75]}>
+        <sphereGeometry args={[0.22 * shoulder, 20, 16]} />
+        <ClothMat color={topC} soft={isSoftTop} />
       </mesh>
 
       </group>
@@ -541,10 +567,20 @@ export function StylizedCharacter({
             <SkinMat color={appearance.skin} />
           </mesh>
           {[-0.035, -0.012, 0.012, 0.035].map((x, i) => (
-            <mesh key={i} position={[x, -0.02, 0.12 + i * 0.002]} rotation={[0.35 + i * 0.05, 0, 0]} castShadow>
-              <capsuleGeometry args={[0.012, 0.045 - i * 0.004, 6, 10]} />
-              <SkinMat color={appearance.skin} />
-            </mesh>
+            <group key={i} position={[x, -0.02, 0.1]} rotation={[0.3 + i * 0.04, 0, 0]}>
+              <mesh position={[0, 0, 0.03]} castShadow>
+                <capsuleGeometry args={[0.012, 0.028, 6, 10]} />
+                <SkinMat color={appearance.skin} />
+              </mesh>
+              <mesh position={[0, 0, 0.055]} castShadow>
+                <sphereGeometry args={[0.013, 8, 8]} />
+                <SkinMat color={appearance.skin} />
+              </mesh>
+              <mesh position={[0, 0, 0.08]} castShadow>
+                <capsuleGeometry args={[0.011, 0.022 - i * 0.002, 6, 10]} />
+                <SkinMat color={appearance.skin} />
+              </mesh>
+            </group>
           ))}
           <mesh position={[-0.055, 0.01, 0.04]} rotation={[0.2, 0, 0.9]} castShadow>
             <capsuleGeometry args={[0.014, 0.04, 6, 10]} />
@@ -589,10 +625,20 @@ export function StylizedCharacter({
             <SkinMat color={appearance.skin} />
           </mesh>
           {[-0.035, -0.012, 0.012, 0.035].map((x, i) => (
-            <mesh key={i} position={[x, -0.02, 0.12 + i * 0.002]} rotation={[0.35 + i * 0.05, 0, 0]} castShadow>
-              <capsuleGeometry args={[0.012, 0.045 - i * 0.004, 6, 10]} />
-              <SkinMat color={appearance.skin} />
-            </mesh>
+            <group key={i} position={[x, -0.02, 0.1]} rotation={[0.3 + i * 0.04, 0, 0]}>
+              <mesh position={[0, 0, 0.03]} castShadow>
+                <capsuleGeometry args={[0.012, 0.028, 6, 10]} />
+                <SkinMat color={appearance.skin} />
+              </mesh>
+              <mesh position={[0, 0, 0.055]} castShadow>
+                <sphereGeometry args={[0.013, 8, 8]} />
+                <SkinMat color={appearance.skin} />
+              </mesh>
+              <mesh position={[0, 0, 0.08]} castShadow>
+                <capsuleGeometry args={[0.011, 0.022 - i * 0.002, 6, 10]} />
+                <SkinMat color={appearance.skin} />
+              </mesh>
+            </group>
           ))}
           <mesh position={[0.055, 0.01, 0.04]} rotation={[0.2, 0, -0.9]} castShadow>
             <capsuleGeometry args={[0.014, 0.04, 6, 10]} />
@@ -707,6 +753,20 @@ export function StylizedCharacter({
         <boxGeometry args={[0.07, 0.012, 0.03]} />
         <SkinMat color={appearance.skin} />
       </mesh>
+      {/* under-eye soft shadow volume */}
+      <mesh position={[-0.08, 1.615, 0.21]} scale={[1, 0.45, 0.7]}>
+        <sphereGeometry args={[0.035, 12, 10]} />
+        <meshStandardMaterial color="#5c3317" transparent opacity={0.12} />
+      </mesh>
+      <mesh position={[0.08, 1.615, 0.21]} scale={[1, 0.45, 0.7]}>
+        <sphereGeometry args={[0.035, 12, 10]} />
+        <meshStandardMaterial color="#5c3317" transparent opacity={0.12} />
+      </mesh>
+      {/* philtrum / upper lip notch */}
+      <mesh position={[0, 1.53, 0.23]} scale={[0.5, 0.8, 0.6]}>
+        <sphereGeometry args={[0.02, 10, 8]} />
+        <SkinMat color={appearance.skin} />
+      </mesh>
       {/* Nose bridge + tip */}
       <mesh
         position={[0, 1.58, appearance.noseShape === "strong" ? 0.26 : 0.24]}
@@ -759,14 +819,22 @@ export function StylizedCharacter({
           <meshStandardMaterial color="#fafaf9" />
         </mesh>
       )}
-      {/* Ears — flattened spheres read more like real ears */}
-      <mesh position={[-0.25, 1.6, -0.01]} castShadow scale={[0.55, 1, 0.85]} rotation={[0, 0, 0.15]}>
-        <sphereGeometry args={[0.07, 16, 14]} />
+      {/* Ears — outer + inner bowl */}
+      <mesh position={[-0.25, 1.6, -0.01]} castShadow scale={[0.55, 1.05, 0.85]} rotation={[0, 0.2, 0.15]}>
+        <sphereGeometry args={[0.072, 18, 16]} />
         <SkinMat color={appearance.skin} />
       </mesh>
-      <mesh position={[0.25, 1.6, -0.01]} castShadow scale={[0.55, 1, 0.85]} rotation={[0, 0, -0.15]}>
-        <sphereGeometry args={[0.07, 16, 14]} />
+      <mesh position={[-0.255, 1.6, 0.01]} scale={[0.35, 0.7, 0.5]} rotation={[0, 0.3, 0.1]}>
+        <sphereGeometry args={[0.05, 12, 10]} />
+        <meshStandardMaterial color="#5c3317" transparent opacity={0.35} />
+      </mesh>
+      <mesh position={[0.25, 1.6, -0.01]} castShadow scale={[0.55, 1.05, 0.85]} rotation={[0, -0.2, -0.15]}>
+        <sphereGeometry args={[0.072, 18, 16]} />
         <SkinMat color={appearance.skin} />
+      </mesh>
+      <mesh position={[0.255, 1.6, 0.01]} scale={[0.35, 0.7, 0.5]} rotation={[0, -0.3, -0.1]}>
+        <sphereGeometry args={[0.05, 12, 10]} />
+        <meshStandardMaterial color="#5c3317" transparent opacity={0.35} />
       </mesh>
 
       {/* Marks */}
