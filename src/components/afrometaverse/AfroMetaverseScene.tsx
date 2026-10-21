@@ -98,19 +98,19 @@ const TOWERS: TowerSpec[] = [
 function VillageDaySky() {
   return (
     <>
-      <color attach="background" args={["#c5d6e8"]} />
-      <fog attach="fog" args={["#d4c4a8", 22, 55]} />
-      <ambientLight intensity={0.55} />
-      <hemisphereLight args={["#e8f0f8", "#8a6a3c", 0.45]} />
+      <color attach="background" args={["#b8c9d4"]} />
+      <fog attach="fog" args={["#cbb892", 16, 48]} />
+      <ambientLight intensity={0.62} />
+      <hemisphereLight args={["#dfe8f0", "#7a5a32", 0.5]} />
       <directionalLight
-        position={[10, 18, 6]}
-        intensity={1.15}
-        color="#fff4e0"
+        position={[12, 20, 8]}
+        intensity={1.25}
+        color="#ffe8c8"
         castShadow
         shadow-mapSize-width={1024}
         shadow-mapSize-height={1024}
       />
-      <directionalLight position={[-6, 8, -4]} intensity={0.25} color="#a8c4e0" />
+      <directionalLight position={[-8, 6, -5]} intensity={0.28} color="#9eb6c8" />
     </>
   );
 }
@@ -118,21 +118,32 @@ function VillageDaySky() {
 function NeonGround() {
   return (
     <>
-      {/* Far earth bed */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.04, 0]} receiveShadow>
-        <planeGeometry args={[70, 70]} />
+        <planeGeometry args={[80, 80]} />
         <meshStandardMaterial color={N.earthDeep} roughness={1} />
       </mesh>
-      {/* Mid laterite plain */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.01, 0]} receiveShadow>
-        <planeGeometry args={[42, 36]} />
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.015, 0]} receiveShadow>
+        <planeGeometry args={[48, 42]} />
         <meshStandardMaterial color={N.earth} roughness={0.95} />
       </mesh>
-      {/* Dusty city floor under blocks */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.005, 0]} receiveShadow>
-        <planeGeometry args={[28, 24]} />
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.002, 0]} receiveShadow>
+        <planeGeometry args={[30, 26]} />
         <meshStandardMaterial color={N.dust} roughness={0.92} />
       </mesh>
+      {/* outer savannah grass belts */}
+      {(
+        [
+          [0, 14, 18, 6],
+          [0, -14, 18, 6],
+          [16, 0, 6, 22],
+          [-16, 0, 6, 22],
+        ] as const
+      ).map(([x, z, w, d], i) => (
+        <mesh key={i} rotation={[-Math.PI / 2, 0, 0]} position={[x, 0.008, z]} receiveShadow>
+          <planeGeometry args={[w, d]} />
+          <meshStandardMaterial color={i % 2 ? N.grassEdge : N.grassDry} roughness={1} />
+        </mesh>
+      ))}
     </>
   );
 }
@@ -524,27 +535,102 @@ function VillageHut({
   );
 }
 
-function VillageTree({ x, z, scale = 1 }: { x: number; z: number; scale?: number }) {
+function VillageTree({
+  x,
+  z,
+  scale = 1,
+  kind = "acacia",
+}: {
+  x: number;
+  z: number;
+  scale?: number;
+  kind?: "acacia" | "broad" | "palm";
+}) {
   const s = scale;
+  if (kind === "palm") {
+    return (
+      <group position={[x, 0, z]} scale={[s, s, s]}>
+        <mesh castShadow position={[0, 1.1, 0]}>
+          <cylinderGeometry args={[0.07, 0.11, 2.2, 6]} />
+          <meshStandardMaterial color="#5c4030" roughness={1} />
+        </mesh>
+        {[0, 1, 2, 3, 4].map((i) => {
+          const a = (i / 5) * Math.PI * 2;
+          return (
+            <mesh
+              key={i}
+              castShadow
+              position={[Math.cos(a) * 0.35, 2.15, Math.sin(a) * 0.35]}
+              rotation={[0.6, a, 0]}
+            >
+              <boxGeometry args={[0.12, 0.04, 0.9]} />
+              <meshStandardMaterial color="#3a6b28" roughness={0.9} />
+            </mesh>
+          );
+        })}
+      </group>
+    );
+  }
+  const trunkH = kind === "broad" ? 1.8 : 1.45;
   return (
     <group position={[x, 0, z]} scale={[s, s, s]}>
-      <mesh castShadow position={[0, 0.7, 0]}>
-        <cylinderGeometry args={[0.08, 0.12, 1.4, 6]} />
-        <meshStandardMaterial color="#4a3220" roughness={1} />
+      <mesh castShadow position={[0, trunkH / 2, 0]}>
+        <cylinderGeometry args={[0.09, 0.14, trunkH, 7]} />
+        <meshStandardMaterial color="#3f2a18" roughness={1} />
       </mesh>
-      <mesh castShadow position={[0, 1.6, 0]}>
-        <sphereGeometry args={[0.55, 8, 8]} />
-        <meshStandardMaterial color="#3d5c28" roughness={0.9} />
+      <mesh castShadow position={[0, trunkH + 0.15, 0]}>
+        <sphereGeometry args={[kind === "broad" ? 0.85 : 0.6, 9, 9]} />
+        <meshStandardMaterial color="#355528" roughness={0.88} />
       </mesh>
-      <mesh castShadow position={[0.25, 1.85, 0.1]}>
-        <sphereGeometry args={[0.38, 8, 8]} />
+      <mesh castShadow position={[0.35, trunkH + 0.35, 0.15]}>
+        <sphereGeometry args={[0.45, 8, 8]} />
         <meshStandardMaterial color="#4a6b30" roughness={0.9} />
       </mesh>
-      <mesh castShadow position={[-0.2, 1.75, -0.15]}>
-        <sphereGeometry args={[0.32, 8, 8]} />
-        <meshStandardMaterial color="#2f4a20" roughness={0.92} />
+      <mesh castShadow position={[-0.3, trunkH + 0.25, -0.2]}>
+        <sphereGeometry args={[0.4, 8, 8]} />
+        <meshStandardMaterial color="#2a451c" roughness={0.92} />
+      </mesh>
+      {kind === "broad" && (
+        <mesh castShadow position={[0.1, trunkH + 0.55, -0.25]}>
+          <sphereGeometry args={[0.5, 8, 8]} />
+          <meshStandardMaterial color="#3d5c28" roughness={0.9} />
+        </mesh>
+      )}
+    </group>
+  );
+}
+
+function Bush({ x, z, scale = 1 }: { x: number; z: number; scale?: number }) {
+  return (
+    <group position={[x, 0, z]} scale={[scale, scale, scale]}>
+      <mesh castShadow position={[0, 0.28, 0]}>
+        <sphereGeometry args={[0.32, 7, 7]} />
+        <meshStandardMaterial color="#3a5a28" roughness={0.95} />
+      </mesh>
+      <mesh castShadow position={[0.18, 0.22, 0.1]}>
+        <sphereGeometry args={[0.22, 6, 6]} />
+        <meshStandardMaterial color="#4a6b32" roughness={0.95} />
+      </mesh>
+      <mesh castShadow position={[-0.14, 0.2, -0.08]}>
+        <sphereGeometry args={[0.2, 6, 6]} />
+        <meshStandardMaterial color="#2f4a20" roughness={0.95} />
       </mesh>
     </group>
+  );
+}
+
+function Rock({ x, z, scale = 1 }: { x: number; z: number; scale?: number }) {
+  return (
+    <mesh
+      castShadow
+      receiveShadow
+      position={[x, 0.12 * scale, z]}
+      scale={[scale, scale * 0.7, scale]}
+      rotation={[0.1, scale * 2.1, 0.05]}
+    >
+      <dodecahedronGeometry args={[0.35, 0]} />
+      <meshStandardMaterial color="#7a6a58" roughness={0.95} />
+    </mesh>
   );
 }
 
@@ -603,7 +689,7 @@ function CompoundWall({
             castShadow
             receiveShadow
           >
-            <boxGeometry args={[0.12, 0.8, len * 0.95]} />
+            <boxGeometry args={[0.14, 0.85, len * 0.95]} />
             <meshStandardMaterial color="#c9a66b" roughness={0.98} />
           </mesh>
         );
@@ -612,7 +698,46 @@ function CompoundWall({
   );
 }
 
-/** Starting settlement — compounds, trees, grain, pots (city comes later) */
+/** Dense bush corridors along laterite roads (matches rural PH road refs) */
+function RoadsideFlora() {
+  const bushes: Array<[number, number, number]> = [];
+  // along main E-W road
+  for (let x = -12; x <= 12; x += 1.1) {
+    bushes.push([x, 1.35, 0.7 + (Math.abs(x) % 3) * 0.08]);
+    bushes.push([x + 0.4, -1.0, 0.65 + (Math.abs(x) % 2) * 0.1]);
+  }
+  // market road
+  for (let x = -8; x <= 6; x += 1.3) {
+    bushes.push([x, 5.7, 0.75]);
+    bushes.push([x + 0.5, 4.0, 0.6]);
+  }
+  // south road
+  for (let x = -8; x <= 7; x += 1.25) {
+    bushes.push([x, -3.7, 0.7]);
+    bushes.push([x, -2.0, 0.55]);
+  }
+  // N-S roads
+  for (let z = -8; z <= 8; z += 1.2) {
+    bushes.push([-4.1, z, 0.65]);
+    bushes.push([-2.3, z + 0.3, 0.6]);
+    bushes.push([1.9, z, 0.7]);
+    bushes.push([3.6, z + 0.2, 0.55]);
+    bushes.push([4.6, z, 0.6]);
+    bushes.push([6.4, z + 0.15, 0.65]);
+    bushes.push([-6.4, z, 0.7]);
+    bushes.push([-4.7, z + 0.25, 0.55]);
+  }
+
+  return (
+    <group>
+      {bushes.map(([x, z, sc], i) => (
+        <Bush key={i} x={x} z={z} scale={sc} />
+      ))}
+    </group>
+  );
+}
+
+/** Starting settlement — denser, more lived-in village */
 function StartingVillage() {
   const huts: Array<{
     x: number;
@@ -624,54 +749,65 @@ function StartingVillage() {
     d?: number;
     h?: number;
   }> = [
-    // Market compound (clustered)
+    // Market compound
     { x: -4.4, z: 3.8, style: "thatch", wall: "#c9a66b", w: 1.25, d: 1.1 },
     { x: -3.0, z: 4.4, style: "zinc", wall: "#b8956a", w: 1.35, d: 1.15, h: 1.05 },
     { x: -5.2, z: 2.6, style: "thatch", wall: "#b8895c", rot: 0.35, w: 1.2 },
     { x: -3.5, z: 2.0, style: "round", wall: "#d2b48c", w: 1.35, h: 1.0 },
     { x: -2.0, z: 3.2, style: "zinc", wall: "#a89070", rot: -0.25 },
     { x: -4.8, z: 4.6, style: "round", wall: "#c4a06a", w: 1.1, h: 0.9 },
-    // Civic compound
+    { x: -5.5, z: 3.5, style: "thatch", wall: "#c9a66b", rot: 0.6, w: 1.05 },
+    // Civic
     { x: -1.4, z: -2.6, style: "thatch", wall: "#c4a06a", w: 1.3, d: 1.15 },
     { x: 1.5, z: -3.0, style: "zinc", wall: "#b0a090", w: 1.45, d: 1.25, h: 1.1 },
     { x: 0.15, z: -3.8, style: "round", wall: "#d4b896", w: 1.3, h: 1.05 },
     { x: 2.4, z: -1.6, style: "thatch", wall: "#c9a66b", rot: 0.45 },
     { x: -2.2, z: -1.4, style: "zinc", wall: "#9a8b78", w: 1.2 },
     { x: 0.6, z: -2.0, style: "thatch", wall: "#b8895c", rot: -0.2 },
-    // Creekside compound
+    { x: -0.5, z: -3.2, style: "round", wall: "#c4a06a", w: 1.15 },
+    // Creekside
     { x: -6.8, z: -2.8, style: "round", wall: "#c4a06a", w: 1.4, h: 1.05 },
     { x: -7.6, z: -4.2, style: "thatch", wall: "#b8895c", rot: 0.2, w: 1.25 },
     { x: -5.4, z: -4.4, style: "zinc", wall: "#a89070", w: 1.2 },
     { x: -8.0, z: -1.8, style: "thatch", wall: "#d2b48c", rot: -0.45 },
     { x: -6.2, z: -1.5, style: "round", wall: "#c9a66b", w: 1.15 },
-    // Port / work edge
+    { x: -7.0, z: -5.0, style: "thatch", wall: "#b8895c", w: 1.1 },
+    // Port edge
     { x: 5.4, z: 3.6, style: "zinc", wall: "#8a8070", w: 1.55, d: 1.25, h: 1.1 },
     { x: 6.8, z: 2.5, style: "thatch", wall: "#c4a06a", w: 1.2 },
     { x: 4.7, z: 1.7, style: "zinc", wall: "#9a8b78", rot: 0.3, w: 1.3 },
     { x: 7.4, z: 3.9, style: "round", wall: "#b8956a", w: 1.2 },
     { x: 6.0, z: 4.5, style: "thatch", wall: "#b8895c", rot: 0.15 },
+    { x: 8.0, z: 2.8, style: "zinc", wall: "#8a8070", w: 1.15 },
     // Path-side
     { x: 1.7, z: 2.5, style: "thatch", wall: "#c9a66b", rot: 0.12 },
     { x: -0.9, z: 1.3, style: "zinc", wall: "#a89070" },
     { x: 3.9, z: -0.5, style: "thatch", wall: "#b8895c" },
     { x: -4.5, z: -0.3, style: "round", wall: "#d2b48c", w: 1.05 },
+    { x: 2.8, z: 1.2, style: "round", wall: "#c4a06a", w: 1.0 },
   ];
 
-  const trees: Array<[number, number, number]> = [
-    [-6.5, 4.5, 1.1],
-    [-1.5, 5.2, 0.95],
-    [2.5, 4.8, 1.2],
-    [8.0, 1.5, 1.0],
-    [7.5, -2.0, 1.15],
-    [3.5, -4.5, 0.9],
-    [-3.5, -5.0, 1.05],
-    [-8.5, -3.0, 1.25],
-    [-8.2, 0.5, 0.85],
-    [0.5, 0.5, 0.7],
-    [4.0, 2.0, 0.8],
-    [-2.5, 0.2, 0.75],
-    [8.5, 4.0, 1.1],
-    [-0.5, -5.2, 1.0],
+  const trees: Array<[number, number, number, "acacia" | "broad" | "palm"]> = [
+    [-6.5, 4.5, 1.15, "broad"],
+    [-1.5, 5.5, 1.0, "acacia"],
+    [2.8, 5.2, 1.25, "broad"],
+    [8.2, 1.2, 1.05, "acacia"],
+    [7.8, -2.2, 1.2, "broad"],
+    [3.5, -4.8, 0.95, "acacia"],
+    [-3.8, -5.2, 1.1, "broad"],
+    [-8.8, -3.2, 1.3, "broad"],
+    [-8.5, 0.8, 0.9, "acacia"],
+    [0.8, 0.2, 0.75, "acacia"],
+    [4.2, 2.2, 0.85, "palm"],
+    [-2.8, 0.4, 0.8, "acacia"],
+    [8.8, 4.2, 1.15, "broad"],
+    [-0.2, -5.5, 1.05, "broad"],
+    [-9.2, -5.0, 1.2, "palm"],
+    [9.0, -0.5, 1.0, "palm"],
+    [-5.0, 6.0, 1.1, "broad"],
+    [5.5, -3.5, 0.95, "acacia"],
+    [-10, -1.0, 1.15, "broad"],
+    [1.5, 6.2, 1.0, "acacia"],
   ];
 
   return (
@@ -680,45 +816,53 @@ function StartingVillage() {
         <VillageHut key={i} {...h} />
       ))}
 
-      {/* low compound rings (like traditional compounds) */}
-      <CompoundWall x={-3.8} z={3.4} radius={2.4} segments={12} />
-      <CompoundWall x={0.2} z={-2.6} radius={2.6} segments={12} />
-      <CompoundWall x={-6.8} z={-3.2} radius={2.2} segments={10} />
-      <CompoundWall x={6.2} z={3.2} radius={2.3} segments={11} />
+      <CompoundWall x={-3.8} z={3.4} radius={2.5} segments={12} />
+      <CompoundWall x={0.2} z={-2.6} radius={2.7} segments={12} />
+      <CompoundWall x={-6.8} z={-3.2} radius={2.35} segments={11} />
+      <CompoundWall x={6.2} z={3.2} radius={2.4} segments={11} />
 
-      {trees.map(([tx, tz, sc], i) => (
-        <VillageTree key={`t${i}`} x={tx} z={tz} scale={sc} />
+      {trees.map(([tx, tz, sc, kind], i) => (
+        <VillageTree key={`t${i}`} x={tx} z={tz} scale={sc} kind={kind} />
       ))}
 
-      {/* grain / hay stacks */}
+      <RoadsideFlora />
+
+      {/* rocks near creek and slopes */}
+      <Rock x={-4.2} z={-5.8} scale={1.2} />
+      <Rock x={-3.5} z={-6.2} scale={0.8} />
+      <Rock x={-7.5} z={-5.5} scale={1.4} />
+      <Rock x={8.5} z={-3.0} scale={1.1} />
+      <Rock x={-9.0} z={2.0} scale={0.9} />
+      <Rock x={2.0} z={6.0} scale={0.7} />
+      <Rock x={9.2} z={5.0} scale={1.0} />
+
       <GrainStack x={-3.2} z={2.8} />
       <GrainStack x={-4.6} z={3.2} />
       <GrainStack x={-6.0} z={-3.6} />
       <GrainStack x={1.0} z={-2.2} />
       <GrainStack x={5.8} z={2.0} />
+      <GrainStack x={-7.2} z={-2.2} />
 
-      {/* clay pots near doors */}
       <ClayPot x={-4.0} z={3.5} />
       <ClayPot x={-4.15} z={3.35} s={0.8} />
       <ClayPot x={-1.0} z={-2.3} />
       <ClayPot x={-6.4} z={-2.5} s={1.15} />
       <ClayPot x={5.0} z={3.2} />
       <ClayPot x={0.4} z={-3.4} s={0.9} />
+      <ClayPot x={-3.2} z={1.9} s={0.85} />
+      <ClayPot x={6.5} z={2.2} />
 
-      {/* stick fences along market edge */}
       {Array.from({ length: 8 }, (_, i) => (
         <mesh key={`f${i}`} position={[-3.2 + i * 0.35, 0.38, 5.15]} castShadow>
           <boxGeometry args={[0.05, 0.76, 0.05]} />
           <meshStandardMaterial color="#5c4030" roughness={1} />
         </mesh>
       ))}
-      {/* horizontal rail */}
       <mesh position={[-1.95, 0.55, 5.15]}>
         <boxGeometry args={[2.6, 0.04, 0.04]} />
         <meshStandardMaterial color="#6b4e32" roughness={1} />
       </mesh>
 
-      {/* market tables */}
       {[
         [-3.4, 3.15],
         [-2.4, 3.45],
@@ -746,7 +890,6 @@ function StartingVillage() {
         </group>
       ))}
 
-      {/* sparse dry-grass patches near compounds */}
       {[
         [-5.5, 1.5],
         [-1.0, 4.0],
@@ -754,9 +897,13 @@ function StartingVillage() {
         [7.0, 0.5],
         [-7.5, -0.5],
         [3.0, 1.0],
+        [-8.0, 3.0],
+        [4.5, -2.5],
+        [0.0, 5.5],
+        [-2.0, -4.5],
       ].map(([gx, gz], i) => (
         <mesh key={`g${i}`} rotation={[-Math.PI / 2, 0, 0]} position={[gx, 0.02, gz]}>
-          <circleGeometry args={[0.9 + (i % 3) * 0.2, 10]} />
+          <circleGeometry args={[1.0 + (i % 3) * 0.25, 10]} />
           <meshStandardMaterial color={i % 2 ? N.grassDry : N.grassEdge} roughness={1} />
         </mesh>
       ))}
@@ -1466,7 +1613,7 @@ export function AfroMetaverseScene({
     <Canvas
       shadows
       camera={{ position: [0, 10, 15], fov: 45 }}
-      style={{ width: "100%", height: "100%", background: "#c5d6e8" }}
+      style={{ width: "100%", height: "100%", background: "#b8c9d4" }}
       tabIndex={0}
     >
       <VillageDaySky />
