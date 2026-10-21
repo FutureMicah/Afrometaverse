@@ -17,6 +17,18 @@ import {
   BiomeFlora,
   LivingWater,
 } from "@/components/afrometaverse/HeritageTerrain";
+import {
+  YorubaCompound,
+  IgboCompound,
+  VillageHearth,
+} from "@/components/afrometaverse/HeritageArchitecture";
+import {
+  DustMotes,
+  SpiritFireflies,
+  SavannahGrass,
+  LightningFlash,
+  SacredGroveMist,
+} from "@/components/afrometaverse/AtmosphericLife";
 
 const DISTRICT_LAYOUT = {
   "town-market": { x: -3, z: 2.5, color: "#f59e0b", label: "Town Market", neon: "#fbbf24" },
@@ -1634,6 +1646,27 @@ export function AfroMetaverseScene({
       <LivingWater type="pond" position={[-5.5, 0, -5.4]} radius={3.8} />
       <BiomeFlora count={160} />
       <StartingVillage />
+
+      {/* Day 6 — tribal compounds + hearth */}
+      <YorubaCompound
+        position={[-9.5, 0, 4.5]}
+        climateIntensity={wetness}
+        windIntensity={0.35 + dust * 0.4}
+      />
+      <IgboCompound
+        position={[9.0, 0, -4.5]}
+        climateIntensity={wetness}
+        windIntensity={0.35 + dust * 0.4}
+      />
+      <VillageHearth position={[-3.6, 0, 3.0]} />
+      <VillageHearth position={[0.3, 0, -2.6]} />
+
+      {/* Day 1 atmospheric life */}
+      <DustMotes count={90} active={dust > 0.25 || wetness < 0.3} />
+      <SpiritFireflies count={36} active={dust < 0.5} />
+      <SavannahGrass count={200} windIntensity={0.35 + dust * 0.5} />
+      <LightningFlash active={wetness > 0.55} />
+      <SacredGroveMist position={[10, 0.6, -9]} />
 
       {/* Soft district markers — no neon towers; village grows into city later */}
       {Object.entries(DISTRICT_LAYOUT).map(([id, info]) => (
