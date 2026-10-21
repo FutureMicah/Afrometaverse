@@ -462,10 +462,64 @@
 
 .am-city-canvas {
   position: relative;
-  height: min(62vh, 620px);
-  min-height: 320px;
+  height: min(70vh, 720px);
+  min-height: 360px;
   overflow: hidden;
   touch-action: none;
+}
+
+/* COD-style expand / shrink buttons on the city view */
+.am-city-view-controls {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 8;
+  display: flex;
+  gap: 8px;
+  pointer-events: auto;
+}
+
+.am-city-view-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  border: 1px solid oklch(1 0 0 / 0.22);
+  background: oklch(0.14 0.03 280 / 0.82);
+  color: oklch(0.96 0.02 80);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 8px 24px oklch(0.1 0.02 280 / 0.45);
+  transition: transform 140ms ease, background 140ms ease, border-color 140ms ease;
+}
+
+.am-city-view-btn:hover {
+  transform: translateY(-1px) scale(1.02);
+  background: oklch(0.2 0.04 280 / 0.9);
+  border-color: oklch(0.75 0.12 75 / 0.55);
+}
+
+.am-city-view-expand {
+  background: linear-gradient(135deg, oklch(0.45 0.14 35 / 0.95), oklch(0.32 0.1 25 / 0.92));
+  border-color: oklch(0.7 0.12 55 / 0.45);
+}
+
+.am-city-view-shrink {
+  background: oklch(0.18 0.03 280 / 0.88);
+}
+
+@media (max-width: 520px) {
+  .am-city-view-btn span {
+    display: none;
+  }
+  .am-city-view-btn {
+    padding: 12px;
+    border-radius: 999px;
+  }
 }
 
 .am-city-canvas canvas {
@@ -1955,6 +2009,7 @@
   justify-content: space-between;
   gap: 10px;
   padding: 12px 16px;
+  padding-right: 150px; /* room for shrink button */
   background: linear-gradient(to bottom, oklch(0.12 0.02 280 / 0.75), transparent);
   pointer-events: none;
 }
