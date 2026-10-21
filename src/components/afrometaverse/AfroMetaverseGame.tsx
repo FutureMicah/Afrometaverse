@@ -975,7 +975,7 @@ export function AfroMetaverseGame() {
                 <h1>Port Harcourt, Day {cityDay}</h1>
                 <p>
                   {roamMode === "orbit"
-                    ? "Click the map or Play full screen for COD-style move: WASD, mouse look, Shift sprint, C crouch, Space jump, F vehicle. Esc exits full screen."
+                    ? "Play full screen for COD-style move: WASD, mouse look, V = eyes/shoulder cam, Shift sprint, C crouch, Space jump, F vehicle. Esc exits."
                     : "WASD / arrows to move. Reach the glowing district to advance your mission."}
                 </p>
               </div>
@@ -1449,7 +1449,7 @@ export function AfroMetaverseGame() {
                 {cityFullscreen && (
                   <div className="am-fs-hud">
                     <span className="am-fs-hint">
-                      WASD move · Mouse look · Shift sprint · C crouch · Space jump · F vehicle · Esc shrink
+                      WASD · Mouse look · V first/third person · Shift sprint · C crouch · Space jump · F vehicle · Esc shrink
                     </span>
                     <button
                       type="button"

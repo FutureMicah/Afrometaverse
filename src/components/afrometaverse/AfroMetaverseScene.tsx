@@ -1130,6 +1130,9 @@ function PlayerController({
   const heatTick = useRef(0);
   const jumpVel = useRef(0);
   const grounded = useRef(true);
+  /** third = over-shoulder COD cam · first = through the eyes */
+  const firstPerson = useRef(false);
+  const fovRef = useRef(50);
 
   useEffect(() => {
     const down = (e: KeyboardEvent) => {
@@ -1147,6 +1150,13 @@ function PlayerController({
       if (e.key.toLowerCase() === "r" && mode !== "orbit") {
         gl.domElement.requestPointerLock?.();
       }
+      // V toggles first-person (eyes) vs third-person (over shoulder)
+      if (e.key.toLowerCase() === "v" && mode !== "orbit") {
+        firstPerson.current = !firstPerson.current;
+        // reset pitch comfort when switching
+        if (firstPerson.current) pitchRef.current = 0;
+        else pitchRef.current = 0.28;
+      }
     };
     const up = (e: KeyboardEvent) => {
       keys.current[e.key.toLowerCase()] = false;
@@ -1158,12 +1168,15 @@ function PlayerController({
     const onMove = (e: MouseEvent) => {
       if (mode === "orbit") return;
       if (document.pointerLockElement !== gl.domElement) return;
-      const sens = 0.0022;
+      const sens = firstPerson.current ? 0.0026 : 0.0022;
       yawRef.current -= e.movementX * sens;
+      // third-person: limited orbit pitch · first-person: look nearly straight up/down
+      const pMin = firstPerson.current ? -1.25 : 0.08;
+      const pMax = firstPerson.current ? 1.35 : 1.2;
       pitchRef.current = THREE.MathUtils.clamp(
         pitchRef.current - e.movementY * sens,
-        0.12,
-        1.15,
+        pMin,
+        pMax,
       );
     };
     const onClick = () => {
@@ -1294,17 +1307,66 @@ function PlayerController({
       if (house) coolHeat(house.coolRate * 0.15);
     }
 
-    // Third-person COD-style camera: over-shoulder follow from look yaw/pitch
+    // Camera: third-person over-shoulder OR first-person eyes
     const target = group.current.position;
-    const dist = mountedVehicleId ? 9.5 : crouch ? 5.5 : 6.8;
-    const height = mountedVehicleId ? 4.2 : crouch ? 2.8 : 3.4;
     const cy = yawRef.current;
     const cp = pitchRef.current;
-    const camX = target.x + Math.sin(cy) * Math.cos(cp) * dist;
-    const camY = target.y + height + Math.sin(cp) * dist * 0.35;
-    const camZ = target.z + Math.cos(cy) * Math.cos(cp) * dist;
-    camera.position.lerp(new THREE.Vector3(camX, camY, camZ), 1 - Math.pow(0.0008, dt));
-    camera.lookAt(target.x, target.y + (crouch ? 1.0 : 1.35), target.z);
+    const sprinting = !!(keys.current["shift"] && isFoot && moving && !crouch);
+    const fp = firstPerson.current && !mountedVehicleId;
+
+    // Hide body mesh in first-person so you don't see your own head
+    if (group.current) {
+      group.current.visible = !fp;
+    }
+
+    let desired = new THREE.Vector3();
+    let look = new THREE.Vector3();
+
+    if (fp) {
+      // Eyes height (crouch lower)
+      const eyeY = target.y + (crouch ? 1.05 : 1.62);
+      desired.set(target.x, eyeY, target.z);
+      // Look direction from yaw/pitch (FPS style)
+      const lookDist = 12;
+      look.set(
+        target.x - Math.sin(cy) * Math.cos(cp) * lookDist,
+        eyeY + Math.sin(cp) * lookDist,
+        target.z - Math.cos(cy) * Math.cos(cp) * lookDist,
+      );
+      // Snap closer in FPS for responsive feel
+      camera.position.lerp(desired, 1 - Math.pow(0.00002, dt));
+    } else {
+      // Third-person COD-style: distance + height + right-shoulder offset
+      const dist = mountedVehicleId ? 9.5 : crouch ? 5.2 : sprinting ? 7.4 : 6.6;
+      const height = mountedVehicleId ? 4.2 : crouch ? 2.6 : 3.35;
+      const shoulder = mountedVehicleId ? 0.35 : 0.55; // offset to the right
+      // Back vector from yaw/pitch
+      const backX = Math.sin(cy) * Math.cos(cp);
+      const backZ = Math.cos(cy) * Math.cos(cp);
+      // Right vector (perpendicular on XZ)
+      const rightX = Math.cos(cy);
+      const rightZ = -Math.sin(cy);
+      desired.set(
+        target.x + backX * dist + rightX * shoulder,
+        target.y + height + Math.sin(cp) * dist * 0.32,
+        target.z + backZ * dist + rightZ * shoulder,
+      );
+      look.set(target.x + rightX * shoulder * 0.35, target.y + (crouch ? 1.05 : 1.4), target.z + rightZ * shoulder * 0.35);
+      // Stronger follow lag = weightier COD feel
+      const lag = sprinting ? 0.0025 : 0.0012;
+      camera.position.lerp(desired, 1 - Math.pow(lag, dt));
+    }
+
+    camera.lookAt(look.x, look.y, look.z);
+
+    // FOV: sprint widen, FPS slightly tighter, ADS-ready base
+    const baseFov = fp ? 68 : 48;
+    const targetFov = baseFov + (sprinting && !fp ? 8 : 0) + (mountedVehicleId ? 4 : 0);
+    fovRef.current = THREE.MathUtils.lerp(fovRef.current, targetFov, 1 - Math.pow(0.002, dt));
+    if ("fov" in camera) {
+      (camera as THREE.PerspectiveCamera).fov = fovRef.current;
+      (camera as THREE.PerspectiveCamera).updateProjectionMatrix();
+    }
   });
 
   useEffect(() => {
