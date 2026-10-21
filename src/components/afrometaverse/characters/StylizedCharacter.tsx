@@ -217,42 +217,83 @@ export function StylizedCharacter({
         <group>
           {/* Pelvis */}
           <mesh position={[0, 0.78, 0]} castShadow>
-            <sphereGeometry args={[0.26 * hip, 28, 22]} />
+            <sphereGeometry args={[0.26 * hip, 32, 26]} />
             <ClothMat color={bottomC} denim={isDenimBottom} />
+          </mesh>
+          {/* belt band */}
+          <mesh position={[0, 0.88, 0]} castShadow>
+            <torusGeometry args={[0.24 * hip, 0.035, 10, 28]} />
+            <meshStandardMaterial color="#1c1917" roughness={0.55} metalness={0.15} />
+          </mesh>
+          <mesh position={[0.02, 0.88, 0.22]}>
+            <boxGeometry args={[0.06, 0.045, 0.03]} />
+            <meshStandardMaterial color="#a8a29e" metalness={0.85} roughness={0.2} />
+          </mesh>
+          {/* front fly seam */}
+          <mesh position={[0, 0.65, 0.22]}>
+            <boxGeometry args={[0.012, 0.28, 0.01]} />
+            <meshStandardMaterial color="#000000" transparent opacity={0.18} />
           </mesh>
           <group ref={leftLeg} position={[-0.12 * hip, 0.78, 0]}>
             <mesh position={[0, -0.23, 0]} castShadow>
-              <capsuleGeometry args={[0.13 * hip, 0.26, 12, 24]} />
+              <capsuleGeometry args={[0.13 * hip, 0.26, 14, 28]} />
               <ClothMat color={bottomC} denim={isDenimBottom} />
             </mesh>
-            <mesh position={[0, -0.42, 0.02]}>
-              <sphereGeometry args={[0.1 * hip, 18, 16]} />
+            {/* outer seam */}
+            <mesh position={[-0.12 * hip, -0.28, 0]} rotation={[0, 0, 0.05]}>
+              <boxGeometry args={[0.01, 0.45, 0.01]} />
+              <meshStandardMaterial color="#000000" transparent opacity={0.15} />
+            </mesh>
+            {/* pocket flap */}
+            <mesh position={[-0.06, -0.08, 0.1]} castShadow>
+              <boxGeometry args={[0.1, 0.08, 0.02]} />
+              <ClothMat color={bottomC} denim={isDenimBottom} />
+            </mesh>
+            <mesh position={[0, -0.42, 0.02]} castShadow>
+              <sphereGeometry args={[0.105 * hip, 20, 18]} />
               <ClothMat color={bottomC} denim={isDenimBottom} />
             </mesh>
             <mesh position={[0.01, -0.6, 0.03]} castShadow>
-              <capsuleGeometry args={[0.095 * hip, 0.2, 12, 22]} />
+              <capsuleGeometry args={[0.095 * hip, 0.2, 14, 26]} />
               <ClothMat color={bottomC} denim={isDenimBottom} />
             </mesh>
-            <mesh position={[0.01, -0.7, 0.04]}>
-              <sphereGeometry args={[0.07 * hip, 14, 14]} />
+            {/* ankle cuff */}
+            <mesh position={[0.01, -0.72, 0.04]}>
+              <torusGeometry args={[0.08 * hip, 0.015, 8, 16]} />
+              <ClothMat color={bottomC} denim={isDenimBottom} />
+            </mesh>
+            <mesh position={[0.01, -0.7, 0.04]} castShadow>
+              <sphereGeometry args={[0.072 * hip, 16, 14]} />
               <ClothMat color={bottomC} denim={isDenimBottom} />
             </mesh>
           </group>
           <group ref={rightLeg} position={[0.12 * hip, 0.78, 0]}>
             <mesh position={[0, -0.23, 0]} castShadow>
-              <capsuleGeometry args={[0.13 * hip, 0.26, 12, 24]} />
+              <capsuleGeometry args={[0.13 * hip, 0.26, 14, 28]} />
               <ClothMat color={bottomC} denim={isDenimBottom} />
             </mesh>
-            <mesh position={[0, -0.42, 0.02]}>
-              <sphereGeometry args={[0.1 * hip, 18, 16]} />
+            <mesh position={[0.12 * hip, -0.28, 0]} rotation={[0, 0, -0.05]}>
+              <boxGeometry args={[0.01, 0.45, 0.01]} />
+              <meshStandardMaterial color="#000000" transparent opacity={0.15} />
+            </mesh>
+            <mesh position={[0.06, -0.08, 0.1]} castShadow>
+              <boxGeometry args={[0.1, 0.08, 0.02]} />
+              <ClothMat color={bottomC} denim={isDenimBottom} />
+            </mesh>
+            <mesh position={[0, -0.42, 0.02]} castShadow>
+              <sphereGeometry args={[0.105 * hip, 20, 18]} />
               <ClothMat color={bottomC} denim={isDenimBottom} />
             </mesh>
             <mesh position={[-0.01, -0.6, 0.03]} castShadow>
-              <capsuleGeometry args={[0.095 * hip, 0.2, 12, 22]} />
+              <capsuleGeometry args={[0.095 * hip, 0.2, 14, 26]} />
               <ClothMat color={bottomC} denim={isDenimBottom} />
             </mesh>
-            <mesh position={[-0.01, -0.7, 0.04]}>
-              <sphereGeometry args={[0.07 * hip, 14, 14]} />
+            <mesh position={[-0.01, -0.72, 0.04]}>
+              <torusGeometry args={[0.08 * hip, 0.015, 8, 16]} />
+              <ClothMat color={bottomC} denim={isDenimBottom} />
+            </mesh>
+            <mesh position={[-0.01, -0.7, 0.04]} castShadow>
+              <sphereGeometry args={[0.072 * hip, 16, 14]} />
               <ClothMat color={bottomC} denim={isDenimBottom} />
             </mesh>
           </group>
@@ -598,6 +639,20 @@ export function StylizedCharacter({
         <sphereGeometry args={[0.095, 18, 16]} />
         <SkinMat color={appearance.skin} />
       </mesh>
+      {/* Brow ridge / forehead mass */}
+      <mesh position={[0, 1.72, 0.12]} castShadow scale={[1.15, 0.45, 0.7]}>
+        <sphereGeometry args={[0.14, 18, 14]} />
+        <SkinMat color={appearance.skin} />
+      </mesh>
+      {/* Temple volume */}
+      <mesh position={[-0.2, 1.62, 0.02]} castShadow scale={[0.6, 0.9, 0.7]}>
+        <sphereGeometry args={[0.1, 14, 12]} />
+        <SkinMat color={appearance.skin} />
+      </mesh>
+      <mesh position={[0.2, 1.62, 0.02]} castShadow scale={[0.6, 0.9, 0.7]}>
+        <sphereGeometry args={[0.1, 14, 12]} />
+        <SkinMat color={appearance.skin} />
+      </mesh>
 
       {/* Eyes */}
       <mesh position={[-0.08, 1.64, 0.21]}>
@@ -615,6 +670,15 @@ export function StylizedCharacter({
       <mesh position={[0.08, 1.64, 0.248]}>
         <sphereGeometry args={[eyeR * 0.58, 16, 16]} />
         <meshStandardMaterial color={appearance.eyeColor || "#2c1810"} roughness={0.3} />
+      </mesh>
+      {/* pupil */}
+      <mesh position={[-0.08, 1.64, 0.268]}>
+        <sphereGeometry args={[eyeR * 0.28, 12, 12]} />
+        <meshStandardMaterial color="#0a0a0a" roughness={0.2} />
+      </mesh>
+      <mesh position={[0.08, 1.64, 0.268]}>
+        <sphereGeometry args={[eyeR * 0.28, 12, 12]} />
+        <meshStandardMaterial color="#0a0a0a" roughness={0.2} />
       </mesh>
       {/* Highlights */}
       <mesh position={[-0.07, 1.65, 0.265]}>
@@ -854,25 +918,35 @@ export function StylizedCharacter({
 }
 
 function MaxHair({ style, color }: { style: CharacterAppearance["hair"]; color: string }) {
+  const hairMat = (
+    <meshPhysicalMaterial
+      color={color}
+      roughness={0.92}
+      sheen={0.55}
+      sheenRoughness={0.85}
+      sheenColor={color}
+    />
+  );
   switch (style) {
     case "afro":
       return (
         <group>
           <mesh position={[0, 1.78, 0]} castShadow>
-            <sphereGeometry args={[0.38, 20, 16]} />
-            <meshPhysicalMaterial color={color} roughness={0.98} sheen={0.6} sheenRoughness={0.9} />
+            <sphereGeometry args={[0.4, 28, 22]} />
+            {hairMat}
           </mesh>
-          {Array.from({ length: 14 }).map((_, i) => {
-            const a = (i / 14) * Math.PI * 2;
-            const y = 1.72 + (i % 4) * 0.06;
+          {Array.from({ length: 28 }).map((_, i) => {
+            const a = (i / 28) * Math.PI * 2;
+            const elev = ((i * 5) % 7) * 0.04;
+            const r = 0.28 + (i % 3) * 0.04;
             return (
               <mesh
                 key={i}
-                position={[Math.cos(a) * 0.32, y, Math.sin(a) * 0.32]}
+                position={[Math.cos(a) * r, 1.7 + elev, Math.sin(a) * r * 0.95]}
                 castShadow
               >
-                <sphereGeometry args={[0.1, 10, 10]} />
-                <meshPhysicalMaterial color={color} roughness={1} sheen={0.5} sheenRoughness={0.95} />
+                <sphereGeometry args={[0.09 + (i % 4) * 0.012, 12, 10]} />
+                {hairMat}
               </mesh>
             );
           })}
@@ -881,13 +955,17 @@ function MaxHair({ style, color }: { style: CharacterAppearance["hair"]; color: 
     case "bob":
       return (
         <group>
-          <mesh position={[0, 1.68, 0]} castShadow>
-            <sphereGeometry args={[0.32, 18, 14]} />
-            <meshPhysicalMaterial color={color} roughness={0.85} sheen={0.3} />
+          <mesh position={[0, 1.7, 0]} castShadow>
+            <sphereGeometry args={[0.33, 24, 18]} />
+            {hairMat}
           </mesh>
-          <mesh position={[0, 1.4, 0.02]} castShadow>
-            <boxGeometry args={[0.58, 0.4, 0.42]} />
-            <meshPhysicalMaterial color={color} roughness={0.85} />
+          <mesh position={[0, 1.42, 0]} castShadow scale={[1, 1.05, 1]}>
+            <sphereGeometry args={[0.34, 22, 16]} />
+            {hairMat}
+          </mesh>
+          <mesh position={[0, 1.28, -0.05]} castShadow>
+            <capsuleGeometry args={[0.2, 0.15, 8, 16]} />
+            {hairMat}
           </mesh>
         </group>
       );
@@ -895,18 +973,32 @@ function MaxHair({ style, color }: { style: CharacterAppearance["hair"]; color: 
       return (
         <group>
           <mesh position={[0, 1.7, 0]} castShadow>
-            <sphereGeometry args={[0.28, 16, 14]} />
-            <meshPhysicalMaterial color={color} roughness={0.9} />
+            <sphereGeometry args={[0.29, 22, 18]} />
+            {hairMat}
           </mesh>
-          {[-0.16, -0.06, 0.06, 0.16].map((x, i) => (
-            <group key={i}>
-              <mesh position={[x, 1.98, -0.05]} castShadow>
-                <cylinderGeometry args={[0.04, 0.032, 0.55 + (i % 2) * 0.14, 10]} />
-                <meshPhysicalMaterial color={color} roughness={0.9} />
+          {/* scalp cornrow ridges */}
+          {[-0.12, -0.04, 0.04, 0.12].map((x, i) => (
+            <mesh key={`row-${i}`} position={[x, 1.78, 0]} rotation={[0.2, 0, 0]} castShadow>
+              <capsuleGeometry args={[0.025, 0.22, 6, 10]} />
+              {hairMat}
+            </mesh>
+          ))}
+          {[-0.18, -0.1, -0.02, 0.06, 0.14, 0.2].map((x, i) => (
+            <group key={i} position={[x, 1.55, -0.08]}>
+              <mesh position={[0, 0.35, 0]} castShadow>
+                <cylinderGeometry args={[0.035, 0.028, 0.65 + (i % 3) * 0.08, 12]} />
+                {hairMat}
               </mesh>
-              <mesh position={[x, 1.7, -0.05]}>
-                <torusGeometry args={[0.048, 0.012, 6, 14]} />
-                <meshStandardMaterial color="#fbbf24" metalness={0.85} roughness={0.2} />
+              {/* braid segments */}
+              {[0.15, 0.3, 0.45].map((y, j) => (
+                <mesh key={j} position={[0, y, 0]} castShadow>
+                  <sphereGeometry args={[0.038, 10, 8]} />
+                  {hairMat}
+                </mesh>
+              ))}
+              <mesh position={[0, 0.05, 0]}>
+                <torusGeometry args={[0.04, 0.01, 6, 12]} />
+                <meshStandardMaterial color="#fbbf24" metalness={0.9} roughness={0.18} />
               </mesh>
             </group>
           ))}
@@ -915,37 +1007,63 @@ function MaxHair({ style, color }: { style: CharacterAppearance["hair"]; color: 
     case "bun":
       return (
         <group>
-          <mesh position={[0, 1.68, 0]} castShadow>
-            <sphereGeometry args={[0.26, 16, 14]} />
-            <meshPhysicalMaterial color={color} roughness={0.88} />
+          <mesh position={[0, 1.7, 0]} castShadow>
+            <sphereGeometry args={[0.28, 22, 18]} />
+            {hairMat}
           </mesh>
-          <mesh position={[0, 1.96, -0.05]} castShadow>
-            <sphereGeometry args={[0.17, 16, 14]} />
-            <meshPhysicalMaterial color={color} roughness={0.88} sheen={0.3} />
+          <mesh position={[0, 1.98, -0.06]} castShadow>
+            <sphereGeometry args={[0.18, 20, 16]} />
+            {hairMat}
+          </mesh>
+          <mesh position={[0, 1.92, -0.06]}>
+            <torusGeometry args={[0.12, 0.025, 8, 16]} />
+            {hairMat}
           </mesh>
         </group>
       );
     case "long":
       return (
         <group>
-          <mesh position={[0, 1.68, 0]} castShadow>
-            <sphereGeometry args={[0.29, 16, 14]} />
-            <meshPhysicalMaterial color={color} roughness={0.88} />
+          <mesh position={[0, 1.7, 0]} castShadow>
+            <sphereGeometry args={[0.3, 22, 18]} />
+            {hairMat}
           </mesh>
-          <mesh position={[0, 1.2, -0.12]} castShadow>
-            <boxGeometry args={[0.5, 0.75, 0.26]} />
-            <meshPhysicalMaterial color={color} roughness={0.9} sheen={0.25} />
+          {[-0.12, 0, 0.12].map((x, i) => (
+            <mesh key={i} position={[x, 1.15, -0.1]} castShadow>
+              <capsuleGeometry args={[0.1, 0.55, 8, 14]} />
+              {hairMat}
+            </mesh>
+          ))}
+          <mesh position={[0, 1.35, -0.14]} castShadow>
+            <boxGeometry args={[0.48, 0.5, 0.18]} />
+            {hairMat}
           </mesh>
         </group>
       );
     case "bald":
       return null;
     default:
+      // short
       return (
-        <mesh position={[0, 1.74, 0]} castShadow>
-          <sphereGeometry args={[0.27, 16, 14]} />
-          <meshPhysicalMaterial color={color} roughness={0.9} />
-        </mesh>
+        <group>
+          <mesh position={[0, 1.76, 0]} castShadow scale={[1, 0.7, 1]}>
+            <sphereGeometry args={[0.28, 24, 16]} />
+            {hairMat}
+          </mesh>
+          {Array.from({ length: 12 }).map((_, i) => {
+            const a = (i / 12) * Math.PI * 2;
+            return (
+              <mesh
+                key={i}
+                position={[Math.cos(a) * 0.22, 1.72, Math.sin(a) * 0.2]}
+                castShadow
+              >
+                <sphereGeometry args={[0.06, 10, 8]} />
+                {hairMat}
+              </mesh>
+            );
+          })}
+        </group>
       );
   }
 }
