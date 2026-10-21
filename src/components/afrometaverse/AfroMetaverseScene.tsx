@@ -12,6 +12,11 @@ import {
 
 import { useCharacterStore } from "@/stores/characterStore";
 import { StylizedCharacter } from "@/components/afrometaverse/characters/StylizedCharacter";
+import {
+  HeritageTerrain,
+  BiomeFlora,
+  LivingWater,
+} from "@/components/afrometaverse/HeritageTerrain";
 
 const DISTRICT_LAYOUT = {
   "town-market": { x: -3, z: 2.5, color: "#f59e0b", label: "Town Market", neon: "#fbbf24" },
@@ -1607,7 +1612,8 @@ export function AfroMetaverseScene({
 }) {
   const mode = useRoamStore((s) => s.mode);
   const nearDistrictId = useRoamStore((s) => s.nearDistrictId);
-  void weather;
+  const wetness = weather?.rainIntensity ?? 0;
+  const dust = weather?.dustIntensity ?? 0;
 
   return (
     <Canvas
@@ -1617,9 +1623,16 @@ export function AfroMetaverseScene({
       tabIndex={0}
     >
       <VillageDaySky />
-      <NeonGround />
+      {/* Multi-biome heritage terrain (Day 2) — single draw call + climate tint */}
+      <HeritageTerrain wetness={wetness} dust={dust} />
+      {/* Keep a soft local dust pad under the village for road contrast */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.001, 0]} receiveShadow>
+        <planeGeometry args={[28, 24]} />
+        <meshStandardMaterial color={N.dust} roughness={0.92} transparent opacity={0.55} />
+      </mesh>
       <NeonRoads />
-      <CreekWater />
+      <LivingWater type="pond" position={[-5.5, 0, -5.4]} radius={3.8} />
+      <BiomeFlora count={160} />
       <StartingVillage />
 
       {/* Soft district markers — no neon towers; village grows into city later */}
