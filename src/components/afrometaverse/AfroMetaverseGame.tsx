@@ -965,7 +965,7 @@ export function AfroMetaverseGame() {
               </button>
             );
           })}
-          <p className="am-rail-note">Season 01 · Day {cityDay}</p>
+          <p className="am-rail-note">Season 01 · Day {cityDay} · Build 21-Oct terrain+FS</p>
         </nav>
 
         <main className="am-main">
