@@ -1161,7 +1161,6 @@ export function AfroMetaverseGame() {
                 </div>
               )}
 
-              <div
               <div className="am-character-panel">
                 <div className="am-character-head">
                   <strong>Your look</strong>
@@ -1414,6 +1413,7 @@ export function AfroMetaverseGame() {
                 </div>
               </div>
 
+              <div
                 className={`am-city-wrap am-city-canvas ${cityFullscreen ? "am-city-fullscreen" : ""}`}
                 style={{
                   background: weather.sky,
