@@ -1104,6 +1104,10 @@ function nearestDistrict(x: number, z: number): string | null {
   return best;
 }
 
+// Reused every frame by PlayerController so the render loop does not allocate.
+const cameraScratchDesired = new THREE.Vector3();
+const cameraScratchLook = new THREE.Vector3();
+
 function PlayerController({
   onDistrictChange,
 }: {
@@ -1351,8 +1355,8 @@ function PlayerController({
       group.current.visible = !fp;
     }
 
-    let desired = new THREE.Vector3();
-    let look = new THREE.Vector3();
+    const desired = cameraScratchDesired;
+    const look = cameraScratchLook;
 
     if (fp) {
       // Eyes height (crouch lower)
@@ -1403,6 +1407,7 @@ function PlayerController({
 
   useEffect(() => {
     if (group.current && mode !== "orbit") {
+      const position = useRoamStore.getState().position;
       group.current.position.set(position[0], position[1], position[2]);
       yawRef.current = useRoamStore.getState().facing;
     }
