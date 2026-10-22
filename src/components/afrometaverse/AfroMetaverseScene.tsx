@@ -9,6 +9,7 @@ import {
   useRoamStore,
   type TransportId,
 } from "@/stores/roamStore";
+import { takeTouchLook, touchInput } from "@/lib/touchInput";
 
 import { useCharacterStore } from "@/stores/characterStore";
 import { StylizedCharacter } from "@/components/afrometaverse/characters/StylizedCharacter";
@@ -1109,6 +1110,7 @@ function PlayerController({
   onDistrictChange?: (id: string | null) => void;
 }) {
   const keys = useRef<Record<string, boolean>>({});
+  const touchViewSeen = useRef(0);
   const group = useRef<THREE.Group>(null);
   const yawRef = useRef(0);
   const pitchRef = useRef(0.35);
@@ -1198,12 +1200,34 @@ function PlayerController({
   }, [gl, mode]);
 
   useFrame((_, dt) => {
+    // Drain touch camera drag every frame (even in orbit) so it never piles up unseen.
+    const touchLook = takeTouchLook();
+    if (touchInput.viewToggles !== touchViewSeen.current) {
+      touchViewSeen.current = touchInput.viewToggles;
+      if (mode !== "orbit") {
+        firstPerson.current = !firstPerson.current;
+        pitchRef.current = firstPerson.current ? 0 : 0.28;
+      }
+    }
     if (mode === "orbit" || !group.current) return;
+
+    // Touch look: same yaw/pitch math as the pointer-lock mousemove handler.
+    if (touchLook.dx !== 0 || touchLook.dy !== 0) {
+      const lookSens = firstPerson.current ? 0.0026 : 0.0022;
+      yawRef.current -= touchLook.dx * lookSens;
+      const pMin = firstPerson.current ? -1.25 : 0.08;
+      const pMax = firstPerson.current ? 1.35 : 1.2;
+      pitchRef.current = THREE.MathUtils.clamp(
+        pitchRef.current - touchLook.dy * lookSens,
+        pMin,
+        pMax,
+      );
+    }
 
     const speedBase = TRANSPORT_SPEED[transport] ?? 4;
     const isFoot = transport === "foot";
-    const sprint = !!(keys.current["shift"]);
-    const crouch = !!(keys.current["c"] || keys.current["control"]);
+    const sprint = !!(keys.current["shift"] || touchInput.sprint);
+    const crouch = !!(keys.current["c"] || keys.current["control"] || touchInput.crouch);
 
     // COD-style: move relative to look yaw
     let inputX = 0;
@@ -1212,6 +1236,11 @@ function PlayerController({
     if (keys.current["s"] || keys.current["arrowdown"]) inputZ += 1;
     if (keys.current["a"] || keys.current["arrowleft"]) inputX -= 1;
     if (keys.current["d"] || keys.current["arrowright"]) inputX += 1;
+    // Virtual joystick (analog, already inside [-1, 1] after the deadzone)
+    inputX += touchInput.move.x;
+    inputZ += touchInput.move.y;
+    inputX = THREE.MathUtils.clamp(inputX, -1, 1);
+    inputZ = THREE.MathUtils.clamp(inputZ, -1, 1);
 
     const moving = inputX !== 0 || inputZ !== 0;
     let speedMul = 1;
@@ -1224,9 +1253,12 @@ function PlayerController({
     else setMoveState("idle");
 
     if (moving) {
-      const len = Math.hypot(inputX, inputZ) || 1;
-      inputX /= len;
-      inputZ /= len;
+      // Keys give a unit vector; the joystick keeps its analog magnitude (partial push = slower walk).
+      const len = Math.hypot(inputX, inputZ);
+      if (len > 1) {
+        inputX /= len;
+        inputZ /= len;
+      }
       const yaw = yawRef.current;
       // Forward is -Z in look space
       const forwardX = -Math.sin(yaw);
@@ -1263,7 +1295,7 @@ function PlayerController({
 
     // Jump (foot only)
     if (isFoot && !mountedVehicleId) {
-      if (keys.current["space"] && grounded.current) {
+      if ((keys.current["space"] || touchInput.jump) && grounded.current) {
         jumpVel.current = 4.2;
         grounded.current = false;
       }
@@ -1311,7 +1343,7 @@ function PlayerController({
     const target = group.current.position;
     const cy = yawRef.current;
     const cp = pitchRef.current;
-    const sprinting = !!(keys.current["shift"] && isFoot && moving && !crouch);
+    const sprinting = !!((keys.current["shift"] || touchInput.sprint) && isFoot && moving && !crouch);
     const fp = firstPerson.current && !mountedVehicleId;
 
     // Hide body mesh in first-person so you don't see your own head

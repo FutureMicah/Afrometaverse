@@ -24,6 +24,7 @@ import {
   X,
 } from "lucide-react";
 import AfroMetaverseScene from "@/components/afrometaverse/AfroMetaverseScene";
+import { TouchControls, useIsTouchDevice } from "@/components/afrometaverse/TouchControls";
 import { CharacterPreview } from "@/components/afrometaverse/characters/CharacterPreview";
 import { CharacterCreator } from "@/components/afrometaverse/characters/CharacterCreator";
 import { editsUnlockedAtLevel } from "@/lib/photoToCharacter";
@@ -471,7 +472,7 @@ export function AfroMetaverseGame() {
   }, [isAuthenticated, saveProgress]);
 
   const setRoamMode = useRoamStore((s) => s.setMode);
-
+  const isTouchDevice = useIsTouchDevice();
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
       if (e.key === "Escape" && cityFullscreen) {
@@ -1492,6 +1493,7 @@ export function AfroMetaverseGame() {
                     }
                   }}
                 />
+                {roamMode !== "orbit" && isTouchDevice && <TouchControls />}
                 {roamMode === "orbit" &&
                   DISTRICTS.map((d) => (
                     <button

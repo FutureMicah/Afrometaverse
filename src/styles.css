@@ -2266,3 +2266,154 @@
 @keyframes am-spin { to { transform: rotate(360deg); } }
 .am-hidden { display: none; }
 .am-muted { color: oklch(0.65 0.03 280); font-size: 0.75rem; }
+
+/* ===== Mobile touch controls (touch devices only) ===== */
+.am-touch-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 7;
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  touch-action: none;
+}
+
+.am-touch-zone {
+  position: absolute;
+  pointer-events: auto;
+  touch-action: none;
+}
+
+/* left half: floating joystick */
+.am-touch-move {
+  left: 0;
+  bottom: 0;
+  width: 50%;
+  height: 62%;
+}
+
+/* right half: camera drag, below the expand/shrink controls */
+.am-touch-look {
+  right: 0;
+  top: 56px;
+  bottom: 0;
+  width: 50%;
+}
+
+.am-touch-look-hint {
+  position: absolute;
+  right: 16px;
+  top: 12px;
+  font-size: 11px;
+  font-weight: 650;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: oklch(0.95 0.02 80 / 0.55);
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
+  pointer-events: none;
+}
+
+.am-touch-joy {
+  position: absolute;
+  width: 112px;
+  height: 112px;
+  margin-left: -56px;
+  margin-top: -56px;
+  border-radius: 999px;
+  border: 2px solid oklch(0.95 0.03 85 / 0.45);
+  background: oklch(0.2 0.03 160 / 0.35);
+  pointer-events: none;
+}
+
+.am-touch-joy-knob {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 46px;
+  height: 46px;
+  margin-left: -23px;
+  margin-top: -23px;
+  border-radius: 999px;
+  background: var(--am-gold);
+  box-shadow: 0 0 0 4px var(--am-gold-soft), 0 6px 14px oklch(0.2 0.03 70 / 0.35);
+}
+
+.am-touch-joy-hint {
+  position: absolute;
+  left: 28px;
+  bottom: 28px;
+  width: 64px;
+  height: 64px;
+  border-radius: 999px;
+  border: 2px dashed oklch(0.95 0.03 85 / 0.35);
+  pointer-events: none;
+}
+
+/* bottom-right action cluster */
+.am-touch-buttons {
+  position: absolute;
+  right: 12px;
+  bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+  display: grid;
+  grid-template-columns: repeat(2, auto);
+  gap: 10px;
+  z-index: 9;
+  pointer-events: none;
+}
+
+.am-touch-btn {
+  pointer-events: auto;
+  touch-action: none;
+  -webkit-tap-highlight-color: transparent;
+  min-width: 72px;
+  min-height: 56px;
+  padding: 10px 14px;
+  border-radius: 16px;
+  border: 1px solid oklch(0.95 0.03 85 / 0.4);
+  background: oklch(0.2 0.03 160 / 0.6);
+  color: var(--am-forest-ink);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  box-shadow: var(--am-shadow);
+}
+
+.am-touch-btn:active,
+.am-touch-btn-on {
+  background: var(--am-gold);
+  color: var(--am-ink);
+  transform: scale(0.96);
+}
+
+.am-touch-btn-view {
+  background: oklch(0.34 0.06 158 / 0.7);
+}
+
+.am-touch-btn-vehicle {
+  background: var(--am-coral);
+  color: var(--am-paper);
+  border-color: var(--am-coral-soft);
+}
+
+.am-touch-btn-dim {
+  opacity: 0.5;
+}
+
+.am-touch-btn-jump,
+.am-touch-btn-run {
+  min-width: 88px;
+  min-height: 68px;
+}
+
+@media (max-width: 520px) {
+  .am-touch-buttons {
+    right: 8px;
+    gap: 8px;
+  }
+  .am-touch-btn {
+    min-width: 64px;
+    min-height: 52px;
+    padding: 8px 10px;
+  }
+}
