@@ -9,6 +9,8 @@ import {
   useRoamStore,
   type TransportId,
 } from "@/stores/roamStore";
+import { INTERIOR_LIST, DOOR_RADIUS } from "@/data/interiors";
+import { useInteriorStore, enterBuilding, type InteriorId } from "@/stores/interiorStore";
 import { takeTouchLook, touchInput } from "@/lib/touchInput";
 
 import { useCharacterStore } from "@/stores/characterStore";
@@ -1150,7 +1152,11 @@ function PlayerController({
       }
       if (e.key.toLowerCase() === "f" || e.key === "e") {
         const st = useRoamStore.getState();
-        if (st.mountedVehicleId) st.exitVehicle();
+        const ist = useInteriorStore.getState();
+        if (ist.insideId) {
+          // exit is handled by the interior overlay (it owns the room)
+        } else if (st.mountedVehicleId) st.exitVehicle();
+        else if (ist.nearDoorId) enterBuilding(ist.nearDoorId);
         else st.enterNearestVehicle();
       }
       // Click-to-lock hint: press R to request pointer lock
@@ -1292,6 +1298,7 @@ function PlayerController({
       if (mountedVehicleId) updateMountedVehiclePose([nextX, 0, nextZ], faceYaw);
       const near = nearestDistrict(nextX, nextZ);
       setNearDistrict(near);
+      useInteriorStore.getState().setNearDoor(nearestDoor(nextX, nextZ));
       onDistrictChange?.(near);
     } else {
       group.current.rotation.y = yawRef.current;
@@ -1814,3 +1821,18 @@ export function AfroMetaverseScene({
 }
 
 export default AfroMetaverseScene;
+/** Nearest building door within DOOR_RADIUS (null if none). */
+function nearestDoor(x: number, z: number): InteriorId | null {
+  let best: InteriorId | null = null;
+  let bestD = DOOR_RADIUS;
+  for (const d of INTERIOR_LIST) {
+    const dist = Math.hypot(x - d.door.x, z - d.door.z);
+    if (dist < bestD) {
+      bestD = dist;
+      best = d.id;
+    }
+  }
+  return best;
+}
+
+

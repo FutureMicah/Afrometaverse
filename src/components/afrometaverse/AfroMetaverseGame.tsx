@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import {
   BadgeCheck,
   Banknote,
@@ -24,6 +24,11 @@ import {
   X,
 } from "lucide-react";
 import AfroMetaverseScene from "@/components/afrometaverse/AfroMetaverseScene";
+import { useInteriorStore, enterBuilding } from "@/stores/interiorStore";
+import { INTERIORS } from "@/data/interiors";
+
+// Interior rooms load on demand, only when the player walks into a building.
+const InteriorScene = lazy(() => import("@/components/afrometaverse/InteriorScene"));
 import { TouchControls, useIsTouchDevice } from "@/components/afrometaverse/TouchControls";
 import { CharacterPreview } from "@/components/afrometaverse/characters/CharacterPreview";
 import { CharacterCreator } from "@/components/afrometaverse/characters/CharacterCreator";
@@ -370,6 +375,8 @@ export function AfroMetaverseGame() {
   const inSafehouseId = useRoamStore((s) => s.inSafehouseId);
   const worldVehicles = useRoamStore((s) => s.worldVehicles);
   const enterNearestVehicle = useRoamStore((s) => s.enterNearestVehicle);
+  const insideId = useInteriorStore((s) => s.insideId);
+  const nearDoorId = useInteriorStore((s) => s.nearDoorId);
 
   const exitVehicle = useRoamStore((s) => s.exitVehicle);
 
@@ -635,6 +642,29 @@ export function AfroMetaverseGame() {
     worldState.globalEvents[0] ??
     socialState.feed[0] ??
     `${timeOfDay.label} conditions: ${weather.summary} ${weather.risk}`;
+
+  /** Leave the room: put the player back at the same street spot as the door. */
+  function exitBuildingRoom() {
+    const back = useInteriorStore.getState().exitInterior();
+    if (back) setRoamPosition([back.x, 0.6, back.z]);
+    setRoamMode("walk");
+  }
+
+  /** Safehouse: rest by the hearth. Uses the existing heat store. */
+  function restInSafehouse() {
+    coolHeat(20);
+    announce("You rest by the hearth. Heat cools.");
+  }
+
+  /** Workplace: start a shift. Same payout path as the Work board's quick complete. */
+  function startShiftInside() {
+    const next = JOBS.find((j) => !completedJobs.includes(j.id));
+    if (!next) {
+      announce("No shifts left to work today. Come back tomorrow.");
+      return;
+    }
+    workJob(next.id);
+  }
 
   function buyClothes(itemId: string) {
     const item = CLOTHING_CATALOG.find((c) => c.id === itemId);
@@ -1494,6 +1524,25 @@ export function AfroMetaverseGame() {
                   }}
                 />
                 {roamMode !== "orbit" && isTouchDevice && <TouchControls />}
+                {insideId && (
+                  <Suspense fallback={<div className="am-interior-loading">Entering...</div>}>
+                    <InteriorScene
+                      id={insideId}
+                      balance={balance}
+                      goods={GOODS.map((g) => ({
+                        id: g.id,
+                        name: g.name,
+                        price: g.price,
+                        emoji: g.emoji,
+                        owned: purchasedGoods.includes(g.id),
+                      }))}
+                      onBuyGood={buyGood}
+                      onRest={insideId === "safehouse" ? restInSafehouse : undefined}
+                      onTakeShift={insideId === "workplace" ? startShiftInside : undefined}
+                      onExit={exitBuildingRoom}
+                    />
+                  </Suspense>
+                )}
                 {roamMode === "orbit" &&
                   DISTRICTS.map((d) => (
                     <button
@@ -1507,6 +1556,15 @@ export function AfroMetaverseGame() {
                       <span>{d.name}</span>
                     </button>
                   ))}
+                {roamMode !== "orbit" && nearDoorId && !insideId && (
+                  <button
+                    type="button"
+                    className="am-btn am-btn-primary am-door-prompt"
+                    onClick={() => enterBuilding(nearDoorId)}
+                  >
+                    Enter {INTERIORS[nearDoorId].name} (F)
+                  </button>
+                )}
                 {roamMode !== "orbit" && (
                   <div className="am-roam-hint">WASD drive · F enter/exit · click hubs · parked vehicles glow when near</div>
                 )}
