@@ -1333,8 +1333,8 @@ function PlayerController({
         eyeY + Math.sin(cp) * lookDist,
         target.z - Math.cos(cy) * Math.cos(cp) * lookDist,
       );
-      // Snap closer in FPS for responsive feel
-      camera.position.lerp(desired, 1 - Math.pow(0.00002, dt));
+      // Snap to eye height every frame so the view never trails the body (no lag in FPS)
+      camera.position.copy(desired);
     } else {
       // Third-person COD-style: distance + height + right-shoulder offset
       const dist = mountedVehicleId ? 9.5 : crouch ? 5.2 : sprinting ? 7.4 : 6.6;
