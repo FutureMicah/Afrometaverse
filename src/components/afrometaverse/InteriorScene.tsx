@@ -112,18 +112,85 @@ function Bowl({ p }: { p: [number, number, number] }) {
   );
 }
 
+/** Firewood hearth: three stones with logs and a low flame, no modern fireplace. */
+function FirewoodHearth({ p }: { p: [number, number, number] }) {
+  return (
+    <group position={p}>
+      <Box p={[-0.2, 0.08, 0]} s={[0.5, 0.12, 0.1]} c={WOOD} r={0.4} />
+      <Box p={[0.2, 0.08, 0.05]} s={[0.5, 0.12, 0.1]} c={WOOD} r={-0.5} />
+      {[[-0.45, 0, 0.3], [0.45, 0, 0.3], [0, 0, -0.4]].map((q, i) => (
+        <Cyl key={i} p={[q[0], 0.07, q[2]]} rt={0.12} rb={0.14} h={0.14} c={MUD_DARK} />
+      ))}
+      <mesh position={[0, 0.2, 0]}>
+        <sphereGeometry args={[0.16, 10, 8]} />
+        <meshStandardMaterial color="#ff7a1a" emissive="#ff5a00" emissiveIntensity={1.4} />
+      </mesh>
+      <pointLight position={[0, 0.6, 0]} color="#ff8a3a" intensity={1.1} distance={4} />
+    </group>
+  );
+}
+
+/** Clay water pot on a low stand, with a gourd lid. */
+function WaterPot({ p }: { p: [number, number, number] }) {
+  return (
+    <group position={p}>
+      <Cyl p={[0, 0.22, 0]} rt={0.24} rb={0.15} h={0.45} c={CLAY} />
+      <Cyl p={[0, 0.5, 0]} rt={0.12} rb={0.2} h={0.1} c={CLAY} />
+    </group>
+  );
+}
+
+/** Wooden bowl on the floor or a table. */
+function WoodBowl({ p }: { p: [number, number, number] }) {
+  return (
+    <mesh position={p}>
+      <sphereGeometry args={[0.2, 10, 6, 0, Math.PI * 2, 0, Math.PI / 2]} />
+      <meshStandardMaterial color={WOOD} />
+    </mesh>
+  );
+}
+
+/** Goods piled on a mat: yams (tan ovals), kola (red nuts), salt (white heap), cloth bolt. */
+function Goods({ p }: { p: [number, number, number] }) {
+  return (
+    <group position={p}>
+      <Box p={[-0.35, 0.09, 0]} s={[0.5, 0.14, 0.3]} c="#b8864a" />
+      <Box p={[0.1, 0.09, 0.2]} s={[0.5, 0.14, 0.3]} c="#c79754" r={0.3} />
+      <mesh position={[0.45, 0.06, -0.2]}>
+        <sphereGeometry args={[0.1, 8, 6]} />
+        <meshStandardMaterial color="#9c3b26" />
+      </mesh>
+      <mesh position={[0.6, 0.06, -0.05]}>
+        <sphereGeometry args={[0.1, 8, 6]} />
+        <meshStandardMaterial color="#9c3b26" />
+      </mesh>
+      <Cyl p={[-0.1, 0.1, -0.35]} rt={0.14} rb={0.1} h={0.18} c="#e9e2d0" />
+    </group>
+  );
+}
+
+/** Woven cloth bolt on a rolled stick. */
+function ClothBolt({ p }: { p: [number, number, number] }) {
+  return (
+    <group position={p}>
+      <Cyl p={[0, 0.1, 0]} rt={0.13} rb={0.13} h={0.3} c="#2f5a7a" />
+      <Box p={[0, 0.1, 0]} s={[0.27, 0.02, 0.27]} c="#c9a46a" />
+    </group>
+  );
+}
+
 function SafehouseRoom() {
   return (
     <group>
       <Shell w={6} d={5} h={2.8} />
-      <Hearth p={[-1.6, 0, -1.2]} />
+      <FirewoodHearth p={[-1.6, 0, -1.2]} />
       <Mat p={[1, 0, -1]} />
       <Stool p={[-1.2, 0, 0.6]} />
       <Stool p={[-0.4, 0, 0.9]} />
-      <Pot p={[1.9, 0.22, -1.8]} />
-      <Pot p={[2.3, 0.22, -1.6]} />
-      <Bowl p={[0.5, 0.45, 0.2]} />
-      {/* rest spot by the cooler */}
+      <WaterPot p={[1.9, 0, -1.8]} />
+      <WaterPot p={[2.4, 0, -1.6]} />
+      <WoodBowl p={[0.5, 0.45, 0.2]} />
+      {/* rest spot by the hearth */}
       <Mat p={[0, 0, -2.2]} />
     </group>
   );
@@ -133,16 +200,20 @@ function MarketShopRoom() {
   return (
     <group>
       <Shell w={6} d={5} h={2.8} />
-      {/* trader's counter */}
-      <Table p={[0, 0, -1.6]} />
-      <Pot p={[-1.6, 0.8, -1.6]} />
-      <Pot p={[-1.2, 0.8, -1.6]} />
-      <Bowl p={[0.6, 0.85, -1.6]} />
-      <Bowl p={[1.0, 0.85, -1.6]} />
-      {/* woven goods mat on the floor */}
+      {/* trader's mat with goods on it, at the back */}
+      <Mat p={[0, 0, -1.6]} />
+      <Goods p={[-0.4, 0.04, -1.6]} />
+      <WoodBowl p={[0.9, 0.06, -1.7]} />
+      <WoodBowl p={[1.3, 0.06, -1.5]} />
+      <ClothBolt p={[-1.7, 0, -1.7]} />
+      {/* pottery stacked by the wall */}
+      <WaterPot p={[1.8, 0, -0.2]} />
+      <WaterPot p={[2.3, 0, -0.2]} />
+      {/* woven mat for displays by the door */}
       <Mat p={[1.6, 0, 1.2]} />
-      <Stool p={[0, 0, -0.2]} />
-      <Hearth p={[-2, 0, 1.4]} />
+      <Goods p={[1.6, 0.04, 1.2]} />
+      <Stool p={[-0.6, 0, -0.2]} />
+      <FirewoodHearth p={[-2, 0, 1.4]} />
     </group>
   );
 }
@@ -151,14 +222,15 @@ function WorkplaceRoom() {
   return (
     <group>
       <Shell w={6} d={5} h={2.8} />
-      {/* craft/work table */}
+      {/* carver's bench and tools (wooden) */}
       <Table p={[0, 0, -1.6]} />
-      <Pot p={[1.6, 0.4, -1.8]} />
-      <Pot p={[-1.8, 0.4, -1.8]} />
+      <Box p={[0.3, 0.6, -1.6]} s={[0.5, 0.04, 0.06]} c={MUD_DARK} r={0.2} />
+      <WaterPot p={[1.6, 0, -1.8]} />
+      <WaterPot p={[-1.8, 0, -1.8]} />
       <Stool p={[0, 0, -0.2]} />
       <Stool p={[1.6, 0, 0.6]} />
       <Mat p={[-1.4, 0, 1]} />
-      <Hearth p={[2, 0, 1.4]} />
+      <FirewoodHearth p={[2, 0, 1.4]} />
     </group>
   );
 }
