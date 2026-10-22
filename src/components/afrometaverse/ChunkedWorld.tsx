@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import * as THREE from "three";
-import { ChunkStreamer, CHUNK_SIZE, chunkKey, type ChunkCoord } from "@/lib/chunkStreaming";
+import { ChunkStreamer, chunkKey, type ChunkCoord } from "@/lib/chunkStreaming";
 import { currentRenderTier, type RenderTier } from "@/lib/renderTier";
 
 /**
@@ -22,12 +22,14 @@ interface ChunkedWorldProps {
   focusRef?: React.RefObject<THREE.Object3D | null>;
   /** Optional builder that returns the static content for a chunk (ground, flora, props). */
   buildChunk?: (chunk: ChunkCoord) => React.ReactNode;
+  /** Chunks that never unload (doors, interior anchors). */
+  pinned?: ChunkCoord[];
 }
 
-export function ChunkedWorld({ tier, focusRef, buildChunk }: ChunkedWorldProps) {
+export function ChunkedWorld({ tier, focusRef, buildChunk, pinned }: ChunkedWorldProps) {
   const resolvedTier = tier ?? currentRenderTier();
   const camera = useThree((s) => s.camera);
-  const streamer = useMemo(() => new ChunkStreamer({ tier: resolvedTier }), [resolvedTier]);
+  const streamer = useMemo(() => new ChunkStreamer({ tier: resolvedTier, pinned }), [resolvedTier]);
   const [visible, setVisible] = useState<ChunkCoord[]>([]);
   const lastKey = useRef("");
   const clock = useRef(0);
@@ -52,9 +54,8 @@ export function ChunkedWorld({ tier, focusRef, buildChunk }: ChunkedWorldProps) 
   return (
     <group>
       {visible.map((c) => (
-        <group key={chunkKey(c.cx, c.cz)} position={[c.cx * CHUNK_SIZE, 0, c.cz * CHUNK_SIZE]}>
-          {buildChunk ? buildChunk(c) : null}
-        </group>
+        // buildChunk emits world-space content, so the chunk group is not offset.
+        <group key={chunkKey(c.cx, c.cz)}>{buildChunk ? buildChunk(c) : null}</group>
       ))}
     </group>
   );

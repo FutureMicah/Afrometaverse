@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { seasonForDay, weatherForDay, dayOfYear, SEASON_YEAR_DAYS } from "@/lib/seasons";
 import { advanceHour, timeKeyForHour, nightStrength, sunSignal } from "@/lib/worldClock";
-import { ChunkStreamer, CHUNK_SIZE, fogEndMeters, renderRadiusFor, chunkOf } from "@/lib/chunkStreaming";
+import { ChunkStreamer, CHUNK_SIZE, fogEndMeters, renderRadiusFor, chunkOf, chunkKey } from "@/lib/chunkStreaming";
+import { groupByChunk, itemsInChunk, chunksContaining, chunkOrigin } from "@/lib/chunkAssign";
 import { detectRenderTier } from "@/lib/renderTier";
 import { atmosphereAt, NIGHT_AMBIENT_FLOOR } from "@/lib/atmosphere";
 
@@ -115,5 +116,62 @@ describe("atmosphere (day/night + season)", () => {
     const harm = atmosphereAt(12, "harmattan", 192);
     expect(harm.fogFar).toBeLessThan(192);
     expect(rain.fogFar).toBeLessThan(192);
+  });
+});
+
+describe("chunk assignment (spec 10.3)", () => {
+  const items = [
+    { id: "hut-a", x: 5, z: 5 },
+    { id: "hut-b", x: 63.9, z: 0.1 },
+    { id: "hut-c", x: 64, z: 0 },
+    { id: "tree-neg", x: -1, z: -1 },
+  ];
+
+  it("puts each item in the 64 m chunk its position falls in", () => {
+    expect(chunkOf(63.9, 0.1)).toEqual({ cx: 0, cz: 0 });
+    expect(chunkOf(64, 0)).toEqual({ cx: 1, cz: 0 });
+    expect(chunkOf(-1, -1)).toEqual({ cx: -1, cz: -1 });
+    const groups = groupByChunk(items);
+    expect(groups.get(chunkKey(0, 0))?.items.map((i) => i.id)).toEqual(["hut-a", "hut-b"]);
+    expect(groups.get(chunkKey(1, 0))?.items.map((i) => i.id)).toEqual(["hut-c"]);
+    expect(groups.get(chunkKey(-1, -1))?.items.map((i) => i.id)).toEqual(["tree-neg"]);
+  });
+
+  it("returns only the items inside a given chunk, in original order", () => {
+    expect(itemsInChunk(items, { cx: 0, cz: 0 }).map((i) => i.id)).toEqual(["hut-a", "hut-b"]);
+    expect(itemsInChunk(items, { cx: 9, cz: 9 })).toEqual([]);
+  });
+
+  it("finds the distinct chunks that contain a set of anchors", () => {
+    const chunks = chunksContaining([
+      { x: 1, z: 1 },
+      { x: 2, z: 2 },
+      { x: 70, z: 1 },
+    ]);
+    expect(chunks.map((c) => chunkKey(c.cx, c.cz)).sort()).toEqual(["0,0", "1,0"]);
+  });
+
+  it("gives each chunk its world-space origin", () => {
+    expect(chunkOrigin({ cx: 2, cz: -1 })).toEqual({ x: 2 * CHUNK_SIZE, z: -CHUNK_SIZE });
+  });
+});
+
+describe("chunk pinning (door anchors stay loaded)", () => {
+  it("keeps a pinned chunk loaded long after the player has left", () => {
+    const s = new ChunkStreamer({ tier: "low", pinned: [{ cx: 5, cz: 0 }] });
+    for (let i = 0; i < 80; i++) s.update(0, 0, 0);
+    expect(s.isLoaded(5, 0)).toBe(true);
+    // Move far away and let the grace period expire for every unpinned chunk.
+    s.update(10_000, 0, 1);
+    s.update(10_000, 0, 100);
+    expect(s.isLoaded(0, 0)).toBe(false);
+    expect(s.isLoaded(5, 0)).toBe(true);
+  });
+
+  it("pin() adds a pinned chunk at runtime", () => {
+    const s = new ChunkStreamer({ tier: "low" });
+    s.pin(7, 7);
+    for (let i = 0; i < 80; i++) s.update(0, 0, 0);
+    expect(s.isLoaded(7, 7)).toBe(true);
   });
 });

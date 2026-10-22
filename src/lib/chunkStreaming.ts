@@ -69,10 +69,19 @@ export class ChunkStreamer {
   private readonly bounds: WorldBounds | undefined;
   private readonly graceSeconds: number;
 
-  constructor(opts: { tier: RenderTier; bounds?: WorldBounds; graceSeconds?: number }) {
+  /** Chunks that never unload (doors, interior anchors). Always treated as wanted. */
+  private readonly pinned = new Set<string>();
+
+  constructor(opts: { tier: RenderTier; bounds?: WorldBounds; graceSeconds?: number; pinned?: ChunkCoord[] }) {
     this.tier = opts.tier;
     this.bounds = opts.bounds ?? undefined;
     this.graceSeconds = opts.graceSeconds ?? UNLOAD_GRACE_SECONDS;
+    for (const c of opts.pinned ?? []) this.pinned.add(chunkKey(c.cx, c.cz));
+  }
+
+  /** Pin a chunk so it stays loaded regardless of distance. */
+  pin(cx: number, cz: number): void {
+    this.pinned.add(chunkKey(cx, cz));
   }
 
   get renderRadius(): number {
@@ -105,6 +114,11 @@ export class ChunkStreamer {
     wanted.sort((a, b) => a.d - b.d);
 
     const wantedKeys = new Set<string>();
+    // Pinned chunks are always wanted: they load immediately and never start a grace timer.
+    for (const key of this.pinned) {
+      const [cx, cz] = key.split(",").map(Number);
+      wanted.push({ c: { cx, cz }, d: 0 });
+    }
     const load: ChunkCoord[] = [];
     for (const { c } of wanted) {
       const key = chunkKey(c.cx, c.cz);

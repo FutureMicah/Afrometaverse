@@ -15,6 +15,10 @@ import { takeTouchLook, touchInput } from "@/lib/touchInput";
 
 import { useCharacterStore } from "@/stores/characterStore";
 import { DayNightSky } from "@/components/afrometaverse/DayNightSky";
+import { ChunkedWorld } from "@/components/afrometaverse/ChunkedWorld";
+import { groupByChunk, chunksContaining, chunkOrigin } from "@/lib/chunkAssign";
+import { chunkOf } from "@/lib/chunkStreaming";
+import { currentRenderTier } from "@/lib/renderTier";
 import { StylizedCharacter } from "@/components/afrometaverse/characters/StylizedCharacter";
 import {
   HeritageTerrain,
@@ -760,7 +764,19 @@ function RoadsideFlora() {
 }
 
 /** Starting settlement — denser, more lived-in village */
-function StartingVillage() {
+/** Door and interior anchors: their chunks never unload, so doors keep working. */
+const VILLAGE_PINNED_CHUNKS = chunksContaining(INTERIOR_LIST.map((d) => d.door));
+
+/** Player focus for chunk streaming (set once; PlayerController moves the group). */
+const playerFocusRef = { current: null as THREE.Object3D | null };
+
+/** Only the items whose centre falls in this chunk (undefined = render everything, always-loaded). */
+function StartingVillage({ chunk }: { chunk?: { cx: number; cz: number } }) {
+  const inChunk = (x: number, z: number) => {
+    if (!chunk) return true;
+    const c = chunkOf(x, z);
+    return c.cx === chunk.cx && c.cz === chunk.cz;
+  };
   const huts: Array<{
     x: number;
     z: number;
@@ -834,29 +850,35 @@ function StartingVillage() {
 
   return (
     <group>
-      {huts.map((h, i) => (
+      {huts.filter((h) => inChunk(h.x, h.z)).map((h, i) => (
         <VillageHut key={i} {...h} />
       ))}
 
-      <CompoundWall x={-3.8} z={3.4} radius={2.5} segments={12} />
-      <CompoundWall x={0.2} z={-2.6} radius={2.7} segments={12} />
-      <CompoundWall x={-6.8} z={-3.2} radius={2.35} segments={11} />
-      <CompoundWall x={6.2} z={3.2} radius={2.4} segments={11} />
+      {[
+        [-3.8, 3.4, 2.5, 12],
+        [0.2, -2.6, 2.7, 12],
+        [-6.8, -3.2, 2.35, 11],
+        [6.2, 3.2, 2.4, 11],
+      ]
+        .filter(([x, z]) => inChunk(x, z))
+        .map(([x, z, r, n], i) => (
+          <CompoundWall key={`w${i}`} x={x} z={z} radius={r} segments={n} />
+        ))}
 
-      {trees.map(([tx, tz, sc, kind], i) => (
+      {trees.filter(([tx, tz]) => inChunk(tx, tz)).map(([tx, tz, sc, kind], i) => (
         <VillageTree key={`t${i}`} x={tx} z={tz} scale={sc} kind={kind} />
       ))}
 
       <RoadsideFlora />
 
       {/* rocks near creek and slopes */}
-      <Rock x={-4.2} z={-5.8} scale={1.2} />
-      <Rock x={-3.5} z={-6.2} scale={0.8} />
-      <Rock x={-7.5} z={-5.5} scale={1.4} />
-      <Rock x={8.5} z={-3.0} scale={1.1} />
-      <Rock x={-9.0} z={2.0} scale={0.9} />
-      <Rock x={2.0} z={6.0} scale={0.7} />
-      <Rock x={9.2} z={5.0} scale={1.0} />
+      {inChunk(-4.2, -5.8) && <Rock x={-4.2} z={-5.8} scale={1.2} />}
+      {inChunk(-3.5, -6.2) && <Rock x={-3.5} z={-6.2} scale={0.8} />}
+      {inChunk(-7.5, -5.5) && <Rock x={-7.5} z={-5.5} scale={1.4} />}
+      {inChunk(8.5, -3.0) && <Rock x={8.5} z={-3.0} scale={1.1} />}
+      {inChunk(-9.0, 2.0) && <Rock x={-9.0} z={2.0} scale={0.9} />}
+      {inChunk(2.0, 6.0) && <Rock x={2.0} z={6.0} scale={0.7} />}
+      {inChunk(9.2, 5.0) && <Rock x={9.2} z={5.0} scale={1.0} />}
 
       <GrainStack x={-3.2} z={2.8} />
       <GrainStack x={-4.6} z={3.2} />
@@ -1119,6 +1141,12 @@ function PlayerController({
   const keys = useRef<Record<string, boolean>>({});
   const touchViewSeen = useRef(0);
   const group = useRef<THREE.Group>(null);
+  useEffect(() => {
+    playerFocusRef.current = group.current;
+    return () => {
+      playerFocusRef.current = null;
+    };
+  }, []);
   const yawRef = useRef(0);
   const pitchRef = useRef(0.35);
   const pointerLocked = useRef(false);
@@ -1753,7 +1781,13 @@ export function AfroMetaverseScene({
       <NeonRoads />
       <LivingWater type="pond" position={[-5.5, 0, -5.4]} radius={3.8} />
       <BiomeFlora count={160} />
-      <StartingVillage />
+      {/* Village huts, compound walls, trees and rocks stream per 64 m chunk; terrain, roads and props stay always-loaded. */}
+      <ChunkedWorld
+        tier={currentRenderTier()}
+        focusRef={playerFocusRef}
+        pinned={VILLAGE_PINNED_CHUNKS}
+        buildChunk={(c) => <StartingVillage chunk={c} />}
+      />
 
       {/* Day 6 — tribal compounds + hearth */}
       <YorubaCompound
