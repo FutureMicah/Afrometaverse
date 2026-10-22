@@ -1,4 +1,6 @@
 import { create } from "zustand";
+import { weatherForDay, seasonForDay, type SeasonId } from "@/lib/seasons";
+import { advanceHour, timeKeyForHour, DEFAULT_START_HOUR, DEFAULT_DAY_MINUTES } from "@/lib/worldClock";
 
 export type WeatherId = "dry" | "rainy" | "harmattan";
 export type TimeOfDay = "morning" | "afternoon" | "evening" | "night";
@@ -7,6 +9,9 @@ interface WeatherState {
   day: number;
   weatherId: WeatherId;
   timeOfDay: TimeOfDay;
+  /** In-game hour, 0 to 24. Driven by the world clock. */
+  hour: number;
+  season: SeasonId;
   temperature: number;
   windSpeed: number;
   humidity: number;
@@ -160,26 +165,19 @@ export const useWeatherStore = create<{
   state: WeatherState;
   config: WeatherConfig;
   timeConfig: TimeConfig;
+  /** Real seconds per in-game day. Configurable, default 24 minutes. */
+  dayMinutes: number;
   advanceDay: () => void;
   setDay: (day: number) => void;
+  setHour: (hour: number) => void;
+  tickClock: (realSeconds: number) => void;
   getWeatherForDay: (day: number) => { weather: WeatherConfig; time: TimeConfig };
 }>((set, get) => {
-  const getWeatherForDay = (day: number) => {
-    const normalizedDay = ((day - 1) % 365) + 1;
-    let weatherId: WeatherId;
-
-    if (normalizedDay <= 60) weatherId = "dry";
-    else if (normalizedDay <= 150) weatherId = "rainy";
-    else if (normalizedDay <= 250) weatherId = "harmattan";
-    else weatherId = "dry";
-
-    const timeKeys: TimeOfDay[] = ["morning", "afternoon", "evening", "night"];
-    const time = timeKeys[(day - 1) % timeKeys.length];
-
-    return {
-      weather: WEATHER_CONFIG[weatherId],
-      time: TIME_CONFIG[time],
-    };
+  const getWeatherForDay = (day: number, hour = DEFAULT_START_HOUR) => {
+    // Real Tier 1 seasons (spec 12.2.2): 112-day year, four 28-day seasons.
+    const weatherId = weatherForDay(day);
+    const time = TIME_CONFIG[timeKeyForHour(hour)];
+    return { weather: WEATHER_CONFIG[weatherId], time };
   };
 
   const initialWeather = getWeatherForDay(1);
@@ -189,6 +187,8 @@ export const useWeatherStore = create<{
       day: 1,
       weatherId: initialWeather.weather.id,
       timeOfDay: initialWeather.time.key,
+      hour: DEFAULT_START_HOUR,
+      season: seasonForDay(1),
       temperature: initialWeather.weather.baseTemp,
       windSpeed: initialWeather.weather.windSpeed,
       humidity: initialWeather.weather.humidity,
@@ -196,13 +196,17 @@ export const useWeatherStore = create<{
     },
     config: initialWeather.weather,
     timeConfig: initialWeather.time,
+    dayMinutes: DEFAULT_DAY_MINUTES,
     setDay: (day: number) => {
-      const weatherData = getWeatherForDay(day);
+      const hour = get().state.hour;
+      const weatherData = getWeatherForDay(day, hour);
       set({
         state: {
+          ...get().state,
           day,
           weatherId: weatherData.weather.id,
           timeOfDay: weatherData.time.key,
+          season: seasonForDay(day),
           temperature: weatherData.weather.baseTemp + (Math.random() - 0.5) * weatherData.weather.tempVariance,
           windSpeed: weatherData.weather.windSpeed + (Math.random() - 0.5) * 2,
           humidity: weatherData.weather.humidity,
@@ -211,6 +215,21 @@ export const useWeatherStore = create<{
         config: weatherData.weather,
         timeConfig: weatherData.time,
       });
+    },
+    setHour: (hour: number) => {
+      const day = get().state.day;
+      const weatherData = getWeatherForDay(day, hour);
+      set({
+        state: { ...get().state, hour, timeOfDay: weatherData.time.key },
+        timeConfig: weatherData.time,
+      });
+    },
+    tickClock: (realSeconds: number) => {
+      const hour = get().state.hour;
+      const next = advanceHour(hour, realSeconds, get().dayMinutes);
+      // Crossing midnight advances the in-game day.
+      if (next < hour) get().advanceDay();
+      get().setHour(next);
     },
     advanceDay: () => {
       const currentDay = get().state.day;

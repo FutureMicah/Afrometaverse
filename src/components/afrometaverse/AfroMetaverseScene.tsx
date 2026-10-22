@@ -12,6 +12,7 @@ import {
 import { takeTouchLook, touchInput } from "@/lib/touchInput";
 
 import { useCharacterStore } from "@/stores/characterStore";
+import { DayNightSky } from "@/components/afrometaverse/DayNightSky";
 import { StylizedCharacter } from "@/components/afrometaverse/characters/StylizedCharacter";
 import {
   HeritageTerrain,
@@ -1734,7 +1735,7 @@ export function AfroMetaverseScene({
       style={{ width: "100%", height: "100%", background: "#b8c9d4" }}
       tabIndex={0}
     >
-      <VillageDaySky />
+      <DayNightSky dust={dust} />
       {/* Multi-biome heritage terrain (Day 2) — single draw call + climate tint */}
       <HeritageTerrain wetness={wetness} dust={dust} />
       {/* Keep a soft local dust pad under the village for road contrast */}

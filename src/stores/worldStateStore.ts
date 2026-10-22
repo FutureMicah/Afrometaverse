@@ -21,6 +21,10 @@ export interface WorldState {
   day: number;
   weatherId: WeatherId;
   timeOfDay: TimeOfDay;
+  /** In-game hour, 0 to 24. Owned by the world clock (weatherStore). */
+  hour: number;
+  /** Current season (spec 12.2.2). Owned by the calendar. */
+  season: "rain" | "harvest" | "harmattan" | "dry";
   currentDisaster: DisasterId;
   disasterIntensity: number; // 0-100
   disasterDuration: number; // days remaining
@@ -205,6 +209,8 @@ export const useWorldStateStore = create<{
         day,
         weatherId: weatherStore.state.weatherId,
         timeOfDay: weatherStore.state.timeOfDay,
+        hour: weatherStore.state.hour,
+        season: weatherStore.state.season,
         currentDisaster: newDisaster,
         disasterIntensity: newIntensity,
         disasterDuration: newDuration,
@@ -276,6 +282,8 @@ export const useWorldStateStore = create<{
       day: 1,
       weatherId: "dry",
       timeOfDay: "morning",
+      hour: 7,
+      season: "rain",
       currentDisaster: "none",
       disasterIntensity: 0,
       disasterDuration: 0,
