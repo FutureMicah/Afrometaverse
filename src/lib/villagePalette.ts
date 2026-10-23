@@ -1,0 +1,46 @@
+/**
+ * Village prop palette (three.js vertex colours).
+ *
+ * AGENTS.md keeps game styling in am-* classes, but three.js materials need numeric
+ * colours, so the prop colours live in this one named module instead of inline literals.
+ */
+export const VILLAGE_PALETTE = {
+  beamWood: "#6b4e20",
+  clayPot: "#8a5a3a",
+  doorWood: "#2a1c10",
+  fenceWood: "#6b4e32",
+  grassDark: "#4a5c28",
+  grassGreen: "#3a6b28",
+  grassLight: "#7a8a3a",
+  groundDirt: "#a87848",
+  leafDeep: "#3a5a28",
+  leafMid: "#4a6b32",
+  leafMid2: "#4a6b30",
+  leafShadow: "#2f4a20",
+  matWeave: "#6b5340",
+  postWood: "#4a3728",
+  rockBase: "#7a6a58",
+  roofSteel: "#5a6570",
+  straw: "#c4a05a",
+  strawDark: "#a88840",
+  thatch: "#7a5c28",
+  thatchDark: "#5c4218",
+  timberDark: "#4a3420",
+  treeDark: "#2a451c",
+  treeLight: "#3d5c28",
+  treeMid: "#355528",
+  trunk: "#3f2a18",
+  wallClay: "#b8895c",
+  wallDusk: "#a89070",
+  wallGrey: "#9a8b78",
+  wallLight: "#b0a090",
+  wallOchre: "#c4a06a",
+  wallPale: "#d4b896",
+  wallSand: "#c9a66b",
+  wallStone: "#8a8070",
+  wallTan: "#d2b48c",
+  wallWarm: "#b8956a",
+  windowDark: "#1a1208",
+  woodDark: "#5c4030",
+  zincRoof: "#7d8b96",
+} as const;

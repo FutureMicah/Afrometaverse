@@ -1,4 +1,5 @@
 import * as THREE from "three";
+import { VILLAGE_PALETTE } from "@/lib/villagePalette";
 import { PropBatch, Placer, groupMatrix, type MergedPropMesh } from "@/lib/propBatch";
 import { chunkOf, type ChunkCoord } from "@/lib/chunkStreaming";
 
@@ -27,41 +28,41 @@ export type TreeKind = "acacia" | "broad" | "palm";
 
 export const VILLAGE_HUTS: HutSpec[] = [
   // Market compound
-  { x: -4.4, z: 3.8, style: "thatch", wall: "#c9a66b", w: 1.25, d: 1.1 },
-  { x: -3.0, z: 4.4, style: "zinc", wall: "#b8956a", w: 1.35, d: 1.15, h: 1.05 },
-  { x: -5.2, z: 2.6, style: "thatch", wall: "#b8895c", rot: 0.35, w: 1.2 },
-  { x: -3.5, z: 2.0, style: "round", wall: "#d2b48c", w: 1.35, h: 1.0 },
-  { x: -2.0, z: 3.2, style: "zinc", wall: "#a89070", rot: -0.25 },
-  { x: -4.8, z: 4.6, style: "round", wall: "#c4a06a", w: 1.1, h: 0.9 },
-  { x: -5.5, z: 3.5, style: "thatch", wall: "#c9a66b", rot: 0.6, w: 1.05 },
+  { x: -4.4, z: 3.8, style: "thatch", wall: VILLAGE_PALETTE.wallSand, w: 1.25, d: 1.1 },
+  { x: -3.0, z: 4.4, style: "zinc", wall: VILLAGE_PALETTE.wallWarm, w: 1.35, d: 1.15, h: 1.05 },
+  { x: -5.2, z: 2.6, style: "thatch", wall: VILLAGE_PALETTE.wallClay, rot: 0.35, w: 1.2 },
+  { x: -3.5, z: 2.0, style: "round", wall: VILLAGE_PALETTE.wallTan, w: 1.35, h: 1.0 },
+  { x: -2.0, z: 3.2, style: "zinc", wall: VILLAGE_PALETTE.wallDusk, rot: -0.25 },
+  { x: -4.8, z: 4.6, style: "round", wall: VILLAGE_PALETTE.wallOchre, w: 1.1, h: 0.9 },
+  { x: -5.5, z: 3.5, style: "thatch", wall: VILLAGE_PALETTE.wallSand, rot: 0.6, w: 1.05 },
   // Civic
-  { x: -1.4, z: -2.6, style: "thatch", wall: "#c4a06a", w: 1.3, d: 1.15 },
-  { x: 1.5, z: -3.0, style: "zinc", wall: "#b0a090", w: 1.45, d: 1.25, h: 1.1 },
-  { x: 0.15, z: -3.8, style: "round", wall: "#d4b896", w: 1.3, h: 1.05 },
-  { x: 2.4, z: -1.6, style: "thatch", wall: "#c9a66b", rot: 0.45 },
-  { x: -2.2, z: -1.4, style: "zinc", wall: "#9a8b78", w: 1.2 },
-  { x: 0.6, z: -2.0, style: "thatch", wall: "#b8895c", rot: -0.2 },
-  { x: -0.5, z: -3.2, style: "round", wall: "#c4a06a", w: 1.15 },
+  { x: -1.4, z: -2.6, style: "thatch", wall: VILLAGE_PALETTE.wallOchre, w: 1.3, d: 1.15 },
+  { x: 1.5, z: -3.0, style: "zinc", wall: VILLAGE_PALETTE.wallLight, w: 1.45, d: 1.25, h: 1.1 },
+  { x: 0.15, z: -3.8, style: "round", wall: VILLAGE_PALETTE.wallPale, w: 1.3, h: 1.05 },
+  { x: 2.4, z: -1.6, style: "thatch", wall: VILLAGE_PALETTE.wallSand, rot: 0.45 },
+  { x: -2.2, z: -1.4, style: "zinc", wall: VILLAGE_PALETTE.wallGrey, w: 1.2 },
+  { x: 0.6, z: -2.0, style: "thatch", wall: VILLAGE_PALETTE.wallClay, rot: -0.2 },
+  { x: -0.5, z: -3.2, style: "round", wall: VILLAGE_PALETTE.wallOchre, w: 1.15 },
   // Creekside
-  { x: -6.8, z: -2.8, style: "round", wall: "#c4a06a", w: 1.4, h: 1.05 },
-  { x: -7.6, z: -4.2, style: "thatch", wall: "#b8895c", rot: 0.2, w: 1.25 },
-  { x: -5.4, z: -4.4, style: "zinc", wall: "#a89070", w: 1.2 },
-  { x: -8.0, z: -1.8, style: "thatch", wall: "#d2b48c", rot: -0.45 },
-  { x: -6.2, z: -1.5, style: "round", wall: "#c9a66b", w: 1.15 },
-  { x: -7.0, z: -5.0, style: "thatch", wall: "#b8895c", w: 1.1 },
+  { x: -6.8, z: -2.8, style: "round", wall: VILLAGE_PALETTE.wallOchre, w: 1.4, h: 1.05 },
+  { x: -7.6, z: -4.2, style: "thatch", wall: VILLAGE_PALETTE.wallClay, rot: 0.2, w: 1.25 },
+  { x: -5.4, z: -4.4, style: "zinc", wall: VILLAGE_PALETTE.wallDusk, w: 1.2 },
+  { x: -8.0, z: -1.8, style: "thatch", wall: VILLAGE_PALETTE.wallTan, rot: -0.45 },
+  { x: -6.2, z: -1.5, style: "round", wall: VILLAGE_PALETTE.wallSand, w: 1.15 },
+  { x: -7.0, z: -5.0, style: "thatch", wall: VILLAGE_PALETTE.wallClay, w: 1.1 },
   // Port edge
-  { x: 5.4, z: 3.6, style: "zinc", wall: "#8a8070", w: 1.55, d: 1.25, h: 1.1 },
-  { x: 6.8, z: 2.5, style: "thatch", wall: "#c4a06a", w: 1.2 },
-  { x: 4.7, z: 1.7, style: "zinc", wall: "#9a8b78", rot: 0.3, w: 1.3 },
-  { x: 7.4, z: 3.9, style: "round", wall: "#b8956a", w: 1.2 },
-  { x: 6.0, z: 4.5, style: "thatch", wall: "#b8895c", rot: 0.15 },
-  { x: 8.0, z: 2.8, style: "zinc", wall: "#8a8070", w: 1.15 },
+  { x: 5.4, z: 3.6, style: "zinc", wall: VILLAGE_PALETTE.wallStone, w: 1.55, d: 1.25, h: 1.1 },
+  { x: 6.8, z: 2.5, style: "thatch", wall: VILLAGE_PALETTE.wallOchre, w: 1.2 },
+  { x: 4.7, z: 1.7, style: "zinc", wall: VILLAGE_PALETTE.wallGrey, rot: 0.3, w: 1.3 },
+  { x: 7.4, z: 3.9, style: "round", wall: VILLAGE_PALETTE.wallWarm, w: 1.2 },
+  { x: 6.0, z: 4.5, style: "thatch", wall: VILLAGE_PALETTE.wallClay, rot: 0.15 },
+  { x: 8.0, z: 2.8, style: "zinc", wall: VILLAGE_PALETTE.wallStone, w: 1.15 },
   // Path-side
-  { x: 1.7, z: 2.5, style: "thatch", wall: "#c9a66b", rot: 0.12 },
-  { x: -0.9, z: 1.3, style: "zinc", wall: "#a89070" },
-  { x: 3.9, z: -0.5, style: "thatch", wall: "#b8895c" },
-  { x: -4.5, z: -0.3, style: "round", wall: "#d2b48c", w: 1.05 },
-  { x: 2.8, z: 1.2, style: "round", wall: "#c4a06a", w: 1.0 },
+  { x: 1.7, z: 2.5, style: "thatch", wall: VILLAGE_PALETTE.wallSand, rot: 0.12 },
+  { x: -0.9, z: 1.3, style: "zinc", wall: VILLAGE_PALETTE.wallDusk },
+  { x: 3.9, z: -0.5, style: "thatch", wall: VILLAGE_PALETTE.wallClay },
+  { x: -4.5, z: -0.3, style: "round", wall: VILLAGE_PALETTE.wallTan, w: 1.05 },
+  { x: 2.8, z: 1.2, style: "round", wall: VILLAGE_PALETTE.wallOchre, w: 1.0 },
 ];
 
 export const VILLAGE_TREES: Array<[number, number, number, TreeKind]> = [
@@ -188,16 +189,16 @@ function roadsideBushes(): Array<[number, number, number]> {
 export function addBush(batch: PropBatch, x: number, z: number, sc: number): void {
   const p = new Placer(batch, groupMatrix([x, 0, z], 0, [sc, sc, sc]));
   const spec = { roughness: 0.95, castShadow: true };
-  p.part(new THREE.SphereGeometry(0.32, 7, 7), "#3a5a28", [0, 0.28, 0], undefined, undefined, spec);
-  p.part(new THREE.SphereGeometry(0.22, 6, 6), "#4a6b32", [0.18, 0.22, 0.1], undefined, undefined, spec);
-  p.part(new THREE.SphereGeometry(0.2, 6, 6), "#2f4a20", [-0.14, 0.2, -0.08], undefined, undefined, spec);
+  p.part(new THREE.SphereGeometry(0.32, 7, 7), VILLAGE_PALETTE.leafDeep, [0, 0.28, 0], undefined, undefined, spec);
+  p.part(new THREE.SphereGeometry(0.22, 6, 6), VILLAGE_PALETTE.leafMid, [0.18, 0.22, 0.1], undefined, undefined, spec);
+  p.part(new THREE.SphereGeometry(0.2, 6, 6), VILLAGE_PALETTE.leafShadow, [-0.14, 0.2, -0.08], undefined, undefined, spec);
 }
 
 export function addRock(batch: PropBatch, x: number, z: number, s: number): void {
   const p = new Placer(batch);
   p.part(
     new THREE.DodecahedronGeometry(0.35, 0),
-    "#7a6a58",
+    VILLAGE_PALETTE.rockBase,
     [x, 0.12 * s, z],
     [0.1, s * 2.1, 0.05],
     [s, s * 0.7, s],
@@ -207,12 +208,12 @@ export function addRock(batch: PropBatch, x: number, z: number, s: number): void
 
 function addGrain(batch: PropBatch, x: number, z: number): void {
   const p = new Placer(batch, groupMatrix([x, 0, z]));
-  p.part(new THREE.CylinderGeometry(0.35, 0.42, 0.7, 10), "#c4a05a", [0, 0.35, 0], undefined, undefined, { castShadow: true });
-  p.part(new THREE.ConeGeometry(0.38, 0.25, 10), "#a88840", [0, 0.75, 0]);
+  p.part(new THREE.CylinderGeometry(0.35, 0.42, 0.7, 10), VILLAGE_PALETTE.straw, [0, 0.35, 0], undefined, undefined, { castShadow: true });
+  p.part(new THREE.ConeGeometry(0.38, 0.25, 10), VILLAGE_PALETTE.strawDark, [0, 0.75, 0]);
 }
 
 function addPot(batch: PropBatch, x: number, z: number, s: number): void {
-  new Placer(batch).part(new THREE.SphereGeometry(0.12, 8, 8), "#8a5a3a", [x, 0.12 * s, z], undefined, [s, s, s], {
+  new Placer(batch).part(new THREE.SphereGeometry(0.12, 8, 8), VILLAGE_PALETTE.clayPot, [x, 0.12 * s, z], undefined, [s, s, s], {
     roughness: 0.85,
     castShadow: true,
   });
@@ -230,7 +231,7 @@ export function addCompoundWall(batch: PropBatch, x: number, z: number, radius: 
     const ang = Math.atan2(qx - px, qz - pz);
     p.part(
       new THREE.BoxGeometry(0.14, 0.85, len * 0.95),
-      "#c9a66b",
+      VILLAGE_PALETTE.wallSand,
       [(px + qx) / 2, 0.4, (pz + qz) / 2],
       [0, ang, 0],
       undefined,
@@ -240,17 +241,17 @@ export function addCompoundWall(batch: PropBatch, x: number, z: number, radius: 
 }
 
 export function addHut(batch: PropBatch, spec: HutSpec): void {
-  const { x, z, rot = 0, w = 1.15, d = 1.05, h = 0.95, style = "thatch", wall = "#c4a06a" } = spec;
+  const { x, z, rot = 0, w = 1.15, d = 1.05, h = 0.95, style = "thatch", wall = VILLAGE_PALETTE.wallOchre } = spec;
   const p = new Placer(batch, groupMatrix([x, 0, z], rot));
-  const thatch = "#7a5c28";
-  const thatchDark = "#5c4218";
-  const zinc = "#7d8b96";
-  const door = "#2a1c10";
+  const thatch = VILLAGE_PALETTE.thatch;
+  const thatchDark = VILLAGE_PALETTE.thatchDark;
+  const zinc = VILLAGE_PALETTE.zincRoof;
+  const door = VILLAGE_PALETTE.doorWood;
   const isRound = style === "round";
   const roofY = h + (isRound ? 0.42 : 0.28);
 
   // packed earth pad
-  p.part(new THREE.CircleGeometry(Math.max(w, d) * 0.75, 12), "#a87848", [0, 0.01, 0], [-Math.PI / 2, 0, 0], undefined, {
+  p.part(new THREE.CircleGeometry(Math.max(w, d) * 0.75, 12), VILLAGE_PALETTE.groundDirt, [0, 0.01, 0], [-Math.PI / 2, 0, 0], undefined, {
     receiveShadow: true,
   });
 
@@ -267,7 +268,7 @@ export function addHut(batch: PropBatch, spec: HutSpec): void {
   // plaster band
   p.part(
     isRound ? new THREE.CylinderGeometry(w * 0.56, w * 0.56, 0.18, 12) : new THREE.BoxGeometry(w * 1.04, 0.18, d * 1.04),
-    "#d4b896",
+    VILLAGE_PALETTE.wallPale,
     [0, 0.12, 0],
   );
 
@@ -275,11 +276,11 @@ export function addHut(batch: PropBatch, spec: HutSpec): void {
   p.part(new THREE.BoxGeometry(0.32, h * 0.62, 0.04), door, [0, h * 0.38, isRound ? w * 0.52 : d / 2 + 0.015], undefined, undefined, {
     castShadow: true,
   });
-  p.part(new THREE.BoxGeometry(0.38, 0.06, 0.05), "#4a3420", [0, h * 0.72, isRound ? w * 0.54 : d / 2 + 0.03]);
+  p.part(new THREE.BoxGeometry(0.38, 0.06, 0.05), VILLAGE_PALETTE.timberDark, [0, h * 0.72, isRound ? w * 0.54 : d / 2 + 0.03]);
 
   // small window
   if (!isRound) {
-    p.part(new THREE.PlaneGeometry(0.18, 0.16), "#1a1208", [w * 0.35, h * 0.55, d / 2 + 0.012]);
+    p.part(new THREE.PlaneGeometry(0.18, 0.16), VILLAGE_PALETTE.windowDark, [w * 0.35, h * 0.55, d / 2 + 0.012]);
   }
 
   // roof
@@ -300,7 +301,7 @@ export function addHut(batch: PropBatch, spec: HutSpec): void {
       metalness: 0.35,
       castShadow: true,
     });
-    p.part(new THREE.BoxGeometry(w * 1.22, 0.05, 0.08), "#5a6570", [0, roofY + 0.22, 0], undefined, undefined, {
+    p.part(new THREE.BoxGeometry(w * 1.22, 0.05, 0.08), VILLAGE_PALETTE.roofSteel, [0, roofY + 0.22, 0], undefined, undefined, {
       roughness: 0.45,
       metalness: 0.5,
     });
@@ -313,19 +314,19 @@ export function addHut(batch: PropBatch, spec: HutSpec): void {
       roughness: 0.98,
       castShadow: true,
     });
-    p.part(new THREE.BoxGeometry(w * 1.15, 0.12, 0.15), "#6b4e20", [0, roofY + 0.28, 0]);
+    p.part(new THREE.BoxGeometry(w * 1.15, 0.12, 0.15), VILLAGE_PALETTE.beamWood, [0, roofY + 0.28, 0]);
   }
 }
 
 export function addTree(batch: PropBatch, x: number, z: number, s: number, kind: TreeKind): void {
   const p = new Placer(batch, groupMatrix([x, 0, z], 0, [s, s, s]));
   if (kind === "palm") {
-    p.part(new THREE.CylinderGeometry(0.07, 0.11, 2.2, 6), "#5c4030", [0, 1.1, 0], undefined, undefined, { castShadow: true });
+    p.part(new THREE.CylinderGeometry(0.07, 0.11, 2.2, 6), VILLAGE_PALETTE.woodDark, [0, 1.1, 0], undefined, undefined, { castShadow: true });
     for (let i = 0; i < 5; i++) {
       const a = (i / 5) * Math.PI * 2;
       p.part(
         new THREE.BoxGeometry(0.12, 0.04, 0.9),
-        "#3a6b28",
+        VILLAGE_PALETTE.grassGreen,
         [Math.cos(a) * 0.35, 2.15, Math.sin(a) * 0.35],
         [0.6, a, 0],
         undefined,
@@ -335,21 +336,21 @@ export function addTree(batch: PropBatch, x: number, z: number, s: number, kind:
     return;
   }
   const trunkH = kind === "broad" ? 1.8 : 1.45;
-  p.part(new THREE.CylinderGeometry(0.09, 0.14, trunkH, 7), "#3f2a18", [0, trunkH / 2, 0], undefined, undefined, { castShadow: true });
-  p.part(new THREE.SphereGeometry(kind === "broad" ? 0.85 : 0.6, 9, 9), "#355528", [0, trunkH + 0.15, 0], undefined, undefined, {
+  p.part(new THREE.CylinderGeometry(0.09, 0.14, trunkH, 7), VILLAGE_PALETTE.trunk, [0, trunkH / 2, 0], undefined, undefined, { castShadow: true });
+  p.part(new THREE.SphereGeometry(kind === "broad" ? 0.85 : 0.6, 9, 9), VILLAGE_PALETTE.treeMid, [0, trunkH + 0.15, 0], undefined, undefined, {
     roughness: 0.88,
     castShadow: true,
   });
-  p.part(new THREE.SphereGeometry(0.45, 8, 8), "#4a6b30", [0.35, trunkH + 0.35, 0.15], undefined, undefined, {
+  p.part(new THREE.SphereGeometry(0.45, 8, 8), VILLAGE_PALETTE.leafMid2, [0.35, trunkH + 0.35, 0.15], undefined, undefined, {
     roughness: 0.9,
     castShadow: true,
   });
-  p.part(new THREE.SphereGeometry(0.4, 8, 8), "#2a451c", [-0.3, trunkH + 0.25, -0.2], undefined, undefined, {
+  p.part(new THREE.SphereGeometry(0.4, 8, 8), VILLAGE_PALETTE.treeDark, [-0.3, trunkH + 0.25, -0.2], undefined, undefined, {
     roughness: 0.92,
     castShadow: true,
   });
   if (kind === "broad") {
-    p.part(new THREE.SphereGeometry(0.5, 8, 8), "#3d5c28", [0.1, trunkH + 0.55, -0.25], undefined, undefined, {
+    p.part(new THREE.SphereGeometry(0.5, 8, 8), VILLAGE_PALETTE.treeLight, [0.1, trunkH + 0.55, -0.25], undefined, undefined, {
       roughness: 0.9,
       castShadow: true,
     });
@@ -366,21 +367,21 @@ export function buildStaticVillageProps(): MergedPropMesh[] {
   // fence along the south edge of the market
   const fence = new Placer(batch);
   for (let i = 0; i < 8; i++) {
-    fence.part(new THREE.BoxGeometry(0.05, 0.76, 0.05), "#5c4030", [-3.2 + i * 0.35, 0.38, 5.15], undefined, undefined, {
+    fence.part(new THREE.BoxGeometry(0.05, 0.76, 0.05), VILLAGE_PALETTE.woodDark, [-3.2 + i * 0.35, 0.38, 5.15], undefined, undefined, {
       castShadow: true,
     });
   }
-  fence.part(new THREE.BoxGeometry(2.6, 0.04, 0.04), "#6b4e32", [-1.95, 0.55, 5.15], undefined, undefined, { roughness: 1 });
+  fence.part(new THREE.BoxGeometry(2.6, 0.04, 0.04), VILLAGE_PALETTE.fenceWood, [-1.95, 0.55, 5.15], undefined, undefined, { roughness: 1 });
 
   // market mats: a top slab on four legs each
   for (const [mx, mz] of MARKET_MATS) {
     const m = new Placer(batch, groupMatrix([mx, 0, mz]));
-    m.part(new THREE.BoxGeometry(0.95, 0.05, 0.48), "#6b5340", [0, 0.48, 0], undefined, undefined, {
+    m.part(new THREE.BoxGeometry(0.95, 0.05, 0.48), VILLAGE_PALETTE.matWeave, [0, 0.48, 0], undefined, undefined, {
       roughness: 0.9,
       castShadow: true,
     });
     for (const [lx, lz] of MARKET_MAT_LEGS) {
-      m.part(new THREE.BoxGeometry(0.05, 0.48, 0.05), "#4a3728", [lx, 0.24, lz]);
+      m.part(new THREE.BoxGeometry(0.05, 0.48, 0.05), VILLAGE_PALETTE.postWood, [lx, 0.24, lz]);
     }
   }
 
@@ -389,7 +390,7 @@ export function buildStaticVillageProps(): MergedPropMesh[] {
   GRASS_PAD_POINTS.forEach(([gx, gz], i) => {
     pads.part(
       new THREE.CircleGeometry(1.0 + (i % 3) * 0.25, 10),
-      i % 2 ? "#7a8a3a" : "#4a5c28",
+      i % 2 ? VILLAGE_PALETTE.grassLight : VILLAGE_PALETTE.grassDark,
       [gx, 0.02, gz],
       [-Math.PI / 2, 0, 0],
     );
