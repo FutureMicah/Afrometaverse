@@ -929,8 +929,25 @@ export function AfroMetaverseGame() {
     persist({ likedPosts: nextLiked });
   }
 
+  // Landscape lock: the 3D scene is landscape-only. Lock when the city full view opens,
+  // release on exit. Portrait shows the rotate overlay only while the scene is active.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const o = (window.screen as Screen & { orientation?: { lock?: (t: string) => Promise<void>; unlock?: () => void } }).orientation;
+    if (!cityFullscreen || !o?.lock) return;
+    o.lock("landscape").catch(() => {
+      /* iOS/desktop reject lock(); the overlay below covers portrait. */
+    });
+    return () => o.unlock?.();
+  }, [cityFullscreen]);
+
   return (
     <div className="am-shell">
+      <div className={`am-rotate-overlay ${cityFullscreen ? "am-rotate-active" : ""}`} role="status" aria-live="polite">
+        <div className="am-rotate-icon" aria-hidden="true" />
+        <p className="am-rotate-title">Rotate your phone</p>
+        <p className="am-rotate-copy">The city plays in landscape. Turn your phone sideways to continue.</p>
+      </div>
       <header className="am-topbar">
         <div className="am-brand">
           <span className="am-brand-mark">A.</span>
@@ -1002,6 +1019,30 @@ export function AfroMetaverseGame() {
         <main className="am-main">
           {screen === "city" && (
             <section>
+              <div className="am-home-hero">
+                <p className="am-home-greet">
+                  Ekaasan, {displayName}
+                  <span className="am-home-sub">Port Harcourt · Day {cityDay}</span>
+                </p>
+                <div className="am-home-featured">
+                  <span className="am-home-tag">Featured · Season 01</span>
+                  <h2 className="am-home-title">Rise with the creek</h2>
+                  <p className="am-home-copy">
+                    Take a shift, cast your vote, and walk the market. Every step of the city answers back.
+                  </p>
+                  <button
+                    type="button"
+                    className="am-btn am-btn-primary am-home-start"
+                    onClick={() => {
+                      setCityFullscreen(true);
+                      setRoamMode("walk");
+                      announce("Full map — click canvas for mouse look · Esc to exit");
+                    }}
+                  >
+                    Start
+                  </button>
+                </div>
+              </div>
               <div className="am-screen-head">
                 <h1>Port Harcourt, Day {cityDay}</h1>
                 <p>

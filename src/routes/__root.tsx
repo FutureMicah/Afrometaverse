@@ -12,6 +12,7 @@ import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import "../components/afrometaverse/afro-theme.css";
+import "../components/afrometaverse/afro-theme-home.css";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 
 function NotFoundComponent() {
@@ -79,13 +80,13 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "AfroMetaverse — Your city is alive" },
+      { title: "Afrometaverse · Port Harcourt" },
       {
         name: "description",
         content:
           "A living browser simulation of Port Harcourt. Work shifts, trade at Town Market, shape the city with your civic vote and meet your neighbours in the Town Square.",
       },
-      { property: "og:title", content: "AfroMetaverse — Your city is alive" },
+      { property: "og:title", content: "Afrometaverse · Port Harcourt" },
       {
         property: "og:description",
         content:
