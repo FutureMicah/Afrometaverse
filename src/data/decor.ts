@@ -1,3 +1,4 @@
+import { DECOR_PALETTE } from "@/data/decorPalette";
 /**
  * Player housing decoration catalog (era-progression-spec.md 18).
  * Every item has one source: crafted, bought or trophy. Trophies are never sold.
@@ -24,7 +25,7 @@ export const DECOR_CATALOG: Record<string, DecorItem> = {
     source: "crafted",
     width: 1,
     depth: 1,
-    color: "#a0623a",
+    color: DECOR_PALETTE.clayPot,
     description: "Coil-built storage pot, fired in the compound.",
   },
   "carved-stool": {
@@ -33,7 +34,7 @@ export const DECOR_CATALOG: Record<string, DecorItem> = {
     source: "crafted",
     width: 1,
     depth: 1,
-    color: "#5c4030",
+    color: DECOR_PALETTE.carvedStool,
     description: "A stool carved from one block of iroko.",
   },
   "woven-mat": {
@@ -42,7 +43,7 @@ export const DECOR_CATALOG: Record<string, DecorItem> = {
     source: "crafted",
     width: 2,
     depth: 1.5,
-    color: "#c9a46a",
+    color: DECOR_PALETTE.wovenMat,
     description: "Reed mat woven by hand, for sitting or sleeping.",
   },
   "market-cloth": {
@@ -51,7 +52,7 @@ export const DECOR_CATALOG: Record<string, DecorItem> = {
     source: "bought",
     width: 1,
     depth: 1,
-    color: "#2f5a7a",
+    color: DECOR_PALETTE.marketCloth,
     description: "Indigo cloth bought at the market stall.",
   },
   "brass-lamp": {
@@ -60,7 +61,7 @@ export const DECOR_CATALOG: Record<string, DecorItem> = {
     source: "bought",
     width: 0.5,
     depth: 0.5,
-    color: "#b08a4e",
+    color: DECOR_PALETTE.brassLamp,
     description: "Oil lamp bought from the trade hut.",
   },
   "trophy-horns": {
@@ -69,7 +70,7 @@ export const DECOR_CATALOG: Record<string, DecorItem> = {
     source: "trophy",
     width: 1,
     depth: 0.5,
-    color: "#e9e2d0",
+    color: DECOR_PALETTE.trophyHorns,
     description: "Horns from a hunt you brought down.",
   },
   "leopard-rug": {
@@ -78,7 +79,7 @@ export const DECOR_CATALOG: Record<string, DecorItem> = {
     source: "trophy",
     width: 2,
     depth: 1.5,
-    color: "#c7902e",
+    color: DECOR_PALETTE.leopardRug,
     description: "Pelt from a leopard you tracked and killed.",
   },
   "ceremonial-mask": {
@@ -87,7 +88,7 @@ export const DECOR_CATALOG: Record<string, DecorItem> = {
     source: "trophy",
     width: 0.5,
     depth: 0.5,
-    color: "#7a3b1e",
+    color: DECOR_PALETTE.ceremonialMask,
     description: "Mask earned in a masquerade mission.",
   },
   "glazed-pot": {
@@ -96,7 +97,7 @@ export const DECOR_CATALOG: Record<string, DecorItem> = {
     source: "trophy",
     width: 1,
     depth: 1,
-    color: "#2e7a6b",
+    color: DECOR_PALETTE.glazedPot,
     description: "A rare glazed pot won in a craft trial.",
   },
 };

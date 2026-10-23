@@ -55,7 +55,6 @@ import {
   BODY_SHAPE_LABEL,
   CLOTHING_CATALOG,
   GARMENT_DETAILS,
-  SKIN_TONES,
   hydrateCharacterStore,
   useCharacterStore,
   type BodyShape,
@@ -69,6 +68,7 @@ import {
   type Posture,
 } from "@/stores/characterStore";
 import { matchOutfit, matchTierColor } from "@/lib/outfitMatching";
+import { HAIR_COLOR_SWATCHES, NAIL_COLOR_SWATCHES, SKIN_TONE_SWATCHES } from "@/lib/swatchPalette";
 
 type ScreenId = "city" | "work" | "market" | "civic" | "social" | "learn";
 type WeatherId = "dry" | "rainy" | "harmattan";
@@ -1226,7 +1226,7 @@ export function AfroMetaverseGame() {
                 </div>
                 <div className="am-character-row">
                   <span className="am-gear-label">Skin</span>
-                  {SKIN_TONES.map((hex) => (
+                  {SKIN_TONE_SWATCHES.map((hex) => (
                     <button
                       key={hex}
                       type="button"
@@ -1252,7 +1252,7 @@ export function AfroMetaverseGame() {
                 </div>
                 <div className="am-character-row">
                   <span className="am-gear-label">Hair colour</span>
-                  {["#1a1a1a", "#3b2f2f", "#6b4423", "#a3e635", "#7c3aed", "#c4c4c4"].map((hex) => (
+                  {HAIR_COLOR_SWATCHES.map((hex) => (
                     <button
                       key={hex}
                       type="button"
@@ -1303,7 +1303,7 @@ export function AfroMetaverseGame() {
                 </div>
                 <div className="am-character-row">
                   <span className="am-gear-label">Nails</span>
-                  {["#f8fafc", "#fb7185", "#1a1a1a", "#fbbf24", "#c45c6a"].map((hex) => (
+                  {NAIL_COLOR_SWATCHES.map((hex) => (
                     <button key={hex} type="button" className={`am-skin-swatch ${appearance.nailColor === hex ? "am-skin-active" : ""}`} style={{ background: hex }} onClick={() => setNailColor(hex)} aria-label="Nail colour" />
                   ))}
                 </div>

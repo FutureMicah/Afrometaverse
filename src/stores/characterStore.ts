@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { SKIN_TONE_SWATCHES } from "@/lib/swatchPalette";
 
 export type Gender = "female" | "male";
 export type BodyShape = "slim" | "average" | "curvy" | "athletic" | "broad";
@@ -914,14 +915,7 @@ export const useCharacterStore = create<CharacterState>((set, get) => ({
   },
 }));
 
-export const SKIN_TONES = [
-  "#5c3317",
-  "#8d5524",
-  "#a0673f",
-  "#c68642",
-  "#d4a574",
-  "#e0b890",
-];
+export const SKIN_TONES: readonly string[] = SKIN_TONE_SWATCHES;
 
 export const BODY_SHAPE_LABEL: Record<BodyShape, string> = {
   slim: "Slim",
