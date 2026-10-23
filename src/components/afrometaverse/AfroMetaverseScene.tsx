@@ -179,14 +179,15 @@ function NeonGround() {
 
 /** Laterite / red-dirt roads — dual tracks, soft shoulders, no neon centre lines */
 function NeonRoads() {
+  // Wider lanes (about 2.5 units) so people and carts can pass without crowding.
   const segs = [
-    { x: 0, z: 0.2, w: 26, d: 2.0 },
-    { x: 0, z: 4.8, w: 18, d: 1.55 },
-    { x: 0, z: -2.8, w: 20, d: 1.55 },
-    { x: -3.2, z: 1.0, w: 1.55, d: 14 },
-    { x: 2.8, z: 0.5, w: 1.55, d: 13 },
-    { x: 5.5, z: 1.5, w: 1.45, d: 10 },
-    { x: -5.5, z: -1.2, w: 1.4, d: 11 },
+    { x: 0, z: 0.2, w: 26, d: 2.6 },
+    { x: 0, z: 4.8, w: 18, d: 2.4 },
+    { x: 0, z: -2.8, w: 20, d: 2.4 },
+    { x: -3.2, z: 1.0, w: 2.4, d: 14 },
+    { x: 2.8, z: 0.5, w: 2.4, d: 13 },
+    { x: 5.5, z: 1.5, w: 2.3, d: 10 },
+    { x: -5.5, z: -1.2, w: 2.2, d: 11 },
   ];
   return (
     <group>
@@ -1273,18 +1274,19 @@ export function AfroMetaverseScene({
       />
 
       {/* Day 6 — tribal compounds + hearth */}
+      {/* Spread out so paths stay open; compounds sit at the outer edges of the village. */}
       <YorubaCompound
-        position={[-9.5, 0, 4.5]}
+        position={[-12.5, 0, 7.0]}
         climateIntensity={wetness}
         windIntensity={0.35 + dust * 0.4}
       />
       <IgboCompound
-        position={[9.0, 0, -4.5]}
+        position={[12.5, 0, -7.0]}
         climateIntensity={wetness}
         windIntensity={0.35 + dust * 0.4}
       />
-      <VillageHearth position={[-3.6, 0, 3.0]} />
-      <VillageHearth position={[0.3, 0, -2.6]} />
+      <VillageHearth position={[-5.4, 0, 4.6]} />
+      <VillageHearth position={[2.2, 0, -4.4]} />
 
       {/* Day 1 atmospheric life */}
       <DustMotes count={90} active={dust > 0.25 || wetness < 0.3} />

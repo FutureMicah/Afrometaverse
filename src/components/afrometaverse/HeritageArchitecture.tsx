@@ -97,6 +97,11 @@ export function ThatchedRoof({
 }
 
 /** Single modular mud hut (Day 6 building block) */
+/** World scale: characters are ~1.8 units tall. Huts stand about 2.6x that scale so a person
+ * reads small against them, and compound walls reach shoulder height. */
+export const BUILDING_SCALE = 2.6;
+export const WALL_SCALE = 2.2;
+
 export function MudHut({
   position = [0, 0, 0],
   rotation = 0,
@@ -114,8 +119,8 @@ export function MudHut({
   climateIntensity?: number;
   windIntensity?: number;
 }) {
-  const w = 1.2 * scale;
-  const h = 1.0 * scale;
+  const w = 1.2 * scale * BUILDING_SCALE;
+  const h = 1.0 * scale * BUILDING_SCALE;
   const isRound = style === "round";
 
   return (
@@ -134,7 +139,7 @@ export function MudHut({
         <MudWallMaterial climateIntensity={climateIntensity} baseColor={wallColor} />
       </mesh>
 
-      <mesh position={[0, 0.1 * scale, 0]}>
+      <mesh position={[0, 0.1 * scale * BUILDING_SCALE, 0]}>
         {isRound ? (
           <cylinderGeometry args={[w * 0.54, w * 0.54, 0.16 * scale, 12]} />
         ) : (
@@ -144,7 +149,7 @@ export function MudHut({
       </mesh>
 
       <mesh position={[0, h * 0.35, isRound ? w * 0.5 : w * 0.46]} castShadow>
-        <boxGeometry args={[0.3 * scale, h * 0.55, 0.04]} />
+        <boxGeometry args={[0.3 * scale * BUILDING_SCALE, h * 0.55, 0.04]} />
         <meshStandardMaterial color={SCENE_PALETTE.doorWood} roughness={1} />
       </mesh>
 
@@ -152,7 +157,7 @@ export function MudHut({
         <ThatchedRoof
           type={isRound ? "conical" : "gable"}
           radius={w * 0.78}
-          height={0.85 * scale}
+          height={0.85 * scale * BUILDING_SCALE}
           windIntensity={windIntensity}
           isRainy={climateIntensity > 0.5}
         />
@@ -189,8 +194,8 @@ export function CompoundWall({
   return (
     <group position={[x, 0, z]}>
       {posts.map((p, i) => (
-        <mesh key={i} position={[p.x, 0.35, p.z]} rotation={[0, p.rot, 0]} castShadow>
-          <boxGeometry args={[0.55, 0.7, 0.12]} />
+        <mesh key={i} position={[p.x, 0.35 * WALL_SCALE, p.z]} rotation={[0, p.rot, 0]} castShadow>
+          <boxGeometry args={[0.55 * WALL_SCALE, 0.7 * WALL_SCALE, 0.12 * WALL_SCALE]} />
           <MudWallMaterial climateIntensity={climateIntensity} baseColor={SCENE_PALETTE.wallWarm} />
         </mesh>
       ))}
