@@ -34,7 +34,7 @@ export interface WorldState {
   lastUpdateDay: number;
 }
 
-const INITIAL_DISTRICTS = {
+const INITIAL_DISTRICTS: Record<string, District> = {
   "town-market": {
     id: "town-market",
     name: "Town Market",
@@ -124,61 +124,67 @@ export const useWorldStateStore = create<{
     }
 
     // Update districts based on disaster
-    const updatedDistricts = { ...INITIAL_DISTRICTS };
+    const updatedDistricts = structuredClone(INITIAL_DISTRICTS);
+    const district = (id: string): District => {
+      const d = updatedDistricts[id];
+      if (!d) throw new Error(`unknown district: ${id}`);
+      return d;
+    };
+    const creek = district("creekside");
 
     if (newDisaster === "flood") {
       // Creekside and low-lying areas affected
-      updatedDistricts.creekside.condition = "flooded";
-      updatedDistricts.creekside.floodDepth = (newIntensity / 100) * 1.5; // up to 1.5m
-      updatedDistricts.creekside.accessibility = Math.max(10, 100 - newIntensity * 1.2);
-      updatedDistricts.creekside.riskLevel = Math.min(100, 40 + newIntensity);
-      updatedDistricts.creekside.crowdLevel = Math.max(10, 60 - newIntensity * 0.5);
-      updatedDistricts.creekside.warnings = ["⚠️ FLOOD WARNING", "Water levels rising", "Ferry service limited"];
-      updatedDistricts.creekside.safetyTip = `Water depth: ${updatedDistricts.creekside.floodDepth.toFixed(1)}m. Avoid the jetty.`;
+      creek.condition = "flooded";
+      creek.floodDepth = (newIntensity / 100) * 1.5; // up to 1.5m
+      creek.accessibility = Math.max(10, 100 - newIntensity * 1.2);
+      creek.riskLevel = Math.min(100, 40 + newIntensity);
+      creek.crowdLevel = Math.max(10, 60 - newIntensity * 0.5);
+      creek.warnings = ["⚠️ FLOOD WARNING", "Water levels rising", "Ferry service limited"];
+      creek.safetyTip = `Water depth: ${creek.floodDepth.toFixed(1)}m. Avoid the jetty.`;
 
       // Town Market affected moderately
-      updatedDistricts["town-market"].condition = "at_risk";
-      updatedDistricts["town-market"].floodDepth = (newIntensity / 100) * 0.6;
-      updatedDistricts["town-market"].accessibility = Math.max(50, 100 - newIntensity * 0.6);
-      updatedDistricts["town-market"].riskLevel = Math.min(80, 20 + newIntensity * 0.5);
-      updatedDistricts["town-market"].crowdLevel = Math.max(30, 85 - newIntensity * 0.4);
-      updatedDistricts["town-market"].warnings = ["⚠️ FLOOD WATCH", "Slick surfaces", "Stalls closing early"];
-      updatedDistricts["town-market"].safetyTip = "Streets are slick. Market vendors are relocating goods.";
+      district("town-market").condition = "at_risk";
+      district("town-market").floodDepth = (newIntensity / 100) * 0.6;
+      district("town-market").accessibility = Math.max(50, 100 - newIntensity * 0.6);
+      district("town-market").riskLevel = Math.min(80, 20 + newIntensity * 0.5);
+      district("town-market").crowdLevel = Math.max(30, 85 - newIntensity * 0.4);
+      district("town-market").warnings = ["⚠️ FLOOD WATCH", "Slick surfaces", "Stalls closing early"];
+      district("town-market").safetyTip = "Streets are slick. Market vendors are relocating goods.";
 
       // Port slightly affected
-      updatedDistricts.port.condition = "at_risk";
-      updatedDistricts.port.accessibility = Math.max(70, 100 - newIntensity * 0.3);
-      updatedDistricts.port.riskLevel = newIntensity * 0.3;
-      updatedDistricts.port.crowdLevel = Math.max(40, 50 - newIntensity * 0.2);
-      updatedDistricts.port.warnings = ["⚠️ OPERATIONS ALERT", "Crane work limited"];
-      updatedDistricts.port.safetyTip = "Port operations are at reduced capacity.";
+      district("port").condition = "at_risk";
+      district("port").accessibility = Math.max(70, 100 - newIntensity * 0.3);
+      district("port").riskLevel = newIntensity * 0.3;
+      district("port").crowdLevel = Math.max(40, 50 - newIntensity * 0.2);
+      district("port").warnings = ["⚠️ OPERATIONS ALERT", "Crane work limited"];
+      district("port").safetyTip = "Port operations are at reduced capacity.";
     }
 
     if (newDisaster === "dust_storm") {
       // Harmattan dust affects all districts, especially port and civic centre
-      updatedDistricts.port.condition = "hazardous";
-      updatedDistricts.port.visibility = Math.max(30, 100 - newIntensity);
-      updatedDistricts.port.riskLevel = Math.min(70, newIntensity * 0.5);
-      updatedDistricts.port.accessibility = Math.max(40, 100 - newIntensity * 0.5);
-      updatedDistricts.port.crowdLevel = Math.max(20, 50 - newIntensity * 0.3);
-      updatedDistricts.port.warnings = ["⚠️ DUST STORM", "Visibility low", "Masks recommended"];
-      updatedDistricts.port.safetyTip = `Visibility: ${updatedDistricts.port.visibility.toFixed(0)}m. Stay indoors if possible.`;
+      district("port").condition = "hazardous";
+      district("port").visibility = Math.max(30, 100 - newIntensity);
+      district("port").riskLevel = Math.min(70, newIntensity * 0.5);
+      district("port").accessibility = Math.max(40, 100 - newIntensity * 0.5);
+      district("port").crowdLevel = Math.max(20, 50 - newIntensity * 0.3);
+      district("port").warnings = ["⚠️ DUST STORM", "Visibility low", "Masks recommended"];
+      district("port").safetyTip = `Visibility: ${district("port").visibility.toFixed(0)}m. Stay indoors if possible.`;
 
       // Civic centre visibility reduced
-      updatedDistricts["civic-centre"].visibility = Math.max(40, 100 - newIntensity * 0.7);
-      updatedDistricts["civic-centre"].condition = "at_risk";
-      updatedDistricts["civic-centre"].riskLevel = newIntensity * 0.3;
-      updatedDistricts["civic-centre"].crowdLevel = Math.max(20, 40 - newIntensity * 0.2);
-      updatedDistricts["civic-centre"].warnings = ["⚠️ DUST WATCH", "Air quality poor"];
-      updatedDistricts["civic-centre"].safetyTip = "Air is thick with dust. Protect your respiratory system.";
+      district("civic-centre").visibility = Math.max(40, 100 - newIntensity * 0.7);
+      district("civic-centre").condition = "at_risk";
+      district("civic-centre").riskLevel = newIntensity * 0.3;
+      district("civic-centre").crowdLevel = Math.max(20, 40 - newIntensity * 0.2);
+      district("civic-centre").warnings = ["⚠️ DUST WATCH", "Air quality poor"];
+      district("civic-centre").safetyTip = "Air is thick with dust. Protect your respiratory system.";
 
       // Market affected by dust
-      updatedDistricts["town-market"].visibility = Math.max(50, 100 - newIntensity * 0.6);
-      updatedDistricts["town-market"].condition = "at_risk";
-      updatedDistricts["town-market"].riskLevel = newIntensity * 0.2;
-      updatedDistricts["town-market"].crowdLevel = Math.max(40, 85 - newIntensity * 0.3);
-      updatedDistricts["town-market"].warnings = ["🌫️ DUST ALERT", "Goods covered", "Ventilation issues"];
-      updatedDistricts["town-market"].safetyTip = "Vendors have covered their goods. Business moves slower.";
+      district("town-market").visibility = Math.max(50, 100 - newIntensity * 0.6);
+      district("town-market").condition = "at_risk";
+      district("town-market").riskLevel = newIntensity * 0.2;
+      district("town-market").crowdLevel = Math.max(40, 85 - newIntensity * 0.3);
+      district("town-market").warnings = ["🌫️ DUST ALERT", "Goods covered", "Ventilation issues"];
+      district("town-market").safetyTip = "Vendors have covered their goods. Business moves slower.";
     }
 
     // Determine city mood based on disaster

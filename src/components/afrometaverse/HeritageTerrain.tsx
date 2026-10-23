@@ -243,9 +243,10 @@ export function HeritageTerrain({ wetness = 0, dust = 0 }: HeritageTerrainProps)
 
   useFrame(({ clock }) => {
     if (matRef.current) {
-      matRef.current.uniforms.uTime.value = clock.getElapsedTime();
-      matRef.current.uniforms.uWetness.value = wetness;
-      matRef.current.uniforms.uDust.value = dust;
+      const u = matRef.current.uniforms;
+      if (u["uTime"]) u["uTime"].value = clock.getElapsedTime();
+      if (u["uWetness"]) u["uWetness"].value = wetness;
+      if (u["uDust"]) u["uDust"].value = dust;
     }
   });
 

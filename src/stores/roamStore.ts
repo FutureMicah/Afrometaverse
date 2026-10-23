@@ -243,7 +243,8 @@ export const useRoamStore = create<RoamState>((set, get) => ({
     if (!mission) return;
     const steps = mission.steps.map((s) => {
       if (s.id !== stepId) return s;
-      const subs = s.subSteps?.map((sub) => ({ ...sub, done: true }));
+      if (!s.subSteps) return { ...s, done: true };
+      const subs = s.subSteps.map((sub) => ({ ...sub, done: true }));
       return { ...s, done: true, subSteps: subs };
     });
     const allDone = steps.every((s) => s.done);
@@ -345,7 +346,8 @@ export const useRoamStore = create<RoamState>((set, get) => ({
     if (v.kind === "ferry") {
       // Ferry only usable near water / creekside
       const [x, , z] = get().position;
-      if (Math.hypot(x - DISTRICT_WORLD.creekside.x, z - DISTRICT_WORLD.creekside.z) > 4.5) {
+      const creek = DISTRICT_WORLD["creekside"];
+      if (!creek || Math.hypot(x - creek.x, z - creek.z) > 4.5) {
         get().pushLog("Ferry only at the creek");
         return false;
       }

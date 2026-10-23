@@ -221,7 +221,7 @@ export function missionToActive(def: MissionDef): NonNullable<ActiveMission> {
     rep: def.rep,
     heatOnFail: def.heatOnFail,
     heatOnSuccess: def.heatOnSuccess,
-    requiredGear: def.requiredGear,
+    ...(def.requiredGear ? { requiredGear: def.requiredGear } : {}),
     steps: def.buildSteps(),
     startedAt: Date.now(),
   };

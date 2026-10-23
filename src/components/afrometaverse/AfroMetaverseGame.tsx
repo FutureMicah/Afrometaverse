@@ -572,9 +572,9 @@ export function AfroMetaverseGame() {
           gear: {
             ...g,
             ammo: {
-              sidearm: progress.gear.ammo?.sidearm ?? g.ammo.sidearm,
-              carbine: progress.gear.ammo?.carbine ?? g.ammo.carbine,
-              stun: progress.gear.ammo?.stun ?? g.ammo.stun,
+              sidearm: progress.gear.ammo?.["sidearm"] ?? g.ammo["sidearm"],
+              carbine: progress.gear.ammo?.["carbine"] ?? g.ammo["carbine"],
+              stun: progress.gear.ammo?.["stun"] ?? g.ammo["stun"],
             },
           },
         });
@@ -635,8 +635,8 @@ export function AfroMetaverseGame() {
   const editUnlocks = useMemo(() => editsUnlockedAtLevel(level), [level]);
   const repPct = Math.min(100, (reputation % 10) * 10 || (reputation === 0 ? 0 : 100));
   const activeDistrict = DISTRICTS.find((d) => d.id === selectedDistrict) ?? null;
-  const timeOfDay = TIME_OF_DAY.find((entry) => entry.key === weatherStore.state.timeOfDay) ?? TIME_OF_DAY[0];
-  const weather = WEATHER_STATES.find((entry) => entry.id === weatherStore.state.weatherId) ?? WEATHER_STATES[0];
+  const timeOfDay = TIME_OF_DAY.find((entry) => entry.key === weatherStore.state.timeOfDay) ?? TIME_OF_DAY[0]!;
+  const weather = WEATHER_STATES.find((entry) => entry.id === weatherStore.state.weatherId) ?? WEATHER_STATES[0]!;
   const districtWeatherNote = getDistrictWeatherNote(activeDistrict?.id, weather.id as WeatherId, timeOfDay.key);
   const cityPulseText =
     worldState.globalEvents[0] ??
@@ -1415,12 +1415,16 @@ export function AfroMetaverseGame() {
                         />
                         <span className="am-wardrobe-name">{item.name}</span>
                         <span className="am-wardrobe-slot">{item.slot}</span>
-                        {GARMENT_DETAILS[item.id] && (
-                          <span className="am-wardrobe-meta">
-                            {GARMENT_DETAILS[item.id].fabric} · {GARMENT_DETAILS[item.id].stitch}
-                            {GARMENT_DETAILS[item.id].quirk ? ` · ${GARMENT_DETAILS[item.id].quirk}` : ""}
-                          </span>
-                        )}
+                        {GARMENT_DETAILS[item.id] && (() => {
+                          const d = GARMENT_DETAILS[item.id];
+                          if (!d) return null;
+                          return (
+                            <span className="am-wardrobe-meta">
+                              {d.fabric} · {d.stitch}
+                              {d.quirk ? ` · ${d.quirk}` : ""}
+                            </span>
+                          );
+                        })()}
                         {isOn && <span className="am-chip am-transport-active">On</span>}
                       </button>
                     );
@@ -1537,8 +1541,8 @@ export function AfroMetaverseGame() {
                         owned: purchasedGoods.includes(g.id),
                       }))}
                       onBuyGood={buyGood}
-                      onRest={insideId === "safehouse" ? restInSafehouse : undefined}
-                      onTakeShift={insideId === "workplace" ? startShiftInside : undefined}
+                      {...(insideId === "safehouse" ? { onRest: restInSafehouse } : {})}
+                      {...(insideId === "workplace" ? { onTakeShift: startShiftInside } : {})}
                       onExit={exitBuildingRoom}
                     />
                   </Suspense>

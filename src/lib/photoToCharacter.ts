@@ -58,7 +58,7 @@ async function sampleFaceSkin(faceSrc: string): Promise<{ skin: string; eyeColor
   for (let y = 28; y < 48; y++) {
     for (let x = 20; x < 44; x++) {
       const i = (y * w + x) * 4;
-      const r = data[i], g = data[i + 1], b = data[i + 2];
+      const r = data[i] ?? 0, g = data[i + 1] ?? 0, b = data[i + 2] ?? 0;
       // skin-ish: r > g > b roughly, not too dark/bright
       if (r > 40 && r > b && r >= g - 15) {
         sr += r; sg += g; sb += b; sn++;
@@ -69,7 +69,7 @@ async function sampleFaceSkin(faceSrc: string): Promise<{ skin: string; eyeColor
   for (let y = 2; y < 18; y++) {
     for (let x = 16; x < 48; x++) {
       const i = (y * w + x) * 4;
-      const r = data[i], g = data[i + 1], b = data[i + 2];
+      const r = data[i] ?? 0, g = data[i + 1] ?? 0, b = data[i + 2] ?? 0;
       const lum = (r + g + b) / 3;
       if (lum < 90) {
         hr += r; hg += g; hb += b; hn++;
@@ -81,7 +81,7 @@ async function sampleFaceSkin(faceSrc: string): Promise<{ skin: string; eyeColor
   for (let y = 24; y < 32; y++) {
     for (let x = 22; x < 42; x++) {
       const i = (y * w + x) * 4;
-      const r = data[i], g = data[i + 1], b = data[i + 2];
+      const r = data[i] ?? 0, g = data[i + 1] ?? 0, b = data[i + 2] ?? 0;
       const lum = (r + g + b) / 3;
       if (lum < 70) {
         er += r; eg += g; eb += b; en++;
@@ -123,7 +123,7 @@ async function sampleBodyShape(bodySrc: string): Promise<{ bodyShape: BodyShape;
   for (let y = 30; y < 60; y++) {
     for (let x = 8; x < 40; x++) {
       const i = (y * 48 + x) * 4;
-      const r = data[i], g = data[i + 1], b = data[i + 2];
+      const r = data[i] ?? 0, g = data[i + 1] ?? 0, b = data[i + 2] ?? 0;
       const lum = (r + g + b) / 3;
       // assume light/studio bg → subject darker or coloured
       if (lum < 210) filled++;
@@ -174,8 +174,8 @@ export async function analyzePhotosToAppearance(opts: {
     genderGuess: gender,
     eyeColor: face.eyeColor,
     hairColor: face.hairColor,
-    hair: hairs[seed % hairs.length],
-    eyeShape: eyes[seed % eyes.length],
+    hair: hairs[seed % hairs.length] ?? "short",
+    eyeShape: eyes[seed % eyes.length] ?? "almond",
     confidence: 0.55 + (seed % 30) / 100,
     notes,
   };
@@ -195,7 +195,7 @@ export async function analyzePhotosToAppearance(opts: {
     leftEarPiercing: seed % 3 === 0,
     rightEarPiercing: seed % 4 === 0,
     browStrength: 0.45 + (seed % 5) * 0.1,
-    posture: (["relaxed", "confident", "upright", "shy"] as const)[seed % 4],
+    posture: (["relaxed", "confident", "upright", "shy"] as const)[seed % 4] ?? "relaxed",
   };
 
   return { appearance, analysis };

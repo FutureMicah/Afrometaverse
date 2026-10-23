@@ -76,7 +76,7 @@ export function CharacterCreator({ open, displayName, onComplete, onSkip }: Prop
       const { appearance: partial, analysis } = await analyzePhotosToAppearance({
         faceSrc: facePhoto,
         bodySrc: bodyPhoto,
-        displayName,
+        ...(displayName !== undefined ? { displayName } : {}),
         genderHint,
       });
       applyFromPhotos({

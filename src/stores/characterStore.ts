@@ -623,7 +623,7 @@ export type CharacterAppearance = {
   profileComplete: boolean;
 };
 
-const DEFAULT_APPEARANCE: CharacterAppearance = {
+export const DEFAULT_APPEARANCE: CharacterAppearance = {
   gender: "female",
   bodyShape: "average",
   height: "average",
@@ -825,19 +825,19 @@ export const useCharacterStore = create<CharacterState>((set, get) => ({
       appearance: {
         ...a,
         detailSeed: seed,
-        eyeShape: eyes[seed % 4],
-        noseShape: noses[seed % 4],
-        lipShape: lips[seed % 3],
-        faceMark: marks[seed % 6],
+        eyeShape: eyes[seed % 4] ?? "almond",
+        noseShape: noses[seed % 4] ?? "soft",
+        lipShape: lips[seed % 3] ?? "medium",
+        faceMark: marks[seed % 6] ?? "none",
         browStrength: 0.4 + (seed % 6) * 0.1,
         leftEarPiercing: seed % 2 === 0,
         rightEarPiercing: seed % 3 !== 0,
         nosePiercing: seed % 7 === 0,
         gapTooth: seed % 11 === 0,
-        posture: postures[seed % 4],
-        sleevePreference: (["fitted", "regular", "oversized"] as const)[seed % 3],
-        hemPreference: (["cropped", "regular", "long"] as const)[seed % 3],
-        nailColor: [CLOTHING_PALETTE.slate50, CLOTHING_PALETTE.rose400, CLOTHING_PALETTE.ink, CLOTHING_PALETTE.amber400][seed % 4],
+        posture: postures[seed % 4] ?? "relaxed",
+        sleevePreference: (["fitted", "regular", "oversized"] as const)[seed % 3] ?? "regular",
+        hemPreference: (["cropped", "regular", "long"] as const)[seed % 3] ?? "regular",
+        nailColor: [CLOTHING_PALETTE.slate50, CLOTHING_PALETTE.rose400, CLOTHING_PALETTE.ink, CLOTHING_PALETTE.amber400][seed % 4] ?? CLOTHING_PALETTE.ink,
       },
     });
     get().persist();

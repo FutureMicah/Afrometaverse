@@ -514,7 +514,6 @@ export const VEHICLES: Record<string, Vehicle> = {
     cost: 200,
     travelTime: 30,
     status: "available",
-    weatherSensitive: true,
   },
 
   "bus-express": {

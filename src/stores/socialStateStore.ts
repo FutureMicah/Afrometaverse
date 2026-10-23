@@ -76,6 +76,7 @@ export const useSocialStateStore = create<{
 
     for (const [districtId, base] of Object.entries(INITIAL_DISTRICTS)) {
       const worldDistrict = world.districts[districtId];
+      if (!worldDistrict) continue;
       const districtEconomy = economy[districtId as keyof typeof economy];
       const resilienceValue = resilience.getMitigationFor(districtId, world.currentDisaster === "flood" ? "flood" : "dust_storm");
 

@@ -50,14 +50,14 @@ const DEFAULT_PROGRESS: CitizenProgress = {
 function parseGear(raw: unknown): CitizenGear {
   if (!raw || typeof raw !== "object") return { ...DEFAULT_GEAR, ammo: { ...DEFAULT_GEAR.ammo } };
   const g = raw as Record<string, unknown>;
-  const ammoIn = (g.ammo && typeof g.ammo === "object" ? g.ammo : {}) as Record<string, number>;
+  const ammoIn = (g["ammo"] && typeof g["ammo"] === "object" ? g["ammo"] : {}) as Record<string, number>;
   return {
-    equipped: typeof g.equipped === "string" ? g.equipped : "none",
-    unlocked: Array.isArray(g.unlocked) ? g.unlocked.map(String) : ["none", "stun"],
+    equipped: typeof g["equipped"] === "string" ? g["equipped"] : "none",
+    unlocked: Array.isArray(g["unlocked"]) ? g["unlocked"].map(String) : ["none", "stun"],
     ammo: {
-      sidearm: Number(ammoIn.sidearm) || 0,
-      carbine: Number(ammoIn.carbine) || 0,
-      stun: Number(ammoIn.stun) || 0,
+      sidearm: Number(ammoIn["sidearm"]) || 0,
+      carbine: Number(ammoIn["carbine"]) || 0,
+      stun: Number(ammoIn["stun"]) || 0,
     },
   };
 }
@@ -82,8 +82,9 @@ function rowToProgress(row: CitizenRow): CitizenProgress {
 function initialsFromName(name: string) {
   const parts = name.trim().split(/\s+/).filter(Boolean);
   if (parts.length === 0) return "CI";
-  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
-  return (parts[0][0] + parts[1][0]).toUpperCase();
+  const first = parts[0] ?? "";
+  if (parts.length === 1) return first.slice(0, 2).toUpperCase();
+  return ((first[0] ?? "") + (parts[1]?.[0] ?? "")).toUpperCase();
 }
 
 export function useCitizenAuth() {
@@ -130,8 +131,8 @@ export function useCitizenAuth() {
     if (existing) return existing;
 
     const metaName =
-      (u.user_metadata?.full_name as string | undefined) ||
-      (u.user_metadata?.name as string | undefined) ||
+      (u.user_metadata?.["full_name"] as string | undefined) ||
+      (u.user_metadata?.["name"] as string | undefined) ||
       u.email?.split("@")[0] ||
       "Citizen";
 
@@ -251,7 +252,7 @@ export function useCitizenAuth() {
       typeof window !== "undefined" ? `${window.location.origin}/` : undefined;
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
-      options: { redirectTo },
+      options: redirectTo ? { redirectTo } : {},
     });
     if (error) {
       setAuthError(error.message);

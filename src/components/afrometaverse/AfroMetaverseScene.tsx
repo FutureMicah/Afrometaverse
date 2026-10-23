@@ -1,4 +1,5 @@
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
+import { DEFAULT_APPEARANCE } from "../../stores/characterStore";
 import { OrbitControls } from "@react-three/drei";
 import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
@@ -412,7 +413,7 @@ function MarketNeonLane() {
           ))}
           <mesh position={[0, 1.35, 0]} rotation={[0.15, 0, 0]}>
             <planeGeometry args={[0.8, 0.55]} />
-            <meshStandardMaterial color={s.neon} emissive={s.neon} emissiveIntensity={0.7} side={2} />
+            <meshStandardMaterial color={s.neon ?? "#ffffff"} emissive={s.neon ?? "#ffffff"} emissiveIntensity={0.7} side={2} />
           </mesh>
           <mesh position={[0, 0.45, 0]} castShadow>
             <boxGeometry args={[0.7, 0.08, 0.5]} />
@@ -480,8 +481,8 @@ function PortNeon() {
         <mesh key={i} position={[0, 0.55 + (i % 2) * 0.7, 1.4 + i * 0.35]} castShadow>
           <boxGeometry args={[1.3, 0.7, 0.7]} />
           <meshStandardMaterial
-            color={[SCENE_PALETTE.blueSky, SCENE_PALETTE.yellow, SCENE_PALETTE.purple][i]}
-            emissive={[SCENE_PALETTE.blueSky, SCENE_PALETTE.yellow, SCENE_PALETTE.purple][i]}
+            color={[SCENE_PALETTE.blueSky, SCENE_PALETTE.yellow, SCENE_PALETTE.purple][i] ?? SCENE_PALETTE.blueSky}
+            emissive={[SCENE_PALETTE.blueSky, SCENE_PALETTE.yellow, SCENE_PALETTE.purple][i] ?? SCENE_PALETTE.blueSky}
             emissiveIntensity={0.2}
           />
         </mesh>
@@ -506,7 +507,7 @@ function StreetLampsNeon() {
   return (
     <group>
       {lamps.map(([x, z], i) => {
-        const c = [N.neonPink, N.neonCyan, N.neonPurple, N.neonAmber][i % 4];
+        const c = [N.neonPink, N.neonCyan, N.neonPurple, N.neonAmber][i % 4] ?? N.neonPink;
         return (
           <group key={i} position={[x, 0, z]}>
             <mesh position={[0, 1.4, 0]}>
@@ -1031,13 +1032,14 @@ function TrafficFlow() {
       const g = refs.current[i];
       if (!g) return;
       const pts = ROAD_PATHS[v.path];
+      if (!pts || pts.length < 2) return;
       const raw = (t * v.speed + v.t0) % 1;
       const f = raw * (pts.length - 1);
       const i0 = Math.floor(f);
       const i1 = Math.min(i0 + 1, pts.length - 1);
       const local = f - i0;
-      const [x0, z0] = pts[i0];
-      const [x1, z1] = pts[i1];
+      const [x0 = 0, z0 = 0] = pts[i0] ?? [];
+      const [x1 = 0, z1 = 0] = pts[i1] ?? [];
       g.position.set(x0 + (x1 - x0) * local, 0, z0 + (z1 - z0) * local);
       g.rotation.y = Math.atan2(x1 - x0, z1 - z0);
     });
@@ -1064,11 +1066,12 @@ function NpcCrowd() {
     const shapes = ["slim", "average", "curvy", "athletic", "broad"] as const;
     return Array.from({ length: 8 }, (_, i) => ({
       appearance: {
+        ...DEFAULT_APPEARANCE,
         gender: (i % 2 === 0 ? "female" : "male") as "female" | "male",
-        bodyShape: shapes[i % shapes.length],
-        height: (["short", "average", "tall"] as const)[i % 3],
-        skin: skins[i % skins.length],
-        hair: (["braids", "short", "afro", "bob", "bun", "long"] as const)[i % 6],
+        bodyShape: shapes[i % shapes.length] ?? "average",
+        height: (["short", "average", "tall"] as const)[i % 3] ?? "average",
+        skin: skins[i % skins.length] ?? SCENE_PALETTE.skinMid,
+        hair: (["braids", "short", "afro", "bob", "bun", "long"] as const)[i % 6] ?? "short",
         hairColor: SCENE_PALETTE.ink,
         displayName: `Npc${i}`,
       },
@@ -1316,8 +1319,8 @@ export function AfroMetaverseScene({
       <ParkedVehicles />
       <NpcCrowd />
       <WantedPatrols />
-      <CityHotspots onInteract={onInteract} />
-      <PlayerController onDistrictChange={onNearDistrict} />
+      {onInteract && <CityHotspots onInteract={onInteract} />}
+      {onNearDistrict ? <PlayerController onDistrictChange={onNearDistrict} /> : <PlayerController />}
 
       {mode === "orbit" && (
         <OrbitControls

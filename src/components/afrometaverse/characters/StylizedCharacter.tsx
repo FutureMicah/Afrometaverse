@@ -26,7 +26,7 @@ function SkinMat({ color, map }: { color: string; map?: THREE.Texture | null }) 
   return (
     <meshPhysicalMaterial
       color={color}
-      map={map ?? undefined}
+      {...(map ? { map } : {})}
       roughness={0.38}
       metalness={0}
       clearcoat={0.35}

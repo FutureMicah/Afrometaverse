@@ -116,7 +116,7 @@ export class ChunkStreamer {
     const wantedKeys = new Set<string>();
     // Pinned chunks are always wanted: they load immediately and never start a grace timer.
     for (const key of this.pinned) {
-      const [cx, cz] = key.split(",").map(Number);
+      const [cx = 0, cz = 0] = key.split(",").map(Number);
       wanted.push({ c: { cx, cz }, d: 0 });
     }
     const load: ChunkCoord[] = [];

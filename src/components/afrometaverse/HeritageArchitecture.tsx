@@ -263,7 +263,7 @@ export function IgboCompound({
           position={[ox, 0, i % 2 === 0 ? -0.5 : 0.6]}
           rotation={i * 0.15}
           style={i === 1 ? "round" : "rect"}
-          wallColor={[SCENE_PALETTE.wallOchre, SCENE_PALETTE.clayWall, SCENE_PALETTE.wallTan][i]}
+          wallColor={[SCENE_PALETTE.wallOchre, SCENE_PALETTE.clayWall, SCENE_PALETTE.wallTan][i] ?? SCENE_PALETTE.wallOchre}
           scale={0.85 + i * 0.05}
           climateIntensity={climateIntensity}
           windIntensity={windIntensity}

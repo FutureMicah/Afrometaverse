@@ -29,7 +29,7 @@ interface ChunkedWorldProps {
 export function ChunkedWorld({ tier, focusRef, buildChunk, pinned }: ChunkedWorldProps) {
   const resolvedTier = tier ?? currentRenderTier();
   const camera = useThree((s) => s.camera);
-  const streamer = useMemo(() => new ChunkStreamer({ tier: resolvedTier, pinned }), [resolvedTier]);
+  const streamer = useMemo(() => new ChunkStreamer({ tier: resolvedTier, ...(pinned ? { pinned } : {}) }), [resolvedTier]);
   const [visible, setVisible] = useState<ChunkCoord[]>([]);
   const lastKey = useRef("");
   const clock = useRef(0);

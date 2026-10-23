@@ -104,7 +104,7 @@ function hexToRgb(hex: string): [number, number, number] | null {
 }
 
 function relativeLuminance(rgb: [number, number, number]) {
-  const [r, g, b] = rgb.map((v) => {
+  const [r = 0, g = 0, b = 0] = rgb.map((v) => {
     const s = v / 255;
     return s <= 0.03928 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4);
   });
@@ -177,12 +177,13 @@ export function matchOutfit(loadout: EquippedLoadout): OutfitMatchResult {
   const sortedTags = [...tagCounts.entries()].sort((a, b) => b[1] - a[1]);
   const dominant = sortedTags.slice(0, 3).map(([t]) => t);
   const topCount = sortedTags[0]?.[1] ?? 0;
+  const topTag = sortedTags[0]?.[0] ?? "";
   if (topCount >= 3) {
     score += 16;
-    bonuses.push(`Strong ${sortedTags[0][0]} story`);
+    bonuses.push(`Strong ${topTag} story`);
   } else if (topCount >= 2) {
     score += 10;
-    bonuses.push(`${sortedTags[0][0]} leaning`);
+    bonuses.push(`${topTag} leaning`);
   } else {
     score -= 4;
     tips.push("Pieces speak different languages — pick a lane (street, civic, market…).");
@@ -206,7 +207,9 @@ export function matchOutfit(loadout: EquippedLoadout): OutfitMatchResult {
     let pairs = 0;
     for (let i = 0; i < mains.length; i++) {
       for (let j = i + 1; j < mains.length; j++) {
-        distSum += colorDistance(mains[i].color, mains[j].color);
+        const mi = mains[i], mj = mains[j];
+        if (!mi || !mj) continue;
+        distSum += colorDistance(mi.color, mj.color);
         pairs++;
       }
     }

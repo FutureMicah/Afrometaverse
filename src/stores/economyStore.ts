@@ -80,6 +80,7 @@ export const useEconomyStore = create<{
 
     for (const districtId of Object.keys(BASE_DISTRICT_ECONOMY) as DistrictEconomicId[]) {
       const districtWorldState = world.districts[districtId];
+      if (!districtWorldState) continue;
       const resilienceMitigation =
         world.currentDisaster === "flood"
           ? resilience.getMitigationFor(districtId, "flood")

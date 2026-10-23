@@ -49,7 +49,7 @@ export const useKowryStore = create<KowryState>((set, get) => ({
       id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
       amount,
       reason,
-      note,
+      ...(note !== undefined ? { note } : {}),
       at: Date.now(),
     };
     set((s) => ({
@@ -65,7 +65,7 @@ export const useKowryStore = create<KowryState>((set, get) => ({
       id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
       amount: -amount,
       reason,
-      note,
+      ...(note !== undefined ? { note } : {}),
       at: Date.now(),
     };
     set((s) => ({
