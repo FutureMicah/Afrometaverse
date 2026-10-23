@@ -1,0 +1,128 @@
+/* Afro theme: game-app chrome skinned with adire/ankara patterns, nsibidi dividers,
+   terracotta + earth tones, deep indigo accents, carved-wood panels, raffia borders.
+   Patterns are inline SVG data-URIs or CSS gradients (no image downloads). */
+
+:root {
+  --am-ink: oklch(0.96 0.02 80);
+  --am-ink-soft: oklch(0.8 0.03 70);
+  --am-cream: oklch(0.2 0.045 275);
+  --am-paper: oklch(0.27 0.05 275);
+  --am-line: oklch(0.45 0.06 60 / 0.55);
+  --am-forest: oklch(0.3 0.07 275);
+  --am-forest-deep: oklch(0.2 0.06 275);
+  --am-forest-ink: oklch(0.94 0.03 75);
+  --am-coral: oklch(0.66 0.15 40);
+  --am-coral-soft: oklch(0.36 0.07 40);
+  --am-mint: oklch(0.6 0.08 160);
+  --am-mint-soft: oklch(0.32 0.05 160);
+  --am-gold: oklch(0.78 0.11 80);
+  --am-gold-soft: oklch(0.36 0.06 80);
+  --am-blue: oklch(0.45 0.13 275);
+  --am-blue-soft: oklch(0.3 0.07 275);
+  --am-indigo: oklch(0.3 0.09 275);
+  --am-earth: oklch(0.42 0.06 55);
+  --am-shadow: 0 12px 28px oklch(0.12 0.05 275 / 0.45);
+  --am-adire: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40'%3E%3Cg fill='none' stroke='%23c2653d' stroke-opacity='.22' stroke-width='1.5'%3E%3Cpath d='M0 20 L10 10 L20 20 L30 10 L40 20 M0 40 L10 30 L20 40 M20 0 L30 10 L40 0'/%3E%3Ccircle cx='20' cy='20' r='3' fill='%23c2653d' fill-opacity='.18' stroke='none'/%3E%3C/g%3E%3C/svg%3E");
+  --am-nsibidi: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='24'%3E%3Cpath d='M4 12h18M30 4v16M38 6l8 12M52 12c4-6 8 6 4 0' fill='none' stroke='%23d9a441' stroke-opacity='.5' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E");
+}
+
+/* Carved-wood panels for cards and menus */
+.am-creator-card,
+.am-auth-card,
+.am-character-panel,
+.am-wardrobe,
+.am-citizen-name-block,
+.am-panel,
+.am-gear-bar {
+  background-color: oklch(0.26 0.05 275);
+  background-image:
+    linear-gradient(135deg, oklch(0.32 0.06 60 / 0.25), transparent 40%),
+    repeating-linear-gradient(92deg, oklch(0.2 0.04 60 / 0.18) 0 2px, transparent 2px 7px),
+    var(--am-adire);
+  border: 1px solid oklch(0.5 0.07 60 / 0.5);
+  box-shadow: inset 0 1px 0 oklch(0.8 0.05 70 / 0.12), var(--am-shadow);
+  color: var(--am-forest-ink);
+}
+
+/* Raffia-style woven border on featured/active items */
+.am-wardrobe-on,
+.am-transport-active,
+.am-skin-active,
+.am-chip.am-transport-active {
+  border-color: var(--am-gold);
+  box-shadow:
+    0 0 0 2px oklch(0.2 0.05 275),
+    0 0 0 3px oklch(0.78 0.11 80 / 0.7),
+    inset 0 0 0 3px oklch(0.6 0.12 75 / 0.25);
+}
+
+.am-wardrobe-item,
+.am-upload-tile,
+.am-creator-thumb {
+  background-color: oklch(0.3 0.06 275);
+  background-image: var(--am-nsibidi);
+  background-repeat: repeat-x;
+  background-position: center bottom 6px;
+  border: 1px dashed oklch(0.55 0.08 60 / 0.5);
+  color: var(--am-forest-ink);
+}
+
+/* Nsibidi-style divider between sections */
+.am-gear-label,
+.am-panel-tip,
+.am-outfit-tips {
+  background-image: var(--am-nsibidi);
+  background-repeat: repeat-x;
+  background-position: left bottom;
+  padding-bottom: 6px;
+}
+
+/* Floating bottom nav as a game launcher strip */
+.am-nav-mobile {
+  background-color: oklch(0.2 0.05 275 / 0.92);
+  background-image: repeating-linear-gradient(90deg, oklch(0.5 0.1 40 / 0.08) 0 1px, transparent 1px 22px);
+  border: 1px solid oklch(0.5 0.07 60 / 0.45);
+  border-radius: 22px;
+  box-shadow: var(--am-shadow);
+  backdrop-filter: blur(6px);
+}
+
+.am-btn-primary {
+  background-color: oklch(0.6 0.15 40);
+  background-image: var(--am-adire);
+  color: oklch(0.99 0.01 80);
+  border: 1px solid oklch(0.78 0.11 80 / 0.6);
+}
+
+.am-btn-secondary {
+  background-color: oklch(0.3 0.09 275);
+  color: var(--am-forest-ink);
+  border: 1px solid oklch(0.55 0.08 60 / 0.5);
+}
+
+.am-chip {
+  background-color: oklch(0.3 0.08 275);
+  color: var(--am-forest-ink);
+  border: 1px solid oklch(0.5 0.07 60 / 0.45);
+}
+
+.am-mission-hud,
+.am-creator-overlay,
+.am-auth-backdrop {
+  background-color: oklch(0.14 0.04 275 / 0.82);
+}
+
+.am-save-pill {
+  background: var(--am-mint-soft);
+  color: oklch(0.9 0.05 165);
+}
+
+.am-save-pill-guest {
+  background: var(--am-gold-soft);
+  color: oklch(0.92 0.06 85);
+}
+
+.am-auth-error {
+  background: oklch(0.36 0.09 25);
+  color: oklch(0.95 0.04 25);
+}
