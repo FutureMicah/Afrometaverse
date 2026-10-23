@@ -1,3 +1,9 @@
 [build]
   command = "bun run build"
   publish = "dist"
+
+# SPA fallback: every route serves index.html so client-side routes survive a refresh.
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

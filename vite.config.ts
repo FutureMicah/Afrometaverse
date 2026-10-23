@@ -7,9 +7,13 @@
 import { defineConfig } from "@lovable.dev/vite-tanstack-config";
 
 export default defineConfig({
+  // Static SPA build: no Nitro server bundle (no Cloudflare target). Output goes to dist/.
+  nitro: false,
   tanstackStart: {
     // Redirect TanStack Start's bundled server entry to src/server.ts (our SSR error wrapper).
     // nitro/vite builds from this
     server: { entry: "server" },
+    // SPA mode: TanStack writes a single client shell instead of SSR'ing routes.
+    spa: { enabled: true },
   },
 });
