@@ -7,11 +7,12 @@
 import { useMemo, useRef } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
+import { SCENE_PALETTE } from "@/lib/scenePalette";
 
 /** Adobe / bature mud — darkens when wet, dusty in Harmattan */
 export function MudWallMaterial({
   climateIntensity = 0,
-  baseColor = "#c4a06a",
+  baseColor = SCENE_PALETTE.wallOchre,
 }: {
   climateIntensity?: number; // 0 dry … 1 saturated rain
   baseColor?: string;
@@ -19,7 +20,7 @@ export function MudWallMaterial({
   const props = useMemo(() => {
     const wet = climateIntensity > 0.45;
     return {
-      color: wet ? "#5D4037" : baseColor,
+      color: wet ? SCENE_PALETTE.wetMud : baseColor,
       roughness: 1.0 - climateIntensity * 0.55,
       metalness: climateIntensity * 0.12,
     };
@@ -43,8 +44,8 @@ export function ThatchedRoof({
   isRainy?: boolean;
 }) {
   const ref = useRef<THREE.Group>(null);
-  const thatch = "#7a5c28";
-  const thatchDark = "#5c4218";
+  const thatch = SCENE_PALETTE.thatch;
+  const thatchDark = SCENE_PALETTE.thatchDark;
 
   useFrame(({ clock }) => {
     if (!ref.current) return;
@@ -87,7 +88,7 @@ export function ThatchedRoof({
               position={[Math.cos(a) * radius * 0.7, -0.05, Math.sin(a) * radius * 0.7]}
             >
               <sphereGeometry args={[0.03, 4, 4]} />
-              <meshBasicMaterial color="#8ab4d4" transparent opacity={0.45} />
+              <meshBasicMaterial color={SCENE_PALETTE.waterLight} transparent opacity={0.45} />
             </mesh>
           );
         })}
@@ -100,7 +101,7 @@ export function MudHut({
   position = [0, 0, 0],
   rotation = 0,
   style = "round",
-  wallColor = "#c4a06a",
+  wallColor = SCENE_PALETTE.wallOchre,
   scale = 1,
   climateIntensity = 0,
   windIntensity = 0.3,
@@ -121,7 +122,7 @@ export function MudHut({
     <group position={position} rotation={[0, rotation, 0]}>
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.01, 0]} receiveShadow>
         <circleGeometry args={[w * 0.75, 12]} />
-        <meshStandardMaterial color="#a87848" roughness={1} />
+        <meshStandardMaterial color={SCENE_PALETTE.dirtLight} roughness={1} />
       </mesh>
 
       <mesh castShadow receiveShadow position={[0, h / 2, 0]}>
@@ -139,12 +140,12 @@ export function MudHut({
         ) : (
           <boxGeometry args={[w * 1.04, 0.16 * scale, w * 0.94]} />
         )}
-        <meshStandardMaterial color="#d4b896" roughness={1} />
+        <meshStandardMaterial color={SCENE_PALETTE.wallPale} roughness={1} />
       </mesh>
 
       <mesh position={[0, h * 0.35, isRound ? w * 0.5 : w * 0.46]} castShadow>
         <boxGeometry args={[0.3 * scale, h * 0.55, 0.04]} />
-        <meshStandardMaterial color="#2a1c10" roughness={1} />
+        <meshStandardMaterial color={SCENE_PALETTE.doorWood} roughness={1} />
       </mesh>
 
       <group position={[0, h + 0.05, 0]}>
@@ -190,7 +191,7 @@ export function CompoundWall({
       {posts.map((p, i) => (
         <mesh key={i} position={[p.x, 0.35, p.z]} rotation={[0, p.rot, 0]} castShadow>
           <boxGeometry args={[0.55, 0.7, 0.12]} />
-          <MudWallMaterial climateIntensity={climateIntensity} baseColor="#b8956a" />
+          <MudWallMaterial climateIntensity={climateIntensity} baseColor={SCENE_PALETTE.wallWarm} />
         </mesh>
       ))}
     </group>
@@ -212,7 +213,7 @@ export function YorubaCompound({
       <MudHut
         position={[-1.4, 0, -0.8]}
         style="rect"
-        wallColor="#c9a66b"
+        wallColor={SCENE_PALETTE.wallSand}
         climateIntensity={climateIntensity}
         windIntensity={windIntensity}
       />
@@ -220,7 +221,7 @@ export function YorubaCompound({
         position={[1.3, 0, -0.6]}
         rotation={0.4}
         style="round"
-        wallColor="#b8895c"
+        wallColor={SCENE_PALETTE.clayWall}
         scale={0.9}
         climateIntensity={climateIntensity}
         windIntensity={windIntensity}
@@ -229,7 +230,7 @@ export function YorubaCompound({
         position={[0.2, 0, 1.2]}
         rotation={-0.3}
         style="rect"
-        wallColor="#d2b48c"
+        wallColor={SCENE_PALETTE.wallTan}
         scale={0.95}
         climateIntensity={climateIntensity}
         windIntensity={windIntensity}
@@ -238,7 +239,7 @@ export function YorubaCompound({
       {/* central courtyard hearth pad */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.02, 0.15]} receiveShadow>
         <circleGeometry args={[0.7, 16]} />
-        <meshStandardMaterial color="#6b4a2e" roughness={1} />
+        <meshStandardMaterial color={SCENE_PALETTE.earth} roughness={1} />
       </mesh>
     </group>
   );
@@ -262,7 +263,7 @@ export function IgboCompound({
           position={[ox, 0, i % 2 === 0 ? -0.5 : 0.6]}
           rotation={i * 0.15}
           style={i === 1 ? "round" : "rect"}
-          wallColor={["#c4a06a", "#b8895c", "#d2b48c"][i]}
+          wallColor={[SCENE_PALETTE.wallOchre, SCENE_PALETTE.clayWall, SCENE_PALETTE.wallTan][i]}
           scale={0.85 + i * 0.05}
           climateIntensity={climateIntensity}
           windIntensity={windIntensity}
@@ -277,7 +278,7 @@ export function IgboCompound({
       ].map(([x, z, w, d], i) => (
         <mesh key={i} position={[x as number, 0.28, z as number]} castShadow>
           <boxGeometry args={[w as number, 0.55, d as number]} />
-          <MudWallMaterial climateIntensity={climateIntensity} baseColor="#a89070" />
+          <MudWallMaterial climateIntensity={climateIntensity} baseColor={SCENE_PALETTE.mudWallDusk} />
         </mesh>
       ))}
     </group>
@@ -310,32 +311,32 @@ export function VillageHearth({ position = [0, 0, 0] as [number, number, number]
         return (
           <mesh key={i} position={[Math.cos(a) * 0.35, 0.08, Math.sin(a) * 0.35]} castShadow>
             <boxGeometry args={[0.14, 0.12, 0.1]} />
-            <meshStandardMaterial color="#5a5348" roughness={1} />
+            <meshStandardMaterial color={SCENE_PALETTE.greyBrown} roughness={1} />
           </mesh>
         );
       })}
       {/* logs */}
       <mesh position={[0, 0.1, 0]} rotation={[0, 0.4, 0.1]} castShadow>
         <cylinderGeometry args={[0.05, 0.06, 0.55, 6]} />
-        <meshStandardMaterial color="#3d2914" roughness={1} />
+        <meshStandardMaterial color={SCENE_PALETTE.mudDeepBrown} roughness={1} />
       </mesh>
       <mesh position={[0.05, 0.12, 0.05]} rotation={[0.2, -0.6, 0]} castShadow>
         <cylinderGeometry args={[0.04, 0.05, 0.45, 6]} />
-        <meshStandardMaterial color="#4a3420" roughness={1} />
+        <meshStandardMaterial color={SCENE_PALETTE.timberDark} roughness={1} />
       </mesh>
       {/* flame billboard */}
       <mesh ref={flame} position={[0, 0.35, 0]}>
         <planeGeometry args={[0.35, 0.55]} />
-        <meshBasicMaterial color="#FF6A00" transparent opacity={0.85} side={THREE.DoubleSide} />
+        <meshBasicMaterial color={SCENE_PALETTE.fireOrange} transparent opacity={0.85} side={THREE.DoubleSide} />
       </mesh>
       <mesh position={[0, 0.28, 0]}>
         <planeGeometry args={[0.22, 0.35]} />
-        <meshBasicMaterial color="#FFD54F" transparent opacity={0.7} side={THREE.DoubleSide} />
+        <meshBasicMaterial color={SCENE_PALETTE.goldSun} transparent opacity={0.7} side={THREE.DoubleSide} />
       </mesh>
       <pointLight
         ref={light}
         position={[position[0], 0.6, position[2]]}
-        color="#FFA040"
+        color={SCENE_PALETTE.amberFlame}
         distance={7}
         decay={2}
         castShadow
@@ -366,7 +367,7 @@ function SmokePuffs() {
       {[0, 1, 2, 3].map((i) => (
         <mesh key={i} position={[0, 0.5, 0]}>
           <sphereGeometry args={[0.12, 6, 6]} />
-          <meshBasicMaterial color="#9a9a9a" transparent opacity={0.3} />
+          <meshBasicMaterial color={SCENE_PALETTE.stoneGrey} transparent opacity={0.3} />
         </mesh>
       ))}
     </group>

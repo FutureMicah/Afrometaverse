@@ -6,6 +6,7 @@
 import { useMemo, useRef } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
+import { SCENE_PALETTE } from "@/lib/scenePalette";
 
 /** Daytime heat / Harmattan dust motes */
 export function DustMotes({
@@ -49,7 +50,7 @@ export function DustMotes({
   return (
     <instancedMesh ref={mesh} args={[undefined, undefined, count]}>
       <sphereGeometry args={[1, 4, 4]} />
-      <meshBasicMaterial color="#FFE4B5" transparent opacity={0.22} depthWrite={false} />
+      <meshBasicMaterial color={SCENE_PALETTE.moccasin} transparent opacity={0.22} depthWrite={false} />
     </instancedMesh>
   );
 }
@@ -86,7 +87,7 @@ export function SpiritFireflies({
   return (
     <instancedMesh ref={mesh} args={[undefined, undefined, count]}>
       <sphereGeometry args={[1, 6, 6]} />
-      <meshBasicMaterial color="#A7FF83" transparent opacity={0.85} depthWrite={false} />
+      <meshBasicMaterial color={SCENE_PALETTE.fireflyGreen} transparent opacity={0.85} depthWrite={false} />
     </instancedMesh>
   );
 }
@@ -135,7 +136,7 @@ export function SavannahGrass({
     <instancedMesh ref={mesh} args={[undefined, undefined, placements.length]}>
       <planeGeometry args={[1, 1]} />
       <meshStandardMaterial
-        color="#9a8b3a"
+        color={SCENE_PALETTE.dryGrass}
         transparent
         opacity={0.85}
         side={THREE.DoubleSide}
@@ -179,7 +180,7 @@ export function LightningFlash({ active = false }: { active?: boolean }) {
 
   if (!active) return null;
 
-  return <pointLight ref={light} color="#e0f0ff" intensity={0} distance={80} decay={1.5} />;
+  return <pointLight ref={light} color={SCENE_PALETTE.moonlight} intensity={0} distance={80} decay={1.5} />;
 }
 
 /** Sacred grove soft mist patch */
@@ -200,9 +201,9 @@ export function SacredGroveMist({
     <group position={position}>
       <mesh ref={ref}>
         <sphereGeometry args={[3.5, 12, 12]} />
-        <meshBasicMaterial color="#C2D1B8" transparent opacity={0.12} depthWrite={false} />
+        <meshBasicMaterial color={SCENE_PALETTE.mistGreen} transparent opacity={0.12} depthWrite={false} />
       </mesh>
-      <pointLight color="#E1FFD7" intensity={0.35} distance={12} />
+      <pointLight color={SCENE_PALETTE.wispGreen} intensity={0.35} distance={12} />
     </group>
   );
 }

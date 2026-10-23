@@ -38,41 +38,42 @@ import {
   LightningFlash,
   SacredGroveMist,
 } from "@/components/afrometaverse/AtmosphericLife";
+import { SCENE_PALETTE } from "@/lib/scenePalette";
 
 const DISTRICT_LAYOUT = {
-  "town-market": { x: -3, z: 2.5, color: "#f59e0b", label: "Town Market", neon: "#fbbf24" },
-  "civic-centre": { x: 0, z: -1.5, color: "#14b8a6", label: "Civic Centre", neon: "#2dd4bf" },
-  creekside: { x: -5.5, z: -3.5, color: "#3b82f6", label: "Creekside", neon: "#60a5fa" },
-  port: { x: 5.5, z: 2.5, color: "#f97316", label: "The Port", neon: "#fb923c" },
+  "town-market": { x: -3, z: 2.5, color: SCENE_PALETTE.amber, label: "Town Market", neon: SCENE_PALETTE.amberNeon },
+  "civic-centre": { x: 0, z: -1.5, color: SCENE_PALETTE.teal, label: "Civic Centre", neon: SCENE_PALETTE.tealNeon },
+  creekside: { x: -5.5, z: -3.5, color: SCENE_PALETTE.blue, label: "Creekside", neon: SCENE_PALETTE.blueNeon },
+  port: { x: 5.5, z: 2.5, color: SCENE_PALETTE.orange, label: "The Port", neon: SCENE_PALETTE.orangeNeon },
 } as const;
 
 const BOUNDS = { minX: -14, maxX: 14, minZ: -11, maxZ: 12 };
 
 /** Ground + road palette tuned to PH laterite / village dirt refs */
 const N = {
-  asphalt: "#1a1a22",
-  asphaltLine: "#a78bfa",
-  sidewalk: "#2a2a35",
+  asphalt: SCENE_PALETTE.asphalt,
+  asphaltLine: SCENE_PALETTE.purpleNeonSoft,
+  sidewalk: SCENE_PALETTE.sidewalk,
   /** Red laterite carriageway (refs: rural PH roads) */
-  laterite: "#b4532a",
-  lateriteDark: "#8a3a1c",
-  lateriteLight: "#d4a574",
-  dust: "#c4a574",
-  earth: "#6b4a2e",
-  earthDeep: "#3d2a18",
-  grassEdge: "#4a5c28",
-  grassDry: "#7a8a3a",
-  towerDark: "#12121a",
-  towerMid: "#1e1e2e",
-  towerWarm: "#2a1f28",
-  neonPink: "#ff2d95",
-  neonCyan: "#22d3ee",
-  neonLime: "#a3e635",
-  neonPurple: "#c084fc",
-  neonAmber: "#fbbf24",
-  neonOrange: "#fb923c",
-  water: "#0c4a6e",
-  fog: "#1a0a2e",
+  laterite: SCENE_PALETTE.laterite,
+  lateriteDark: SCENE_PALETTE.lateriteDark,
+  lateriteLight: SCENE_PALETTE.lateriteLight,
+  dust: SCENE_PALETTE.dust,
+  earth: SCENE_PALETTE.earth,
+  earthDeep: SCENE_PALETTE.earthDeep,
+  grassEdge: SCENE_PALETTE.grassEdge,
+  grassDry: SCENE_PALETTE.grassDry,
+  towerDark: SCENE_PALETTE.towerDark,
+  towerMid: SCENE_PALETTE.towerMid,
+  towerWarm: SCENE_PALETTE.towerWarm,
+  neonPink: SCENE_PALETTE.pinkNeon,
+  neonCyan: SCENE_PALETTE.cyanNeon,
+  neonLime: SCENE_PALETTE.limeNeon,
+  neonPurple: SCENE_PALETTE.purpleNeon,
+  neonAmber: SCENE_PALETTE.amberNeon,
+  neonOrange: SCENE_PALETTE.orangeNeon,
+  water: SCENE_PALETTE.waterDeep,
+  fog: SCENE_PALETTE.fogNight,
 };
 
 type TowerSpec = {
@@ -124,20 +125,20 @@ const TOWERS: TowerSpec[] = [
 function VillageDaySky() {
   return (
     <>
-      <color attach="background" args={["#b8c9d4"]} />
-      <fog attach="fog" args={["#cbb892", 16, 48]} />
+      <color attach="background" args={[SCENE_PALETTE.skyHaze]} />
+      <fog attach="fog" args={[SCENE_PALETTE.fogSand, 16, 48]} />
       <ambientLight intensity={0.62} />
-      <hemisphereLight args={["#dfe8f0", "#7a5a32", 0.5]} />
+      <hemisphereLight args={[SCENE_PALETTE.skyPale, SCENE_PALETTE.groundBrown, 0.5]} />
       <directionalLight
         position={[12, 20, 8]}
         intensity={1.45}
-        color="#ffe8c8"
+        color={SCENE_PALETTE.sunWarm}
         castShadow
         shadow-mapSize-width={2048}
         shadow-mapSize-height={2048}
       />
-      <directionalLight position={[-8, 6, -5]} intensity={0.42} color="#9eb6c8" />
-      <directionalLight position={[0, 8, -12]} intensity={0.35} color="#f5d0fe" />
+      <directionalLight position={[-8, 6, -5]} intensity={0.42} color={SCENE_PALETTE.sunBlue} />
+      <directionalLight position={[0, 8, -12]} intensity={0.35} color={SCENE_PALETTE.lavenderLight} />
     </>
   );
 }
@@ -268,8 +269,8 @@ function NeonTower({ spec }: { spec: TowerSpec }) {
           <mesh key={fi} position={[0, y, spec.d / 2 + 0.02]}>
             <planeGeometry args={[spec.w * 0.78, 0.22]} />
             <meshStandardMaterial
-              color={lit ? spec.neon : "#0f172a"}
-              emissive={lit ? spec.neon : "#000000"}
+              color={lit ? spec.neon : SCENE_PALETTE.nightSlate}
+              emissive={lit ? spec.neon : SCENE_PALETTE.black}
               emissiveIntensity={lit ? 0.65 : 0}
               transparent
               opacity={0.9}
@@ -286,7 +287,7 @@ function NeonTower({ spec }: { spec: TowerSpec }) {
       {spec.h > 5 && (
         <mesh position={[0, spec.h + 0.7, 0]}>
           <cylinderGeometry args={[0.03, 0.03, 1.2, 5]} />
-          <meshStandardMaterial color="#94a3b8" emissive={spec.neon} emissiveIntensity={0.3} />
+          <meshStandardMaterial color={SCENE_PALETTE.neonSlate} emissive={spec.neon} emissiveIntensity={0.3} />
         </mesh>
       )}
     </group>
@@ -339,7 +340,7 @@ function DistrictHubNeon({
       <mesh position={[0, 0.05, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
         <circleGeometry args={[2.2, 24]} />
         <meshStandardMaterial
-          color="#1a1025"
+          color={SCENE_PALETTE.shadowPlum}
           emissive={neon}
           emissiveIntensity={lit ? 0.25 : 0.08}
         />
@@ -347,7 +348,7 @@ function DistrictHubNeon({
       <mesh castShadow receiveShadow position={[0, 1.6, 0]}>
         <boxGeometry args={[2.0, 3.2, 2.0]} />
         <meshStandardMaterial
-          color={lit ? "#2a2035" : color}
+          color={lit ? SCENE_PALETTE.litGlassDark : color}
           emissive={neon}
           emissiveIntensity={lit ? 0.45 : 0.12}
           metalness={0.3}
@@ -370,7 +371,7 @@ function DistrictHubNeon({
       {near && (
         <mesh position={[0, 4.2, 0]}>
           <sphereGeometry args={[0.22, 12, 12]} />
-          <meshStandardMaterial color="#fef08a" emissive="#facc15" emissiveIntensity={1.2} />
+          <meshStandardMaterial color={SCENE_PALETTE.yellowLight} emissive={SCENE_PALETTE.yellowGlow} emissiveIntensity={1.2} />
         </mesh>
       )}
       <NeonSign x={0} y={2.4} z={1.08} w={1.6} h={0.35} color={neon} />
@@ -406,7 +407,7 @@ function MarketNeonLane() {
           {[ -0.35, 0.35 ].map((px, j) => (
             <mesh key={j} position={[px, 0.7, 0]}>
               <cylinderGeometry args={[0.03, 0.04, 1.4, 5]} />
-              <meshStandardMaterial color="#334155" />
+              <meshStandardMaterial color={SCENE_PALETTE.slate} />
             </mesh>
           ))}
           <mesh position={[0, 1.35, 0]} rotation={[0.15, 0, 0]}>
@@ -415,7 +416,7 @@ function MarketNeonLane() {
           </mesh>
           <mesh position={[0, 0.45, 0]} castShadow>
             <boxGeometry args={[0.7, 0.08, 0.5]} />
-            <meshStandardMaterial color="#1e293b" />
+            <meshStandardMaterial color={SCENE_PALETTE.slateDark} />
           </mesh>
         </group>
       ))}
@@ -444,7 +445,7 @@ function CreekWater() {
       <mesh ref={ref} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
         <circleGeometry args={[3.8, 28]} />
         <meshStandardMaterial
-          color="#3d4a33"
+          color={SCENE_PALETTE.pondGreen}
           transparent
           opacity={0.88}
           roughness={0.35}
@@ -465,22 +466,22 @@ function PortNeon() {
     <group position={[6.5, 0, 2.8]}>
       <mesh position={[1.5, 3.0, 0]} castShadow>
         <boxGeometry args={[0.18, 6, 0.18]} />
-        <meshStandardMaterial color="#fb923c" emissive="#fb923c" emissiveIntensity={0.35} />
+        <meshStandardMaterial color={SCENE_PALETTE.orangeNeon} emissive={SCENE_PALETTE.orangeNeon} emissiveIntensity={0.35} />
       </mesh>
       <mesh position={[2.8, 3.0, 0]} castShadow>
         <boxGeometry args={[0.18, 6, 0.18]} />
-        <meshStandardMaterial color="#fb923c" emissive="#fb923c" emissiveIntensity={0.35} />
+        <meshStandardMaterial color={SCENE_PALETTE.orangeNeon} emissive={SCENE_PALETTE.orangeNeon} emissiveIntensity={0.35} />
       </mesh>
       <mesh position={[2.15, 6.0, 0.6]} castShadow>
         <boxGeometry args={[2.2, 0.2, 0.2]} />
-        <meshStandardMaterial color="#fdba74" emissive="#f97316" emissiveIntensity={0.5} />
+        <meshStandardMaterial color={SCENE_PALETTE.orangeLight} emissive={SCENE_PALETTE.orange} emissiveIntensity={0.5} />
       </mesh>
       {[0, 1, 2].map((i) => (
         <mesh key={i} position={[0, 0.55 + (i % 2) * 0.7, 1.4 + i * 0.35]} castShadow>
           <boxGeometry args={[1.3, 0.7, 0.7]} />
           <meshStandardMaterial
-            color={["#0ea5e9", "#eab308", "#a855f7"][i]}
-            emissive={["#0ea5e9", "#eab308", "#a855f7"][i]}
+            color={[SCENE_PALETTE.blueSky, SCENE_PALETTE.yellow, SCENE_PALETTE.purple][i]}
+            emissive={[SCENE_PALETTE.blueSky, SCENE_PALETTE.yellow, SCENE_PALETTE.purple][i]}
             emissiveIntensity={0.2}
           />
         </mesh>
@@ -510,7 +511,7 @@ function StreetLampsNeon() {
           <group key={i} position={[x, 0, z]}>
             <mesh position={[0, 1.4, 0]}>
               <cylinderGeometry args={[0.04, 0.06, 2.8, 6]} />
-              <meshStandardMaterial color="#334155" />
+              <meshStandardMaterial color={SCENE_PALETTE.slate} />
             </mesh>
             <mesh position={[0, 2.85, 0]}>
               <sphereGeometry args={[0.14, 8, 8]} />
@@ -552,11 +553,11 @@ function SimpleVehicle({
         </mesh>
         <mesh position={[0.25, 0.18, 0]} rotation={[0, 0, Math.PI / 2]}>
           <torusGeometry args={[0.14, 0.035, 5, 10]} />
-          <meshStandardMaterial color="#0f172a" />
+          <meshStandardMaterial color={SCENE_PALETTE.nightSlate} />
         </mesh>
         <mesh position={[-0.25, 0.18, 0]} rotation={[0, 0, Math.PI / 2]}>
           <torusGeometry args={[0.14, 0.035, 5, 10]} />
-          <meshStandardMaterial color="#0f172a" />
+          <meshStandardMaterial color={SCENE_PALETTE.nightSlate} />
         </mesh>
       </group>
     );
@@ -570,7 +571,7 @@ function SimpleVehicle({
       </mesh>
       <mesh position={[0, 0.7, 0]}>
         <capsuleGeometry args={[0.22, 0.2, 4, 8]} />
-        <meshStandardMaterial color="#e2e8f0" transparent opacity={0.5} />
+        <meshStandardMaterial color={SCENE_PALETTE.glassGrey} transparent opacity={0.5} />
       </mesh>
     </group>
   );
@@ -930,18 +931,18 @@ function PlayerController({
 
   const color =
     transport === "okada"
-      ? "#f97316"
+      ? SCENE_PALETTE.orange
       : transport === "taxi"
-        ? "#eab308"
+        ? SCENE_PALETTE.yellow
         : transport === "ferry"
-          ? "#0ea5e9"
+          ? SCENE_PALETTE.blueSky
           : transport === "keke"
-            ? "#22c55e"
+            ? SCENE_PALETTE.green
             : transport === "scooter"
-              ? "#a855f7"
+              ? SCENE_PALETTE.purple
               : transport === "bicycle"
-                ? "#64748b"
-                : "#f8fafc";
+                ? SCENE_PALETTE.slateGrey
+                : SCENE_PALETTE.white;
 
   return (
     <group ref={group} position={position}>
@@ -962,12 +963,12 @@ function ParkedVehicles() {
   const worldVehicles = useRoamStore((s) => s.worldVehicles);
   const nearVehicleId = useRoamStore((s) => s.nearVehicleId);
   const colors: Record<string, string> = {
-    bicycle: "#64748b",
-    scooter: "#a855f7",
-    keke: "#22c55e",
-    okada: "#f97316",
-    taxi: "#eab308",
-    ferry: "#0ea5e9",
+    bicycle: SCENE_PALETTE.slateGrey,
+    scooter: SCENE_PALETTE.purple,
+    keke: SCENE_PALETTE.green,
+    okada: SCENE_PALETTE.orange,
+    taxi: SCENE_PALETTE.yellow,
+    ferry: SCENE_PALETTE.blueSky,
   };
   return (
     <group>
@@ -975,11 +976,11 @@ function ParkedVehicles() {
         .filter((v) => !v.occupied)
         .map((v) => (
           <group key={v.id} position={v.position} rotation={[0, v.facing, 0]}>
-            <SimpleVehicle position={[0, 0, 0]} color={colors[v.kind] ?? "#94a3b8"} kind={v.kind} />
+            <SimpleVehicle position={[0, 0, 0]} color={colors[v.kind] ?? SCENE_PALETTE.neonSlate} kind={v.kind} />
             {nearVehicleId === v.id && (
               <mesh position={[0, 1.5, 0]}>
                 <sphereGeometry args={[0.12, 8, 8]} />
-                <meshStandardMaterial color="#fef08a" emissive="#facc15" emissiveIntensity={1} />
+                <meshStandardMaterial color={SCENE_PALETTE.yellowLight} emissive={SCENE_PALETTE.yellowGlow} emissiveIntensity={1} />
               </mesh>
             )}
           </group>
@@ -1014,12 +1015,12 @@ const ROAD_PATHS: [number, number][][] = [
 function TrafficFlow() {
   const vehicles = useMemo(
     () => [
-      { path: 0, speed: 0.12, t0: 0, color: "#eab308", kind: "taxi" as const },
-      { path: 0, speed: 0.18, t0: 0.4, color: "#f97316", kind: "okada" as const },
-      { path: 1, speed: 0.15, t0: 0.2, color: "#a855f7", kind: "scooter" as const },
-      { path: 1, speed: 0.2, t0: 0.65, color: "#22c55e", kind: "keke" as const },
-      { path: 2, speed: 0.11, t0: 0.1, color: "#fbbf24", kind: "taxi" as const },
-      { path: 2, speed: 0.17, t0: 0.55, color: "#fb923c", kind: "okada" as const },
+      { path: 0, speed: 0.12, t0: 0, color: SCENE_PALETTE.yellow, kind: "taxi" as const },
+      { path: 0, speed: 0.18, t0: 0.4, color: SCENE_PALETTE.orange, kind: "okada" as const },
+      { path: 1, speed: 0.15, t0: 0.2, color: SCENE_PALETTE.purple, kind: "scooter" as const },
+      { path: 1, speed: 0.2, t0: 0.65, color: SCENE_PALETTE.green, kind: "keke" as const },
+      { path: 2, speed: 0.11, t0: 0.1, color: SCENE_PALETTE.amberNeon, kind: "taxi" as const },
+      { path: 2, speed: 0.17, t0: 0.55, color: SCENE_PALETTE.orangeNeon, kind: "okada" as const },
     ],
     [],
   );
@@ -1059,7 +1060,7 @@ function TrafficFlow() {
 
 function NpcCrowd() {
   const npcs = useMemo(() => {
-    const skins = ["#5c3317", "#8d5524", "#a0673f", "#c68642", "#d4a574", "#6b4423"];
+    const skins = [SCENE_PALETTE.skinDeep, SCENE_PALETTE.skinMid, SCENE_PALETTE.skinTan, SCENE_PALETTE.skinGold, SCENE_PALETTE.lateriteLight, SCENE_PALETTE.skinBrown];
     const shapes = ["slim", "average", "curvy", "athletic", "broad"] as const;
     return Array.from({ length: 8 }, (_, i) => ({
       appearance: {
@@ -1068,7 +1069,7 @@ function NpcCrowd() {
         height: (["short", "average", "tall"] as const)[i % 3],
         skin: skins[i % skins.length],
         hair: (["braids", "short", "afro", "bob", "bun", "long"] as const)[i % 6],
-        hairColor: "#1a1a1a",
+        hairColor: SCENE_PALETTE.ink,
         displayName: `Npc${i}`,
       },
       equipped: {
@@ -1167,16 +1168,16 @@ function WantedPatrols() {
         >
           <mesh position={[0, 0.5, 0]} castShadow>
             <capsuleGeometry args={[0.16, 0.4, 4, 8]} />
-            <meshStandardMaterial color="#0f766e" emissive="#14b8a6" emissiveIntensity={0.4} />
+            <meshStandardMaterial color={SCENE_PALETTE.tealDeep} emissive={SCENE_PALETTE.teal} emissiveIntensity={0.4} />
           </mesh>
           <mesh position={[0, 0.95, 0]}>
             <sphereGeometry args={[0.14, 8, 8]} />
-            <meshStandardMaterial color="#fde68a" />
+            <meshStandardMaterial color={SCENE_PALETTE.yellowPale} />
           </mesh>
           {wantedLevel >= 3 && (
             <mesh position={[0, 1.35, 0]}>
               <sphereGeometry args={[0.1, 8, 8]} />
-              <meshStandardMaterial color="#ef4444" emissive="#dc2626" emissiveIntensity={0.9} />
+              <meshStandardMaterial color={SCENE_PALETTE.red} emissive={SCENE_PALETTE.redGlow} emissiveIntensity={0.9} />
             </mesh>
           )}
         </group>
@@ -1244,7 +1245,7 @@ export function AfroMetaverseScene({
     <Canvas
       shadows
       camera={{ position: [0, 10, 15], fov: 45 }}
-      style={{ width: "100%", height: "100%", background: "#b8c9d4" }}
+      style={{ width: "100%", height: "100%", background: SCENE_PALETTE.skyHaze }}
       tabIndex={0}
     >
       <DayNightSky dust={dust} />
@@ -1303,7 +1304,7 @@ export function AfroMetaverseScene({
           </mesh>
           <mesh position={[0, 0.9, 0]} castShadow>
             <cylinderGeometry args={[0.06, 0.08, 1.8, 6]} />
-            <meshStandardMaterial color="#5c4030" roughness={1} />
+            <meshStandardMaterial color={SCENE_PALETTE.woodDark} roughness={1} />
           </mesh>
           <mesh position={[0, 1.85, 0]}>
             <boxGeometry args={[0.55, 0.28, 0.06]} />

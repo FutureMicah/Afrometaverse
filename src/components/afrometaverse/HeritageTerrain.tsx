@@ -13,6 +13,7 @@
 import { useMemo, useRef } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
+import { SCENE_PALETTE } from "@/lib/scenePalette";
 
 export type BiomeId = "SAVANNAH" | "PLATEAU" | "MOUNTAIN" | "COASTAL";
 
@@ -317,7 +318,7 @@ export function BiomeFlora({ count = 180 }: { count?: number }) {
   return (
     <instancedMesh ref={meshRef} args={[undefined, undefined, placements.length]} castShadow>
       <coneGeometry args={[0.35, 1.4, 5]} />
-      <meshStandardMaterial color="#4a5c28" roughness={1} />
+      <meshStandardMaterial color={SCENE_PALETTE.grassEdge} roughness={1} />
     </instancedMesh>
   );
 }
@@ -334,9 +335,9 @@ export function LivingWater({
 }) {
   const ref = useRef<THREE.Mesh>(null);
   const config = {
-    sea: { color: "#1a3c5e", opacity: 0.92, speed: 0.9, amp: 0.04 },
-    river: { color: "#2b4d42", opacity: 0.9, speed: 1.6, amp: 0.025 },
-    pond: { color: "#3d4a33", opacity: 0.88, speed: 0.55, amp: 0.012 },
+    sea: { color: SCENE_PALETTE.seaBlue, opacity: 0.92, speed: 0.9, amp: 0.04 },
+    river: { color: SCENE_PALETTE.riverTeal, opacity: 0.9, speed: 1.6, amp: 0.025 },
+    pond: { color: SCENE_PALETTE.pondGreen, opacity: 0.88, speed: 0.55, amp: 0.012 },
   }[type];
 
   useFrame(({ clock }) => {
@@ -360,7 +361,7 @@ export function LivingWater({
       </mesh>
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.015, 0]}>
         <ringGeometry args={[radius * 0.97, radius * 1.15, 28]} />
-        <meshStandardMaterial color="#6b4a2e" roughness={1} />
+        <meshStandardMaterial color={SCENE_PALETTE.earth} roughness={1} />
       </mesh>
     </group>
   );

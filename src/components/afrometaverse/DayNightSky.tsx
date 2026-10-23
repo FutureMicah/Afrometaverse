@@ -6,6 +6,7 @@ import { atmosphereAt, MOON_COLOR } from "@/lib/atmosphere";
 import { currentRenderTier, type RenderTier } from "@/lib/renderTier";
 import { fogEndMeters } from "@/lib/chunkStreaming";
 import { seasonForDay, type SeasonId } from "@/lib/seasons";
+import { SCENE_PALETTE } from "@/lib/scenePalette";
 
 /**
  * Day/night sky, sun, moon, stars, fog and light (era-progression-spec.md 10.4, 12.2.2).
@@ -91,22 +92,22 @@ export function DayNightSky({ tier, dust = 0, clockRunning = true }: DayNightSky
 
   return (
     <>
-      <color attach="background" args={["#b8c9d4"]} />
-      <fog ref={fogRef} attach="fog" args={["#cbb892", 16, fogEndMeters(resolvedTier)]} />
+      <color attach="background" args={[SCENE_PALETTE.skyHaze]} />
+      <fog ref={fogRef} attach="fog" args={[SCENE_PALETTE.fogSand, 16, fogEndMeters(resolvedTier)]} />
       <ambientLight ref={ambientRef} intensity={0.62} />
-      <hemisphereLight ref={hemiRef} args={["#dfe8f0", "#7a5a32", 0.5]} />
+      <hemisphereLight ref={hemiRef} args={[SCENE_PALETTE.skyPale, SCENE_PALETTE.groundBrown, 0.5]} />
       <directionalLight
         ref={sunRef}
         position={[12, 20, 8]}
         intensity={1.45}
-        color="#ffe8c8"
+        color={SCENE_PALETTE.sunWarm}
         castShadow
         shadow-mapSize-width={2048}
         shadow-mapSize-height={2048}
       />
       <directionalLight ref={moonRef} position={[-12, -20, -8]} intensity={0} color={MOON_COLOR} />
       <points ref={starsRef} geometry={starGeom}>
-        <pointsMaterial color="#ffffff" size={0.6} sizeAttenuation transparent opacity={0} depthWrite={false} />
+        <pointsMaterial color={SCENE_PALETTE.pureWhite} size={0.6} sizeAttenuation transparent opacity={0} depthWrite={false} />
       </points>
     </>
   );

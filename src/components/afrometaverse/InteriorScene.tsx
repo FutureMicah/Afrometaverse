@@ -18,19 +18,20 @@ import {
   type RoomApertures,
 } from "@/lib/interiorWeather";
 import { InteriorAmbience } from "@/lib/interiorAudio";
+import { SCENE_PALETTE } from "@/lib/scenePalette";
 
 /**
  * Built from primitives only (no imported models or textures), so it adds almost no
  * bundle weight. Lazy-loaded from the game only while the player is inside a building.
  */
 
-const MUD = "#8a6a4a";
-const MUD_DARK = "#6b4f36";
-const THATCH = "#b08a4e";
-const MAT = "#c9a46a";
-const WOOD = "#5c4030";
-const CLAY = "#a0623a";
-const FLOOR = "#7d5c3e";
+const MUD = SCENE_PALETTE.mud;
+const MUD_DARK = SCENE_PALETTE.mudDark;
+const THATCH = SCENE_PALETTE.thatchGold;
+const MAT = SCENE_PALETTE.matTan;
+const WOOD = SCENE_PALETTE.woodDark;
+const CLAY = SCENE_PALETTE.clay;
+const FLOOR = SCENE_PALETTE.floorWood;
 
 function Box({ p, s, c, r = 0 }: { p: [number, number, number]; s: [number, number, number]; c: string; r?: number }) {
   return (
@@ -80,9 +81,9 @@ function Hearth({ p }: { p: [number, number, number] }) {
       <Cyl p={[0, 0.15, 0]} rt={0.5} rb={0.6} h={0.3} c={MUD_DARK} />
       <mesh position={[0, 0.35, 0]}>
         <sphereGeometry args={[0.18, 10, 8]} />
-        <meshStandardMaterial color="#ff7a1a" emissive="#ff5a00" emissiveIntensity={1.4} />
+        <meshStandardMaterial color={SCENE_PALETTE.ember} emissive={SCENE_PALETTE.emberDeep} emissiveIntensity={1.4} />
       </mesh>
-      <pointLight position={[0, 0.6, 0]} color="#ff8a3a" intensity={1.1} distance={4} />
+      <pointLight position={[0, 0.6, 0]} color={SCENE_PALETTE.emberLight} intensity={1.1} distance={4} />
     </group>
   );
 }
@@ -136,9 +137,9 @@ function FirewoodHearth({ p }: { p: [number, number, number] }) {
       ))}
       <mesh position={[0, 0.2, 0]}>
         <sphereGeometry args={[0.16, 10, 8]} />
-        <meshStandardMaterial color="#ff7a1a" emissive="#ff5a00" emissiveIntensity={1.4} />
+        <meshStandardMaterial color={SCENE_PALETTE.ember} emissive={SCENE_PALETTE.emberDeep} emissiveIntensity={1.4} />
       </mesh>
-      <pointLight position={[0, 0.6, 0]} color="#ff8a3a" intensity={1.1} distance={4} />
+      <pointLight position={[0, 0.6, 0]} color={SCENE_PALETTE.emberLight} intensity={1.1} distance={4} />
     </group>
   );
 }
@@ -167,17 +168,17 @@ function WoodBowl({ p }: { p: [number, number, number] }) {
 function Goods({ p }: { p: [number, number, number] }) {
   return (
     <group position={p}>
-      <Box p={[-0.35, 0.09, 0]} s={[0.5, 0.14, 0.3]} c="#b8864a" />
-      <Box p={[0.1, 0.09, 0.2]} s={[0.5, 0.14, 0.3]} c="#c79754" r={0.3} />
+      <Box p={[-0.35, 0.09, 0]} s={[0.5, 0.14, 0.3]} c={SCENE_PALETTE.woodWarm} />
+      <Box p={[0.1, 0.09, 0.2]} s={[0.5, 0.14, 0.3]} c={SCENE_PALETTE.wood} r={0.3} />
       <mesh position={[0.45, 0.06, -0.2]}>
         <sphereGeometry args={[0.1, 8, 6]} />
-        <meshStandardMaterial color="#9c3b26" />
+        <meshStandardMaterial color={SCENE_PALETTE.brickRed} />
       </mesh>
       <mesh position={[0.6, 0.06, -0.05]}>
         <sphereGeometry args={[0.1, 8, 6]} />
-        <meshStandardMaterial color="#9c3b26" />
+        <meshStandardMaterial color={SCENE_PALETTE.brickRed} />
       </mesh>
-      <Cyl p={[-0.1, 0.1, -0.35]} rt={0.14} rb={0.1} h={0.18} c="#e9e2d0" />
+      <Cyl p={[-0.1, 0.1, -0.35]} rt={0.14} rb={0.1} h={0.18} c={SCENE_PALETTE.creamPot} />
     </group>
   );
 }
@@ -186,8 +187,8 @@ function Goods({ p }: { p: [number, number, number] }) {
 function ClothBolt({ p }: { p: [number, number, number] }) {
   return (
     <group position={p}>
-      <Cyl p={[0, 0.1, 0]} rt={0.13} rb={0.13} h={0.3} c="#2f5a7a" />
-      <Box p={[0, 0.1, 0]} s={[0.27, 0.02, 0.27]} c="#c9a46a" />
+      <Cyl p={[0, 0.1, 0]} rt={0.13} rb={0.13} h={0.3} c={SCENE_PALETTE.stoneBlue} />
+      <Box p={[0, 0.1, 0]} s={[0.27, 0.02, 0.27]} c={SCENE_PALETTE.matTan} />
     </group>
   );
 }
@@ -231,13 +232,13 @@ function Aperture({
       <group ref={leaf}>
         <mesh position={axis === "x" ? [w / 2, 0, 0] : [0, 0, w / 2]} castShadow>
           <boxGeometry args={axis === "x" ? [w, h, 0.06] : [0.06, h, w]} />
-          <meshStandardMaterial color={aperture.latched ? "#6b4a2e" : WOOD} roughness={0.9} />
+          <meshStandardMaterial color={aperture.latched ? SCENE_PALETTE.earth : WOOD} roughness={0.9} />
         </mesh>
       </group>
       {aperture.latched && (
         <mesh position={axis === "x" ? [w / 2, 0, 0.05] : [0.05, 0, w / 2]}>
           <boxGeometry args={[0.12, 0.12, 0.05]} />
-          <meshStandardMaterial color="#c9a46a" />
+          <meshStandardMaterial color={SCENE_PALETTE.matTan} />
         </mesh>
       )}
     </group>
@@ -257,7 +258,7 @@ function DecorMesh({ p, item, selected }: { p: Placement; item: DecorItem; selec
       <meshStandardMaterial
         color={item.color}
         roughness={0.9}
-        emissive={selected ? "#ffd27a" : "#000000"}
+        emissive={selected ? SCENE_PALETTE.candleGold : SCENE_PALETTE.black}
         emissiveIntensity={selected ? 0.35 : 0}
       />
     </mesh>
@@ -272,7 +273,7 @@ function Ghost({ x, z, item, rot, valid }: { x: number; z: number; item: DecorIt
   return (
     <mesh position={[x, 0.03, z]}>
       <boxGeometry args={[w * 0.95, 0.04, d * 0.95]} />
-      <meshStandardMaterial color={valid ? "#7fd18a" : "#d17f7f"} transparent opacity={0.6} />
+      <meshStandardMaterial color={valid ? SCENE_PALETTE.validGreen : SCENE_PALETTE.invalidRed} transparent opacity={0.6} />
     </mesh>
   );
 }
@@ -283,7 +284,7 @@ function WetFloor({ wetness }: { wetness: number }) {
   return (
     <mesh position={[0.5, 0.01, 0.4]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
       <planeGeometry args={[3.6 * wetness, 3.2 * wetness]} />
-      <meshStandardMaterial color="#2a2118" roughness={0.2} metalness={0.1} transparent opacity={0.45 * wetness} />
+      <meshStandardMaterial color={SCENE_PALETTE.darkWood} roughness={0.2} metalness={0.1} transparent opacity={0.45 * wetness} />
     </mesh>
   );
 }
@@ -575,7 +576,7 @@ export default function InteriorScene({
         camera={{ position: [0, 3.2, 5.6], fov: 55 }}
         gl={{ antialias: true, powerPreference: "low-power" }}
         onCreated={({ scene }) => {
-          scene.background = new THREE.Color("#1d1510");
+          scene.background = new THREE.Color(SCENE_PALETTE.interiorBg);
         }}
       >
         <ambientLight intensity={0.55} />
