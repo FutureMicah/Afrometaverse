@@ -21,7 +21,11 @@ import { ChunkVillageProps, StaticVillageProps } from "@/components/afrometavers
 import { groupByChunk, chunksContaining, chunkOrigin } from "@/lib/chunkAssign";
 import { NPC_SPECS, anchorFor, stepToward, reactToPlayer, type NpcRole } from "@/lib/npcSim";
 import { resolveCollision, villageObstacles } from "@/lib/villageCollision";
-import { NPC_RADIUS, PLAYER_RADIUS, POND, LANDMARK_POSITIONS, type Pt } from "@/lib/villageLayout";
+import { CHIEF_COMPOUND, NPC_RADIUS, PLAYER_RADIUS, POND, LANDMARK_POSITIONS, WORLD_BOUNDS, MAIN_ROAD_Z, type Pt } from "@/lib/villageLayout";
+
+/** Ground footprint: the layout bounds (-24..22 x -20..18). */
+const WORLD_W = WORLD_BOUNDS.maxX - WORLD_BOUNDS.minX;
+const WORLD_D = WORLD_BOUNDS.maxZ - WORLD_BOUNDS.minZ;
 import { VILLAGE_HEARTHS, VILLAGE_HERITAGE } from "@/lib/villageProps";
 import { chunkOf } from "@/lib/chunkStreaming";
 import { currentRenderTier } from "@/lib/renderTier";
@@ -52,7 +56,7 @@ const DISTRICT_LAYOUT = {
   port: { x: LANDMARK_POSITIONS["port"]!.x, z: LANDMARK_POSITIONS["port"]!.z, color: SCENE_PALETTE.orange, label: "The Port", neon: SCENE_PALETTE.orangeNeon },
 } as const;
 
-const BOUNDS = { minX: -14, maxX: 14, minZ: -11, maxZ: 12 };
+const BOUNDS = WORLD_BOUNDS;
 
 /** Ground + road palette tuned to PH laterite / village dirt refs */
 const N = {
@@ -155,21 +159,21 @@ function NeonGround() {
         <planeGeometry args={[80, 80]} />
         <meshStandardMaterial color={N.earthDeep} roughness={1} />
       </mesh>
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.015, 0]} receiveShadow>
-        <planeGeometry args={[48, 42]} />
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[-1, -0.015, -1]} receiveShadow>
+        <planeGeometry args={[WORLD_W, WORLD_D]} />
         <meshStandardMaterial color={N.earth} roughness={0.95} />
       </mesh>
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.002, 0]} receiveShadow>
-        <planeGeometry args={[30, 26]} />
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[-1, 0.002, -1]} receiveShadow>
+        <planeGeometry args={[WORLD_W - 8, WORLD_D - 8]} />
         <meshStandardMaterial color={N.dust} roughness={0.92} />
       </mesh>
       {/* outer savannah grass belts */}
       {(
         [
-          [0, 14, 18, 6],
-          [0, -14, 18, 6],
-          [16, 0, 6, 22],
-          [-16, 0, 6, 22],
+          [-1, 22, 56, 8],
+          [-1, -24, 56, 8],
+          [28, -1, 8, 52],
+          [-30, -1, 8, 52],
         ] as const
       ).map(([x, z, w, d], i) => (
         <mesh key={i} rotation={[-Math.PI / 2, 0, 0]} position={[x, 0.008, z]} receiveShadow>
@@ -184,14 +188,15 @@ function NeonGround() {
 /** Laterite / red-dirt roads — dual tracks, soft shoulders, no neon centre lines */
 function NeonRoads() {
   // Wider lanes (about 2.5 units) so people and carts can pass without crowding.
+  // Mirrors villageLayout LANES: wide main road along MAIN_ROAD_Z, plus the district spurs.
   const segs = [
-    { x: 0, z: 0.2, w: 26, d: 2.6 },
-    { x: 0, z: 4.8, w: 18, d: 2.4 },
-    { x: 0, z: -2.8, w: 20, d: 2.4 },
-    { x: -3.2, z: 1.0, w: 2.4, d: 14 },
-    { x: 2.8, z: 0.5, w: 2.4, d: 13 },
-    { x: 5.5, z: 1.5, w: 2.3, d: 10 },
-    { x: -5.5, z: -1.2, w: 2.2, d: 11 },
+    { x: -1, z: MAIN_ROAD_Z, w: 46, d: 3.4 },
+    { x: -3, z: 2.2, w: 2.6, d: 13 },
+    { x: 4, z: -5.6, w: 2.6, d: 8.4 },
+    { x: -5.5, z: -2.0, w: 2.4, d: 3.4 },
+    { x: 13, z: 2.2, w: 2.6, d: 7.6 },
+    { x: 14, z: 6.5, w: 2.6, d: 6.2 },
+    { x: 3.0, z: 4.6, w: 2.2, d: 2.4 },
   ];
   return (
     <group>
@@ -433,7 +438,10 @@ function MarketNeonLane() {
 
 /** Simple mud / thatch / zinc hut — starting village fabric (players develop the city later) */
 /** Door and interior anchors: their chunks never unload, so doors keep working. */
-const VILLAGE_PINNED_CHUNKS = chunksContaining(INTERIOR_LIST.map((d) => d.door));
+const VILLAGE_PINNED_CHUNKS = chunksContaining([
+  ...INTERIOR_LIST.map((d) => d.door),
+  { x: CHIEF_COMPOUND.x, z: CHIEF_COMPOUND.z },
+]);
 
 /** Player focus for chunk streaming (set once; PlayerController moves the group). */
 const playerFocusRef = { current: null as THREE.Object3D | null };
@@ -1294,6 +1302,7 @@ export function AfroMetaverseScene({
         tier={currentRenderTier()}
         focusRef={playerFocusRef}
         pinned={VILLAGE_PINNED_CHUNKS}
+        bounds={WORLD_BOUNDS}
         buildChunk={(c) => <ChunkVillageProps chunk={c} />}
       />
 

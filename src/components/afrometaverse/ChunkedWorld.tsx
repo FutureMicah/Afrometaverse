@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import * as THREE from "three";
-import { ChunkStreamer, chunkKey, type ChunkCoord } from "@/lib/chunkStreaming";
+import { ChunkStreamer, chunkKey, type ChunkCoord, type WorldBounds } from "@/lib/chunkStreaming";
 import { currentRenderTier, type RenderTier } from "@/lib/renderTier";
 
 /**
@@ -24,12 +24,14 @@ interface ChunkedWorldProps {
   buildChunk?: (chunk: ChunkCoord) => React.ReactNode;
   /** Chunks that never unload (doors, interior anchors). */
   pinned?: ChunkCoord[];
+  /** Playable footprint. Chunks that don't overlap it are never built. */
+  bounds?: WorldBounds;
 }
 
-export function ChunkedWorld({ tier, focusRef, buildChunk, pinned }: ChunkedWorldProps) {
+export function ChunkedWorld({ tier, focusRef, buildChunk, pinned, bounds }: ChunkedWorldProps) {
   const resolvedTier = tier ?? currentRenderTier();
   const camera = useThree((s) => s.camera);
-  const streamer = useMemo(() => new ChunkStreamer({ tier: resolvedTier, ...(pinned ? { pinned } : {}) }), [resolvedTier]);
+  const streamer = useMemo(() => new ChunkStreamer({ tier: resolvedTier, ...(pinned ? { pinned } : {}), ...(bounds ? { bounds } : {}) }), [resolvedTier]);
   const [visible, setVisible] = useState<ChunkCoord[]>([]);
   const lastKey = useRef("");
   const clock = useRef(0);
