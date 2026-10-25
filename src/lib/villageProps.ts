@@ -39,9 +39,7 @@ export const VILLAGE_HUTS: HutSpec[] = [
   { x: -1.4, z: -2.6, style: "thatch", wall: VILLAGE_PALETTE.wallOchre, w: 1.3, d: 1.15 },
   { x: 1.5, z: -3.0, style: "zinc", wall: VILLAGE_PALETTE.wallLight, w: 1.45, d: 1.25, h: 1.1 },
   { x: 0.15, z: -3.8, style: "round", wall: VILLAGE_PALETTE.wallPale, w: 1.3, h: 1.05 },
-  { x: 2.4, z: -1.6, style: "thatch", wall: VILLAGE_PALETTE.wallSand, rot: 0.45 },
   { x: -2.2, z: -1.4, style: "zinc", wall: VILLAGE_PALETTE.wallGrey, w: 1.2 },
-  { x: 0.6, z: -2.0, style: "thatch", wall: VILLAGE_PALETTE.wallClay, rot: -0.2 },
   { x: -0.5, z: -3.2, style: "round", wall: VILLAGE_PALETTE.wallOchre, w: 1.15 },
   // Creekside
   { x: -6.8, z: -2.8, style: "round", wall: VILLAGE_PALETTE.wallOchre, w: 1.4, h: 1.05 },
@@ -57,13 +55,16 @@ export const VILLAGE_HUTS: HutSpec[] = [
   { x: 7.4, z: 3.9, style: "round", wall: VILLAGE_PALETTE.wallWarm, w: 1.2 },
   { x: 6.0, z: 4.5, style: "thatch", wall: VILLAGE_PALETTE.wallClay, rot: 0.15 },
   { x: 8.0, z: 2.8, style: "zinc", wall: VILLAGE_PALETTE.wallStone, w: 1.15 },
-  // Path-side
+  // Path-side (set back from the main road)
   { x: 1.7, z: 2.5, style: "thatch", wall: VILLAGE_PALETTE.wallSand, rot: 0.12 },
-  { x: -0.9, z: 1.3, style: "zinc", wall: VILLAGE_PALETTE.wallDusk },
-  { x: 3.9, z: -0.5, style: "thatch", wall: VILLAGE_PALETTE.wallClay },
-  { x: -4.5, z: -0.3, style: "round", wall: VILLAGE_PALETTE.wallTan, w: 1.05 },
-  { x: 2.8, z: 1.2, style: "round", wall: VILLAGE_PALETTE.wallOchre, w: 1.0 },
 ];
+
+/** Hut footprint radius for collision (circle approximation of the walls). */
+export function hutRadius(h: HutSpec): number {
+  const { w = 1.15, d = 1.05, style = "thatch" } = h;
+  if (style === "round") return w * 0.6;
+  return (Math.hypot(w, d) / 2) * 1.05;
+}
 
 export const VILLAGE_TREES: Array<[number, number, number, TreeKind]> = [
   [-6.5, 4.5, 1.15, "broad"],
@@ -75,9 +76,7 @@ export const VILLAGE_TREES: Array<[number, number, number, TreeKind]> = [
   [-3.8, -5.2, 1.1, "broad"],
   [-8.8, -3.2, 1.3, "broad"],
   [-8.5, 0.8, 0.9, "acacia"],
-  [0.8, 0.2, 0.75, "acacia"],
   [4.2, 2.2, 0.85, "palm"],
-  [-2.8, 0.4, 0.8, "acacia"],
   [8.8, 4.2, 1.15, "broad"],
   [-0.2, -5.5, 1.05, "broad"],
   [-9.2, -5.0, 1.2, "palm"],
@@ -88,12 +87,24 @@ export const VILLAGE_TREES: Array<[number, number, number, TreeKind]> = [
   [1.5, 6.2, 1.0, "acacia"],
 ];
 
-/** Compound rings: centre x, z, radius, post count. */
-export const VILLAGE_WALLS: Array<[number, number, number, number]> = [
-  [-3.8, 3.4, 2.5, 12],
-  [0.2, -2.6, 2.7, 12],
-  [-6.8, -3.2, 2.35, 11],
-  [6.2, 3.2, 2.4, 11],
+/** Compound rings: centre x, z, radius, post count, optional gate angle (radians, x=cos z=sin). */
+export const VILLAGE_WALLS: Array<[number, number, number, number, number?]> = [
+  [-3.8, 3.4, 2.5, 12, -Math.PI / 2],
+  [0.2, -2.6, 2.7, 12, Math.PI / 2],
+  [-6.8, -3.2, 2.35, 11, -Math.PI / 2],
+  [6.2, 3.2, 2.4, 11, -Math.PI / 2],
+];
+
+/** Hearths: x, z. Shared by the scene render and collision. */
+export const VILLAGE_HEARTHS: ReadonlyArray<readonly [number, number]> = [
+  [-5.4, 4.6],
+  [2.2, -4.4],
+];
+
+/** Heritage compounds at the outer edge: x, z, collision radius. */
+export const VILLAGE_HERITAGE: ReadonlyArray<{ x: number; z: number; r: number }> = [
+  { x: -12.5, z: 7.0, r: 1.7 },
+  { x: 12.5, z: -7.0, r: 1.7 },
 ];
 
 /** Rocks: x, z, scale. */
@@ -219,13 +230,21 @@ function addPot(batch: PropBatch, x: number, z: number, s: number): void {
   });
 }
 
-export function addCompoundWall(batch: PropBatch, x: number, z: number, radius: number, segments: number): void {
+/** True when wall segment i (post i to i+1) sits on the gate angle, so the gap stays open. */
+export function segmentIsGate(i: number, segments: number, gate: number): boolean {
+  const mid = ((i + 0.5) / segments) * Math.PI * 2;
+  const d = Math.abs(Math.atan2(Math.sin(mid - gate), Math.cos(mid - gate)));
+  return d < Math.PI / segments;
+}
+
+export function addCompoundWall(batch: PropBatch, x: number, z: number, radius: number, segments: number, gate?: number): void {
   const p = new Placer(batch);
   const posts = Array.from({ length: segments }, (_, i) => {
     const a = (i / segments) * Math.PI * 2;
     return [x + Math.cos(a) * radius, z + Math.sin(a) * radius] as const;
   });
   posts.forEach(([px, pz], i) => {
+    if (gate !== undefined && segmentIsGate(i, segments, gate)) return;
     const [qx, qz] = posts[(i + 1) % posts.length]!;
     const len = Math.hypot(qx - px, qz - pz);
     const ang = Math.atan2(qx - px, qz - pz);
@@ -408,7 +427,7 @@ export function buildChunkVillageProps(chunk: ChunkCoord): MergedPropMesh[] {
   };
   for (const h of VILLAGE_HUTS) if (inChunk(h.x, h.z)) addHut(batch, h);
   for (const [x, z, s, kind] of VILLAGE_TREES) if (inChunk(x, z)) addTree(batch, x, z, s, kind);
-  for (const [x, z, r, n] of VILLAGE_WALLS) if (inChunk(x, z)) addCompoundWall(batch, x, z, r, n);
+  for (const [x, z, r, n, gate] of VILLAGE_WALLS) if (inChunk(x, z)) addCompoundWall(batch, x, z, r, n, gate);
   for (const [x, z, s] of VILLAGE_ROCKS) if (inChunk(x, z)) addRock(batch, x, z, s);
   return batch.build();
 }

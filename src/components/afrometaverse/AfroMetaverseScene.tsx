@@ -19,6 +19,10 @@ import { DayNightSky } from "@/components/afrometaverse/DayNightSky";
 import { ChunkedWorld } from "@/components/afrometaverse/ChunkedWorld";
 import { ChunkVillageProps, StaticVillageProps } from "@/components/afrometaverse/VillageProps";
 import { groupByChunk, chunksContaining, chunkOrigin } from "@/lib/chunkAssign";
+import { NPC_SPECS, anchorFor, stepToward, reactToPlayer, type NpcRole } from "@/lib/npcSim";
+import { resolveCollision, villageObstacles } from "@/lib/villageCollision";
+import { NPC_RADIUS, PLAYER_RADIUS, POND, LANDMARK_POSITIONS, type Pt } from "@/lib/villageLayout";
+import { VILLAGE_HEARTHS, VILLAGE_HERITAGE } from "@/lib/villageProps";
 import { chunkOf } from "@/lib/chunkStreaming";
 import { currentRenderTier } from "@/lib/renderTier";
 import { StylizedCharacter } from "@/components/afrometaverse/characters/StylizedCharacter";
@@ -42,10 +46,10 @@ import {
 import { SCENE_PALETTE } from "@/lib/scenePalette";
 
 const DISTRICT_LAYOUT = {
-  "town-market": { x: -3, z: 2.5, color: SCENE_PALETTE.amber, label: "Town Market", neon: SCENE_PALETTE.amberNeon },
-  "civic-centre": { x: 0, z: -1.5, color: SCENE_PALETTE.teal, label: "Civic Centre", neon: SCENE_PALETTE.tealNeon },
-  creekside: { x: -5.5, z: -3.5, color: SCENE_PALETTE.blue, label: "Creekside", neon: SCENE_PALETTE.blueNeon },
-  port: { x: 5.5, z: 2.5, color: SCENE_PALETTE.orange, label: "The Port", neon: SCENE_PALETTE.orangeNeon },
+  "town-market": { x: LANDMARK_POSITIONS["town-market"]!.x, z: LANDMARK_POSITIONS["town-market"]!.z, color: SCENE_PALETTE.amber, label: "Town Market", neon: SCENE_PALETTE.amberNeon },
+  "civic-centre": { x: LANDMARK_POSITIONS["civic-centre"]!.x, z: LANDMARK_POSITIONS["civic-centre"]!.z, color: SCENE_PALETTE.teal, label: "Civic Centre", neon: SCENE_PALETTE.tealNeon },
+  creekside: { x: LANDMARK_POSITIONS["creekside"]!.x, z: LANDMARK_POSITIONS["creekside"]!.z, color: SCENE_PALETTE.blue, label: "Creekside", neon: SCENE_PALETTE.blueNeon },
+  port: { x: LANDMARK_POSITIONS["port"]!.x, z: LANDMARK_POSITIONS["port"]!.z, color: SCENE_PALETTE.orange, label: "The Port", neon: SCENE_PALETTE.orangeNeon },
 } as const;
 
 const BOUNDS = { minX: -14, maxX: 14, minZ: -11, maxZ: 12 };
@@ -789,6 +793,12 @@ function PlayerController({
       let nextZ = group.current.position.z + (forwardZ * -inputZ + rightZ * inputX) * step;
       nextX = THREE.MathUtils.clamp(nextX, BOUNDS.minX, BOUNDS.maxX);
       nextZ = THREE.MathUtils.clamp(nextZ, BOUNDS.minZ, BOUNDS.maxZ);
+      // huts, walls, trees and the pond: slide along them instead of walking through
+      if (transport !== "ferry") {
+        const resolved = resolveCollision(nextX, nextZ, PLAYER_RADIUS, villageObstacles());
+        nextX = resolved.x;
+        nextZ = resolved.z;
+      }
       if (transport === "ferry") {
         nextZ = THREE.MathUtils.clamp(nextZ, -9, -2.5);
         nextX = THREE.MathUtils.clamp(nextX, -11, -2);
@@ -1061,11 +1071,25 @@ function TrafficFlow() {
   );
 }
 
+// Role outfits: the population reads by role at a glance (uses the existing equipment ids).
+const ROLE_OUTFIT: Record<NpcRole, { top: string; bottom: string; hat: string | null; shoes: string }> = {
+  trader: { top: "top-white-tee", bottom: "bottom-blue-jeans", hat: null, shoes: "shoes-basic" },
+  fisher: { top: "top-white-tee", bottom: "bottom-blue-jeans", hat: null, shoes: "shoes-basic" },
+  guard: { top: "top-white-tee", bottom: "bottom-blue-jeans", hat: null, shoes: "shoes-basic" },
+  elder: { top: "top-white-tee", bottom: "bottom-blue-jeans", hat: null, shoes: "shoes-basic" },
+  herder: { top: "top-white-tee", bottom: "bottom-blue-jeans", hat: null, shoes: "shoes-basic" },
+  farmer: { top: "top-white-tee", bottom: "bottom-blue-jeans", hat: null, shoes: "shoes-basic" },
+};
+
+// Purposeful NPCs: a fixed population (NPC_SPECS) with roles. Traders stand at stalls, fishers
+// at the shore, guards walk their route, elders idle at the compound. Each NPC walks its lane
+// towards its anchor, collision-resolved so it can't clip buildings, and steps aside from the player.
 function NpcCrowd() {
   const npcs = useMemo(() => {
     const skins = [SCENE_PALETTE.skinDeep, SCENE_PALETTE.skinMid, SCENE_PALETTE.skinTan, SCENE_PALETTE.skinGold, SCENE_PALETTE.lateriteLight, SCENE_PALETTE.skinBrown];
     const shapes = ["slim", "average", "curvy", "athletic", "broad"] as const;
-    return Array.from({ length: 8 }, (_, i) => ({
+    return NPC_SPECS.map((spec, i) => ({
+      spec,
       appearance: {
         ...DEFAULT_APPEARANCE,
         gender: (i % 2 === 0 ? "female" : "male") as "female" | "male",
@@ -1074,41 +1098,41 @@ function NpcCrowd() {
         skin: skins[i % skins.length] ?? SCENE_PALETTE.skinMid,
         hair: (["braids", "short", "afro", "bob", "bun", "long"] as const)[i % 6] ?? "short",
         hairColor: SCENE_PALETTE.ink,
-        displayName: `Npc${i}`,
+        displayName: spec.id,
       },
-      equipped: {
-        top: "top-white-tee",
-        bottom: "bottom-blue-jeans",
-        outer: null,
-        shoes: "shoes-basic",
-        accessory: null,
-        hat: null,
-      },
-      x: (i % 4) * 2.8 - 4.2,
-      z: Math.floor(i / 4) * 3.2 - 0.5,
-      phase: i * 0.85,
+      equipped: { ...ROLE_OUTFIT[spec.role], outer: null, accessory: null },
     }));
   }, []);
   const refs = useRef<(THREE.Group | null)[]>([]);
-  useFrame(({ clock }) => {
+  const sim = useRef(NPC_SPECS.map((s) => ({ x: s.home.x, z: s.home.z, yaw: s.face })));
+  useFrame(({ clock }, dt) => {
     const t = clock.getElapsedTime();
-    npcs.forEach((n, i) => {
+    const player = playerFocusRef.current?.position ?? null;
+    NPC_SPECS.forEach((spec, i) => {
+      const st = sim.current[i]!;
       const g = refs.current[i];
       if (!g) return;
-      g.position.x = n.x + Math.sin(t * 0.4 + n.phase) * 0.9;
-      g.position.z = n.z + Math.cos(t * 0.35 + n.phase) * 0.55;
-      g.rotation.y = t * 0.25 + n.phase;
+      const target = anchorFor(spec, t);
+      let pos: Pt = stepToward({ x: st.x, z: st.z }, target, 1.1, dt);
+      const shy = player ? reactToPlayer(pos, { x: player.x, z: player.z }) : null;
+      if (shy) pos = resolveCollision(shy.x, shy.z, NPC_RADIUS);
+      const moving = Math.hypot(target.x - pos.x, target.z - pos.z) > 0.05 || shy !== null;
+      if (moving) st.yaw = Math.atan2(target.x - pos.x, target.z - pos.z);
+      st.x = pos.x;
+      st.z = pos.z;
+      g.position.set(pos.x, 0, pos.z);
+      g.rotation.y = st.yaw;
     });
   });
   return (
     <group>
       {npcs.map((n, i) => (
         <group
-          key={i}
+          key={n.spec.id}
           ref={(el) => {
             refs.current[i] = el;
           }}
-          position={[n.x, 0, n.z]}
+          position={[n.spec.home.x, 0, n.spec.home.z]}
         >
           <StylizedCharacter appearance={n.appearance} equipped={n.equipped} scale={0.95} animate detail moveState="walk" />
         </group>
@@ -1261,7 +1285,7 @@ export function AfroMetaverseScene({
         <meshStandardMaterial color={N.dust} roughness={0.92} transparent opacity={0.55} />
       </mesh>
       <NeonRoads />
-      <LivingWater type="pond" position={[-5.5, 0, -5.4]} radius={3.8} />
+      <LivingWater type="pond" position={[POND.x, 0, POND.z]} radius={POND.r} />
       <BiomeFlora count={160} />
       {/* Always-loaded village dressing, merged once (was re-drawn in every loaded chunk). */}
       <StaticVillageProps />
@@ -1276,17 +1300,18 @@ export function AfroMetaverseScene({
       {/* Day 6 — tribal compounds + hearth */}
       {/* Spread out so paths stay open; compounds sit at the outer edges of the village. */}
       <YorubaCompound
-        position={[-12.5, 0, 7.0]}
+        position={[VILLAGE_HERITAGE[0]!.x, 0, VILLAGE_HERITAGE[0]!.z]}
         climateIntensity={wetness}
         windIntensity={0.35 + dust * 0.4}
       />
       <IgboCompound
-        position={[12.5, 0, -7.0]}
+        position={[VILLAGE_HERITAGE[1]!.x, 0, VILLAGE_HERITAGE[1]!.z]}
         climateIntensity={wetness}
         windIntensity={0.35 + dust * 0.4}
       />
-      <VillageHearth position={[-5.4, 0, 4.6]} />
-      <VillageHearth position={[2.2, 0, -4.4]} />
+      {VILLAGE_HEARTHS.map(([hx, hz]) => (
+        <VillageHearth key={hx + "," + hz} position={[hx, 0, hz]} />
+      ))}
 
       {/* Day 1 atmospheric life */}
       <DustMotes count={90} active={dust > 0.25 || wetness < 0.3} />

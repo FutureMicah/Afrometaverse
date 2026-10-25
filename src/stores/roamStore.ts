@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { LANDMARK_POSITIONS } from "@/lib/villageLayout";
 
 export type RoamMode = "orbit" | "walk" | "ride";
 
@@ -115,10 +116,10 @@ interface RoamState {
 }
 
 export const DISTRICT_WORLD: Record<string, { x: number; z: number; name: string }> = {
-  "town-market": { x: -3, z: 2.5, name: "Town Market" },
-  "civic-centre": { x: 0, z: -1.5, name: "Civic Centre" },
-  creekside: { x: -5.5, z: -3.5, name: "Creekside" },
-  port: { x: 5.5, z: 2.5, name: "The Port" },
+  "town-market": { ...LANDMARK_POSITIONS["town-market"]!, name: "Town Market" },
+  "civic-centre": { ...LANDMARK_POSITIONS["civic-centre"]!, name: "Civic Centre" },
+  creekside: { ...LANDMARK_POSITIONS["creekside"]!, name: "Creekside" },
+  port: { ...LANDMARK_POSITIONS["port"]!, name: "The Port" },
 };
 
 export const SAFEHOUSES: Safehouse[] = [
