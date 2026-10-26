@@ -524,12 +524,15 @@ function roundWall(R: number, h: number, seg: number, bulge: number, seed: numbe
 
 /** Open thatch cone with a hand-tied, scalloped eave. Bottom at y=-h/2, top at y=+h/2. */
 function thatchCone(rBot: number, rTop: number, H: number, seed: number): THREE.BufferGeometry {
-  const g = new THREE.CylinderGeometry(rTop, rBot, H, 12, 3, true);
+  // r8: 24 radial x 8 height segments so the eave and dome read smooth at distance
+  const g = new THREE.CylinderGeometry(rTop, rBot, H, 24, 8, true);
   warp(g, (x, y, z, t) => {
     const a = Math.atan2(z, x);
+    // dome-like profile: the radius bulges outward through the middle, then rolls into a rounded crown
+    const bulge = 1 + 0.12 * Math.sin(Math.PI * Math.min(1, t * 1.05));
     const eave = 1 + 0.05 * Math.abs(Math.sin(a * 9)) * Math.max(0, 1 - t / 0.25);
-    const j = 1 + (hash3(a * 3, t * 5, seed) - 0.5) * 0.025;
-    const k = eave * j;
+    const j = 1 + (hash3(a * 3, t * 5, seed) - 0.5) * 0.02;
+    const k = eave * j * bulge;
     return [x * k, y, z * k];
   });
   const circ = 2 * Math.PI * Math.max(rBot, rTop);
@@ -808,13 +811,16 @@ function kindDefaults(kind: HutKind): { w: number; d: number; h: number } {
   }
 }
 
+/** r8: wall height scale. Footprints are not scaled: the market cluster is packed tight and collision tests need the gap. */
+export const HUT_HEIGHT_SCALE = 1.35;
+
 export function addHut(batch: PropBatch, spec: HutSpec): void {
   const kind: HutKind = spec.kind ?? (spec.style === "round" ? "round" : "family");
   const def = kindDefaults(kind);
   const jitter = 0.96 + hash3(spec.x, spec.z, 9) * 0.08;
   const w = (spec.w ?? def.w) * jitter;
   const d = (spec.d ?? def.d) * jitter;
-  const h = (spec.h ?? def.h) * (0.97 + hash3(spec.x, spec.z, 12) * 0.06);
+  const h = (spec.h ?? def.h) * (0.97 + hash3(spec.x, spec.z, 12) * 0.06) * HUT_HEIGHT_SCALE;
   const rot = (spec.rot ?? 0) + (hash3(spec.x, spec.z, 10) - 0.5) * 0.3;
   const T = VILLAGE_PALETTE;
   const p = new Placer(batch, groupMatrix([spec.x, 0, spec.z], rot));
