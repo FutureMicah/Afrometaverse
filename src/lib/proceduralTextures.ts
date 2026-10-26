@@ -50,16 +50,25 @@ function heightField(kind: Kind, size: number): Float32Array {
     for (let x = 0; x < size; x++) {
       let v: number;
       if (kind === "mud") {
-        // lime-washed plaster: broad mottling, fine grit, and a few cracks
-        const broad = fbm(x, y, size, 4, 1, 3);
+        // hand-plastered mud: large uneven patches, rain streaks running down, fine grit,
+        // hairline cracks, and a few darker repair patches where the wall was re-daubed
+        const broad = fbm(x, y, size, 3, 1, 3);
+        const patch = fbm(x, y, size, 2, 17, 2);
         const grit = fbm(x, y, size, 64, 9, 2);
+        const streakNoise = fbm(x, y, size, 12, 29, 2);
+        const streak = Math.pow(Math.abs(Math.sin((x / size) * Math.PI * 2 * 6 + streakNoise * 5)), 6) * (0.4 + 0.6 * streakNoise);
         const crack = Math.abs(fbm(x, y, size, 8, 21, 2) - 0.5);
-        v = broad * 0.6 + grit * 0.3 - (crack < 0.012 ? 0.25 : 0);
+        const repair = fbm(x, y, size, 4, 53, 2);
+        const repairMask = repair > 0.62 ? (repair - 0.62) * 2.6 : 0;
+        v = broad * 0.5 + patch * 0.3 + grit * 0.18 - streak * 0.25 - repairMask * 0.15 - (crack < 0.012 ? 0.3 : 0);
       } else if (kind === "thatch") {
-        // stacked straw: long streaks along one axis with dark gaps
+        // stacked straw in courses: horizontal bands where each layer is tied over the one below,
+        // with fine stalks running diagonally and dark shadow gaps between courses
         const streak = fbm(x, y, size, 3, 5, 2);
-        const stalk = Math.abs(Math.sin((y / size) * Math.PI * 2 * 26 + streak * 6));
-        v = stalk * 0.7 + streak * 0.3;
+        const course = Math.abs(Math.sin((y / size) * Math.PI * 2 * 9 + streak * 3));
+        const edge = Math.pow(1 - course, 8); // dark tuck line at each course edge
+        const stalk = Math.abs(Math.sin((x / size) * Math.PI * 2 * 40 + (y / size) * 7 + streak * 6));
+        v = stalk * 0.55 + streak * 0.25 + (1 - edge) * 0.3 - edge * 0.35;
       } else {
         // dust ground: fine speckle plus soft patches
         const patch = fbm(x, y, size, 3, 33, 3);
