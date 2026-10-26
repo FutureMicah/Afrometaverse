@@ -104,6 +104,15 @@ export function DayNightSky({ tier, dust = 0, clockRunning = true }: DayNightSky
         castShadow
         shadow-mapSize-width={2048}
         shadow-mapSize-height={2048}
+        shadow-camera-left={-26}
+        shadow-camera-right={26}
+        shadow-camera-top={26}
+        shadow-camera-bottom={-26}
+        shadow-camera-near={1}
+        shadow-camera-far={90}
+        shadow-bias={-0.0004}
+        shadow-normalBias={0.03}
+        shadow-radius={4}
       />
       <directionalLight ref={moonRef} position={[-12, -20, -8]} intensity={0} color={MOON_COLOR} />
       <points ref={starsRef} geometry={starGeom}>

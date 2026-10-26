@@ -3,6 +3,7 @@ import { DEFAULT_APPEARANCE } from "../../stores/characterStore";
 import { OrbitControls } from "@react-three/drei";
 import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
+import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment.js";
 import {
   DISTRICT_WORLD,
   SAFEHOUSES,
@@ -131,6 +132,26 @@ const TOWERS: TowerSpec[] = [
   { x: -8.5, z: 1.5, w: 1.2, d: 1.1, h: 3.0, hue: N.towerMid, neon: N.neonLime },
   { x: 6.0, z: -2.5, w: 1.1, d: 1.0, h: 5.0, hue: N.towerDark, neon: N.neonPink },
 ];
+
+/**
+ * Image-based lighting: a PMREM-filtered studio environment gives every PBR material
+ * (skin, cloth, clay walls, roofs) soft physically based reflections and bounce light.
+ * Cheap to build once; the sun and sky still drive direct light and shadows.
+ */
+function SceneEnvironment() {
+  const { gl, scene } = useThree();
+  useEffect(() => {
+    const pmrem = new THREE.PMREMGenerator(gl);
+    const envTex = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+    scene.environment = envTex;
+    return () => {
+      scene.environment = null;
+      envTex.dispose();
+      pmrem.dispose();
+    };
+  }, [gl, scene]);
+  return null;
+}
 
 /** Daylight village sky — no neon city yet; players grow this settlement later */
 function VillageDaySky() {
@@ -1274,11 +1295,20 @@ export function AfroMetaverseScene({
 
   return (
     <Canvas
-      shadows
+      shadows={{ type: THREE.PCFSoftShadowMap }}
+      dpr={[1, 1.75]}
+      gl={{
+        antialias: true,
+        powerPreference: "high-performance",
+        toneMapping: THREE.ACESFilmicToneMapping,
+        toneMappingExposure: 1.05,
+        outputColorSpace: THREE.SRGBColorSpace,
+      }}
       camera={{ position: [0, 10, 15], fov: 45 }}
       style={{ width: "100%", height: "100%", background: SCENE_PALETTE.skyHaze }}
       tabIndex={0}
     >
+      <SceneEnvironment />
       <DayNightSky dust={dust} />
       {/* Multi-biome heritage terrain (Day 2) — single draw call + climate tint */}
       <HeritageTerrain wetness={wetness} dust={dust} />
