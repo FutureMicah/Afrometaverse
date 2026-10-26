@@ -439,6 +439,42 @@ function TradeScale({ p }: { p: [number, number, number] }) {
   );
 }
 
+/** Low wall shelf holding pots and calabashes. Storage that reads as lived-in. */
+function WallShelf({ p }: { p: [number, number, number] }) {
+  return (
+    <group position={p}>
+      <mesh position={[0, 0.6, 0]} castShadow>
+        <boxGeometry args={[0.9, 0.06, 0.4]} />
+        <meshStandardMaterial color="#6b4a2b" roughness={0.9} />
+      </mesh>
+      <mesh position={[-0.3, 0.8, 0]} castShadow>
+        <cylinderGeometry args={[0.12, 0.09, 0.3, 12]} />
+        <meshStandardMaterial color="#b5653a" roughness={0.95} />
+      </mesh>
+      <mesh position={[0.25, 0.75, 0]} castShadow>
+        <sphereGeometry args={[0.13, 12, 10]} />
+        <meshStandardMaterial color="#c9a15c" roughness={0.9} />
+      </mesh>
+    </group>
+  );
+}
+
+/** Gourd or dried bundle hung from a roof beam by a cord. */
+function HangingGourd({ p }: { p: [number, number, number] }) {
+  return (
+    <group position={p}>
+      <mesh position={[0, 0.1, 0]}>
+        <cylinderGeometry args={[0.012, 0.012, 0.25, 6]} />
+        <meshStandardMaterial color="#3a2a18" />
+      </mesh>
+      <mesh position={[0, -0.12, 0]} castShadow>
+        <sphereGeometry args={[0.14, 12, 10]} />
+        <meshStandardMaterial color="#8a6a3a" roughness={0.9} />
+      </mesh>
+    </group>
+  );
+}
+
 /** Maps one starter entry to its mesh. Each kind uses the palette, no inline colours. */
 function StarterPiece({ item }: { item: StarterItem }) {
   const p: [number, number, number] = [item.x, item.y ?? 0, item.z];
@@ -481,6 +517,12 @@ function StarterPiece({ item }: { item: StarterItem }) {
       return <BenchTool p={p} />;
     case "scale":
       return <TradeScale p={p} />;
+    case "shelf":
+      return <WallShelf p={p} />;
+    case "hangingGourd":
+      return <HangingGourd p={p} />;
+    case "matLayer":
+      return <Mat p={[p[0], 0.02, p[2]]} />;
     default:
       return null;
   }

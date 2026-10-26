@@ -28,7 +28,10 @@ export type StarterKind =
   | "blockPile"
   | "benchTable"
   | "benchTool"
-  | "scale";
+  | "scale"
+  | "shelf"
+  | "hangingGourd"
+  | "matLayer";
 
 export interface StarterItem {
   id: string;
@@ -71,6 +74,10 @@ export const STARTER: Record<InteriorId, RoomStarter> = {
       { id: "sh-basket", kind: "basket", name: "Yam basket", x: -2.1, z: 1.6 },
       { id: "sh-drum", kind: "drum", name: "Talking drum", x: 2.1, z: 0.8 },
       { id: "sh-lamp", kind: "clayLamp", name: "Clay oil lamp", x: 2.2, z: -0.6 },
+      { id: "sh-shelf", kind: "shelf", name: "Wall shelf of pots and calabashes", x: 2.6, z: 1.6 },
+      { id: "sh-gourd-1", kind: "hangingGourd", name: "Gourd hanging from the roof beam", x: 0.3, z: 0.4, y: 1.9 },
+      { id: "sh-gourd-2", kind: "hangingGourd", name: "Gourd hanging from the roof beam", x: -0.8, z: -0.4, y: 2.0 },
+      { id: "sh-layer", kind: "matLayer", name: "Rush mat laid over the sitting mat", x: 1, z: -1 },
     ],
     later: [
       { decorId: "woven-mat", how: "craft", note: "weave a reed mat at home" },
@@ -99,6 +106,8 @@ export const STARTER: Record<InteriorId, RoomStarter> = {
       { id: "mk-oil", kind: "palmOilJar", name: "Palm oil jar", x: -2.2, z: -0.9 },
       { id: "mk-kola", kind: "basket", name: "Kola basket", x: 2.2, z: -1.1 },
       { id: "mk-scale", kind: "scale", name: "Trade scale", x: 0.2, z: 0.9 },
+      { id: "mk-shelf", kind: "shelf", name: "Shelf of dyed cloth and pots", x: 2.6, z: -1.8 },
+      { id: "mk-cloth-hang", kind: "hangingGourd", name: "Dyed cloth hung from the beam", x: -0.8, z: 0.6, y: 1.9 },
     ],
     later: [
       { decorId: "market-cloth", how: "buy", price: 90, note: "indigo cloth from this stall" },
@@ -119,6 +128,8 @@ export const STARTER: Record<InteriorId, RoomStarter> = {
       { id: "wp-logs", kind: "logPile", name: "Log pile", x: -2.1, z: -0.2 },
       { id: "wp-rack", kind: "toolRack", name: "Adze and chisel rack", x: -2.6, z: -1 },
       { id: "wp-blocks", kind: "blockPile", name: "Carving blocks", x: 1.9, z: -0.6 },
+      { id: "wp-shelf", kind: "shelf", name: "Shelf of finished stools", x: 2.6, z: 0.6 },
+      { id: "wp-hang", kind: "hangingGourd", name: "Bundled dried herbs from the beam", x: -0.6, z: 0.8, y: 1.9 },
     ],
     later: [
       { decorId: "carved-stool", how: "craft", note: "carve it at this bench" },
@@ -149,4 +160,7 @@ export const STARTER_KINDS: StarterKind[] = [
   "benchTable",
   "benchTool",
   "scale",
+  "shelf",
+  "hangingGourd",
+  "matLayer",
 ];
