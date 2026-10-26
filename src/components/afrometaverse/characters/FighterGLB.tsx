@@ -3,6 +3,7 @@ import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { DRACOLoader } from "three/examples/jsm/loaders/DRACOLoader.js";
+import * as SkeletonUtils from "three/examples/jsm/utils/SkeletonUtils.js";
 import type { CharacterAppearance } from "@/stores/characterStore";
 import type { WardrobeTier } from "@/lib/characterWardrobe";
 import { StylizedCharacter } from "./StylizedCharacter";
@@ -148,11 +149,17 @@ function FighterModel({ loaded, moveState, animate, scale }: { loaded: Loaded; m
 
   // each character gets its own skinned clone and mixer; geometry and materials stay shared
   useEffect(() => {
-    const clone = loaded.scene.clone(true);
+    // Plain Object3D.clone() makes SkinnedMesh copies that still point at the SOURCE skeleton,
+    // so every clone skins against bones that never move (the collapsed blob). SkeletonUtils.clone
+    // rebuilds the bone hierarchy and rebinds each skinned mesh to its own copy.
+    const clone = SkeletonUtils.clone(loaded.scene) as THREE.Group;
     dressFighterMaterials(clone);
     const mixer = new THREE.AnimationMixer(clone);
     const actions: Record<string, THREE.AnimationAction> = {};
     for (const c of loaded.clips) actions[c.name] = mixer.clipAction(c, clone);
+    // Put the rest pose on the bones straight away (idle frame 0) so the figure never shows bind/T-pose.
+    actions["idle"]?.play();
+    mixer.update(0);
     mixerRef.current = mixer;
     actionsRef.current = actions;
     holder.current?.add(clone);

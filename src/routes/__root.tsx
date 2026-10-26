@@ -129,6 +129,11 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
+      <div className="am-portrait-guard" role="status" aria-live="polite">
+        <div className="am-rotate-icon" aria-hidden="true" />
+        <p className="am-rotate-title">Rotate your phone</p>
+        <p className="am-rotate-copy">Afrometaverse plays in landscape. Turn your phone sideways to continue.</p>
+      </div>
       <Outlet />
     </QueryClientProvider>
   );

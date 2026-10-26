@@ -1,0 +1,60 @@
+/* Lobby: cinematic night village with HUD columns. Colours come from the am-* tokens. */
+.am-lobby {
+  position: fixed; inset: 0; overflow: hidden; background: var(--am-cream);
+  color: var(--am-ink); font-family: inherit;
+}
+.am-lobby-scene { position: absolute; inset: 0; }
+.am-lobby-vignette {
+  position: absolute; inset: 0; pointer-events: none;
+  background:
+    radial-gradient(ellipse at 50% 55%, transparent 40%, oklch(0.1 0.04 275 / 0.7) 100%),
+    linear-gradient(180deg, transparent 70%, oklch(0.1 0.04 275 / 0.6));
+}
+.am-lobby-left, .am-lobby-right, .am-lobby-loadout { position: absolute; z-index: 2; }
+.am-lobby-left {
+  left: 18px; top: 18px; bottom: 18px; width: 220px;
+  display: flex; flex-direction: column; gap: 12px;
+}
+.am-lobby-badge {
+  display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 14px;
+  background: var(--am-paper); border: 1px solid var(--am-line); box-shadow: var(--am-shadow);
+}
+.am-lobby-avatar {
+  width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center;
+  background: var(--am-coral); color: var(--am-forest-ink); font-weight: 800;
+}
+.am-lobby-badge-text { display: flex; flex-direction: column; min-width: 0; }
+.am-lobby-badge-text strong { font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.am-lobby-badge-text small { font-size: 11px; color: var(--am-ink-soft); text-transform: capitalize; }
+.am-lobby-chip {
+  display: inline-flex; align-items: center; justify-content: space-between; gap: 10px;
+  padding: 8px 12px; border-radius: 999px; background: var(--am-gold-soft); border: 1px solid var(--am-gold);
+}
+.am-lobby-chip-label { font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--am-ink-soft); }
+.am-lobby-chip strong { font-size: 14px; }
+.am-lobby-stack { display: flex; flex-direction: column; gap: 8px; }
+.am-lobby-pill { width: 100%; justify-content: flex-start; }
+.am-lobby-note { font-size: 12px; color: var(--am-ink-soft); margin: 0; }
+
+.am-lobby-right {
+  right: 18px; top: 18px; bottom: 90px; width: 280px;
+  display: flex; flex-direction: column; gap: 10px; justify-content: center;
+}
+.am-lobby-mode {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 4px; text-align: left;
+  padding: 12px 14px; border-radius: 14px; cursor: pointer;
+  background: var(--am-paper); border: 1px solid var(--am-line); color: var(--am-ink);
+  box-shadow: var(--am-shadow); transition: transform 140ms ease, border-color 140ms ease;
+}
+.am-lobby-mode:hover { transform: translateX(-3px); }
+.am-lobby-mode strong { font-size: 16px; }
+.am-lobby-mode small { font-size: 12px; color: var(--am-ink-soft); line-height: 1.35; }
+.am-lobby-mode-tag {
+  font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; padding: 2px 8px; border-radius: 999px;
+  background: var(--am-coral-soft); color: var(--am-coral);
+}
+.am-lobby-mode-active { border-color: var(--am-gold); box-shadow: 0 0 0 2px var(--am-gold-soft), var(--am-shadow); }
+
+.am-lobby-loadout {
+  right: 18px; bottom: 18px; min-width: 180px; min-height: 52px; font-weight: 800; letter-spacing: 0.06em;
+}

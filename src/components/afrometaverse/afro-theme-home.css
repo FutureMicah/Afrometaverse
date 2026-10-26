@@ -46,3 +46,13 @@
 @media (orientation: landscape) {
   .am-rotate-overlay.am-rotate-active { display: none; }
 }
+
+/* Global portrait guard: every screen is landscape-only on phones. */
+.am-portrait-guard {
+  position: fixed; inset: 0; z-index: 10000; display: none;
+  align-items: center; justify-content: center; flex-direction: column; gap: 14px;
+  background: linear-gradient(160deg, #1f2a5a, #3a1f16); color: #fbf4e6; text-align: center; padding: 24px;
+}
+@media (orientation: portrait) and (max-width: 900px) {
+  .am-portrait-guard { display: flex; }
+}
