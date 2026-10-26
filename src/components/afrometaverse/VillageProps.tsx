@@ -34,13 +34,30 @@ function sharedMaterial(spec: MergedPropMesh["material"]): THREE.MeshStandardMat
         m.normalMap = pbr.normal;
         m.normalScale = new THREE.Vector2(spec.surface === "thatch" ? 1.1 : 0.8, spec.surface === "thatch" ? 1.1 : 0.8);
       }
+      if (spec.surface === "thatch") applyFrondRim(m);
     }
     materialCache.set(key, m);
   }
   return m;
 }
 
-function MergedProps({ parts }: { parts: MergedPropMesh[] }) {
+/**
+ * Warm rim on the frond edges: a fresnel term added to the lit colour, so grazing angles (the frond
+ * edges seen at dusk, low sun) pick up a warm glow. Cheap: a few ALU ops per fragment, no extra pass.
+ */
+export function applyFrondRim(m: THREE.MeshStandardMaterial): void {
+  m.onBeforeCompile = (shader) => {
+    shader.fragmentShader = shader.fragmentShader.replace(
+      "#include <opaque_fragment>",
+      `float rimFac = pow(1.0 - saturate(dot(normalize(vNormal), normalize(vViewPosition))), 3.0);
+       outgoingLight += vec3(1.0, 0.62, 0.28) * rimFac * 0.22;
+       #include <opaque_fragment>`,
+    );
+  };
+  m.customProgramCacheKey = () => "frond-rim-v1";
+}
+
+export function MergedProps({ parts }: { parts: MergedPropMesh[] }) {
   useEffect(() => {
     return () => {
       for (const p of parts) p.geometry.dispose();

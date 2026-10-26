@@ -355,8 +355,10 @@ function smooth01(e0: number, e1: number, x: number): number {
 /**
  * Hipped thatch roof: four sloped faces meeting at a short ridge along x.
  * Eave base is at y=0 (the caller places it on the walls), apex at y=height.
+ * Each face is a small grid, not one quad: rafters sit every ~0.3 m along the slope and the thatch
+ * dips slightly between them, so the courses sag like real palm thatch instead of lying flat.
  */
-function hipRoof(hw: number, hd: number, height: number): { faces: THREE.BufferGeometry; ends: THREE.BufferGeometry } {
+function hipRoof(hw: number, hd: number, height: number, seed: number): { faces: THREE.BufferGeometry; ends: THREE.BufferGeometry } {
   const ridge = Math.max(0, hw - hd) * 0.6;
   const FL: V3 = [-hw, 0, hd];
   const FR: V3 = [hw, 0, hd];
@@ -364,10 +366,80 @@ function hipRoof(hw: number, hd: number, height: number): { faces: THREE.BufferG
   const BL: V3 = [-hw, 0, -hd];
   const R1: V3 = [-ridge, height, 0];
   const R2: V3 = [ridge, height, 0];
+  const front = sagFace(FL, FR, R1, R2, hw, height, seed);
+  const back = sagFace(BL, BR, R1, R2, hw, height, seed + 1);
   return {
-    faces: frondRoofUV(triGeometry([...doubleQuad(FL, FR, R2, R1), ...doubleQuad(BR, BL, R1, R2)]), height, ridge),
+    faces: frondRoofUV(triGeometry([...front, ...back]), height, ridge),
     ends: frondRoofUV(triGeometry([...doubleTri(FR, BR, R2), ...doubleTri(BL, FL, R1)]), height, ridge),
   };
+}
+
+/** One sloped face as a sagging grid (eave a..b at the bottom, ridge c..d at the top). Returns both-sided tris. */
+function sagFace(a: V3, b: V3, c: V3, d: V3, hw: number, height: number, seed: number): V3[] {
+  const rafters = Math.max(2, Math.round((2 * hw) / 0.3));
+  const nS = rafters * 2;
+  const nT = 3;
+  const sag = 0.035;
+  const lerp3 = (p: V3, q: V3, k: number): V3 => [p[0] + (q[0] - p[0]) * k, p[1] + (q[1] - p[1]) * k, p[2] + (q[2] - p[2]) * k];
+  const P = (i: number, j: number): V3 => {
+    const s = i / nS;
+    const t = j / nT;
+    const q = lerp3(lerp3(a, b, s), lerp3(c, d, s), t);
+    // dip between rafters (zero on each rafter, deepest midway), fading to nothing at the ridge
+    const between = Math.sin(Math.PI * ((s * rafters) % 1));
+    const dip = sag * between * (1 - t * 0.85);
+    // broken, uneven layer edges: small per-vertex wobble
+    const j2 = (hash3(i, j, seed) - 0.5) * 0.02;
+    return [q[0], q[1] - dip + j2, q[2]];
+  };
+  const out: V3[] = [];
+  for (let i = 0; i < nS; i++) {
+    for (let j = 0; j < nT; j++) {
+      const p00 = P(i, j);
+      const p10 = P(i + 1, j);
+      const p11 = P(i + 1, j + 1);
+      const p01 = P(i, j + 1);
+      out.push(...doubleQuad(p00, p10, p11, p01));
+    }
+  }
+  void height;
+  return out;
+}
+
+/**
+ * Loose frond strands hanging off the eave: a skirt of thin tapered strips along all four edges, so the
+ * roof edge reads as individual hanging strands instead of a hard polygon line. Local space, eave at y=0.
+ */
+function eaveFringe(hw: number, hd: number, seed: number): THREE.BufferGeometry {
+  const verts: V3[] = [];
+  // one strand: a thin tapered triangle whose width runs along the edge tangent, so it reads from any side
+  const strand = (root: V3, dir: V3, len: number, tan: V3) => {
+    const w = 0.011;
+    const tip: V3 = [root[0] + dir[0] * len, root[1] + dir[1] * len, root[2] + dir[2] * len];
+    verts.push(...doubleTri([root[0] - tan[0] * w, root[1] - tan[1] * w, root[2] - tan[2] * w], [root[0] + tan[0] * w, root[1] + tan[1] * w, root[2] + tan[2] * w], tip));
+  };
+  const edge = (count: number, pos: (k: number, r: number) => V3, out: V3, tan: V3, tag: number) => {
+    for (let k = 0; k < count; k++) {
+      const r = hash3(k, tag, seed);
+      const root = pos(k, r);
+      // most strands hang down and out; about one in five is long and loose, sticking out from the eave
+      const loose = hash3(k, tag + 7, seed) > 0.8;
+      const len = loose ? 0.16 + r * 0.1 : 0.06 + r * 0.07;
+      const spread = (hash3(k, tag + 3, seed) - 0.5) * 0.25;
+      const dir: V3 = [out[0] + tan[0] * spread, -0.75 - r * 0.2, out[2] + tan[2] * spread];
+      const n = Math.hypot(dir[0], dir[1], dir[2]);
+      strand(root, [dir[0] / n, dir[1] / n, dir[2] / n], len, tan);
+    }
+  };
+  const nF = Math.max(6, Math.round((2 * hw) / 0.09));
+  const nS = Math.max(4, Math.round((2 * hd) / 0.09));
+  const alongX = (k: number, r: number, nn: number, z: number): V3 => [-hw + ((k + 0.2 + r * 0.6) / nn) * 2 * hw, -0.01, z];
+  const alongZ = (k: number, r: number, nn: number, x: number): V3 => [x, -0.01, -hd + ((k + 0.2 + r * 0.6) / nn) * 2 * hd];
+  edge(nF, (k, r) => alongX(k, r, nF, hd + 0.01), [0, 0, 0.6], [1, 0, 0], 1);
+  edge(nF, (k, r) => alongX(k, r, nF, -hd - 0.01), [0, 0, -0.6], [1, 0, 0], 2);
+  edge(nS, (k, r) => alongZ(k, r, nS, hw + 0.01), [0.6, 0, 0], [0, 0, 1], 3);
+  edge(nS, (k, r) => alongZ(k, r, nS, -hw - 0.01), [-0.6, 0, 0], [0, 0, 1], 4);
+  return triGeometry(verts);
 }
 
 /**
@@ -503,10 +575,42 @@ function doorway(c: HutCtx, frontZ: number, baseY: number, doorH: number, dx: nu
   p.part(new THREE.BoxGeometry(doorW + 0.18, 0.09, 0.1), T.timberDark, [dx, baseY + doorH + 0.05, frontZ + 0.03]);
 }
 
-/** Thick layered hip roof: sloping thatch, a rolled eave board on all four sides, and a rounded ridge cap. */
-function hipRoofThick(p: Placer, hw: number, hd: number, H: number, base: number): void {
+/** Birds-nest ridge cap: irregular clumps of frond ends tied along the ridge, each one leaning a different way. */
+function ridgeNest(ridge: number, seed: number): THREE.BufferGeometry {
+  const verts: V3[] = [];
+  const clumps = 5;
+  for (let k = 0; k < clumps; k++) {
+    const r = hash3(k, 1, seed);
+    const x = -ridge - 0.1 + ((k + 0.5 + (r - 0.5) * 0.5) / clumps) * (2 * ridge + 0.2);
+    const lean = (hash3(k, 2, seed) - 0.5) * 0.9;
+    const hgt = 0.1 + r * 0.06;
+    for (let s = 0; s < 4; s++) {
+      const ang = (s / 4) * Math.PI * 2 + r * 3;
+      const tip: V3 = [x + Math.cos(ang) * 0.09 + lean * 0.05, hgt, Math.sin(ang) * 0.09];
+      const root: V3 = [x, 0, 0];
+      verts.push(...doubleTri([root[0] - 0.012, root[1], root[2]], [root[0] + 0.012, root[1], root[2]], tip));
+    }
+  }
+  return triGeometry(verts);
+}
+
+/** Stick-frame reinforcement: two upright timber poles and a tie-beam pinned to a mud wall face (local space). */
+function stickFrame(p: Placer, w: number, h: number, frontZ: number, seed: number): void {
   const T = VILLAGE_PALETTE;
-  const r = hipRoof(hw, hd, H);
+  const xs = [-w * 0.38, w * 0.38];
+  for (const x of xs) {
+    p.part(new THREE.BoxGeometry(0.04, h * 0.92, 0.035), T.postWood, [x, 0.22 + h * 0.5, frontZ + 0.02], undefined, undefined, { castShadow: true });
+  }
+  p.part(new THREE.BoxGeometry(w * 0.76, 0.035, 0.03), T.timberDark, [0, 0.22 + h * 0.66, frontZ + 0.025], undefined, undefined, { castShadow: true });
+  void seed;
+}
+
+/** Thick layered hip roof: sloping thatch, a rolled eave board on all four sides, and a rounded ridge cap. */
+function hipRoofThick(p: Placer, hw: number, hd: number, H: number, base: number, seed = 0): void {
+  const T = VILLAGE_PALETTE;
+  const r = hipRoof(hw, hd, H, seed);
+  // loose strands hang off all four eaves so the roof edge reads as frond ends, not a polygon line
+  p.part(eaveFringe(hw, hd, seed), T.thatchDark, [0, base, 0], undefined, undefined, THATCH_SPEC);
   p.part(r.faces, T.thatch, [0, base, 0], undefined, undefined, THATCH_SPEC);
   p.part(r.ends, T.thatchDark, [0, base, 0], undefined, undefined, THATCH_SPEC);
   p.part(new THREE.BoxGeometry(2 * hw + 0.06, 0.07, 0.08), T.thatchDark, [0, base + 0.03, hd], undefined, undefined, THATCH_SPEC);
@@ -514,7 +618,8 @@ function hipRoofThick(p: Placer, hw: number, hd: number, H: number, base: number
   p.part(new THREE.BoxGeometry(0.08, 0.07, 2 * hd + 0.06), T.thatchDark, [hw, base + 0.03, 0], undefined, undefined, THATCH_SPEC);
   p.part(new THREE.BoxGeometry(0.08, 0.07, 2 * hd + 0.06), T.thatchDark, [-hw, base + 0.03, 0], undefined, undefined, THATCH_SPEC);
   const ridge = Math.max(0, hw - hd) * 0.6;
-  p.part(new THREE.CylinderGeometry(0.07, 0.07, 2 * ridge + 0.2, 6), T.thatchDark, [0, base + H + 0.01, 0], [0, 0, Math.PI / 2], undefined, THATCH_SPEC);
+  // birds-nest ridge cap: a tangle of tufted frond ends, not a smooth pipe
+  p.part(ridgeNest(ridge, seed), T.thatchDark, [0, base + H, 0], undefined, undefined, THATCH_SPEC);
 }
 
 /** Round thatched hut: a bulged mud ring with a coping course, a tall layered thatch cone with rolled eave and tie rings. */
@@ -547,9 +652,12 @@ function buildFamily(c: HutCtx): void {
   const { p, seed, wall, w, d, h } = c;
   const T = VILLAGE_PALETTE;
   const lean = (hash3(seed, 7, 3) - 0.5) * 0.06;
-  p.part(new THREE.BoxGeometry(w * 1.04, 0.22, d * 1.04), T.wallStone, [0, 0.11, 0], undefined, undefined, { roughness: 1, receiveShadow: true });
+  // packed-earth skirt: darker than the wall and slightly wider, so the base reads as trodden ground
+  p.part(new THREE.BoxGeometry(w * 1.1, 0.24, d * 1.1), T.packedEarth, [0, 0.12, 0], undefined, undefined, { roughness: 1, receiveShadow: true });
   p.part(mudWall(w, h, d, 0.05, lean, seed, dampFor(seed)), wallTone(wall, seed), [0, 0.22 + h / 2, 0], undefined, undefined, SHELL);
   const top = 0.22 + h;
+  // stick-frame posts show on about half the family houses
+  if (hash3(seed, 8, 4) > 0.5) stickFrame(p, w, h, (d / 2) * 1.03, seed);
   p.part(new THREE.BoxGeometry(w + 0.06, 0.07, d + 0.06), T.wallLight, [0, top - 0.02, 0], undefined, undefined, { roughness: 0.95, castShadow: true });
   const frontZ = (d / 2) * 1.03;
   doorway(c, frontZ, 0.22, h * 0.62, (hash3(seed, 2, 2) - 0.5) * w * 0.2);
@@ -558,7 +666,7 @@ function buildFamily(c: HutCtx): void {
     p.part(new THREE.BoxGeometry(0.2, 0.18, 0.03), T.windowDark, [wx, 0.22 + h * 0.6, -frontZ - 0.01]);
     p.part(new THREE.BoxGeometry(0.26, 0.04, 0.06), T.timberDark, [wx, 0.22 + h * 0.6 - 0.11, -frontZ - 0.02]);
   }
-  hipRoofThick(p, w / 2 + 0.26, d / 2 + 0.26, 0.55, top - 0.02);
+  hipRoofThick(p, w / 2 + 0.26, d / 2 + 0.26, 0.55, top - 0.02, seed);
   if (hash3(seed, 5, 5) < 0.35) {
     for (const s of [-1, 1]) {
       p.part(new THREE.CylinderGeometry(0.04, 0.05, h * 0.8, 6), T.postWood, [s * (w * 0.42), 0.22 + h * 0.4, frontZ + 0.55], undefined, undefined, { castShadow: true });
@@ -589,7 +697,7 @@ function buildChief(c: HutCtx): void {
     p.part(new THREE.CylinderGeometry(0.05, 0.06, postH, 6), T.postWood, [x, base + postH / 2, d / 2 + vd - 0.05], undefined, undefined, { castShadow: true });
   }
   p.part(new THREE.BoxGeometry(w + 0.5, 0.07, vd + 0.35), T.thatchDark, [0, base + postH + 0.02, d / 2 + vd / 2 + 0.1], [0.3, 0, 0], undefined, THATCH_SPEC);
-  hipRoofThick(p, w / 2 + 0.32, d / 2 + 0.32, 0.72, top - 0.02);
+  hipRoofThick(p, w / 2 + 0.32, d / 2 + 0.32, 0.72, top - 0.02, seed);
 }
 
 /** Granary on stilts: raised plank platform, round woven body with a bulge, and a thatch cap with overhang. */
@@ -631,7 +739,7 @@ function buildSmith(c: HutCtx): void {
     }
   }
   p.part(mudWall(w - 0.1, h * 0.5, 0.16, 0.04, (hash3(seed, 9, 3) - 0.5) * 0.04, seed, dampFor(seed)), wallTone(wall, seed), [0, (h * 0.5) / 2, -d / 2 + 0.06], undefined, undefined, SHELL);
-  hipRoofThick(p, w / 2 + 0.2, d / 2 + 0.2, 0.6, h - 0.02);
+  hipRoofThick(p, w / 2 + 0.2, d / 2 + 0.2, 0.6, h - 0.02, seed);
   // forge: clay dome and chimney pipe
   p.part(new THREE.SphereGeometry(0.3, 10, 6, 0, Math.PI * 2, 0, Math.PI / 2), T.wallClay, [w * 0.22, 0.02, -d * 0.12], undefined, [1, 0.9, 1], SHELL);
   p.part(new THREE.CylinderGeometry(0.06, 0.09, 0.42, 7), T.wallClay, [w * 0.22, 0.52, -d * 0.12], undefined, undefined, { roughness: 0.98, castShadow: true });

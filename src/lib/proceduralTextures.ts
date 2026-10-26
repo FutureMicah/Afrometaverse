@@ -102,7 +102,12 @@ interface Fields {
   rgb?: [Float32Array, Float32Array, Float32Array];
 }
 
-/** Mud plaster: hand-troweled patches, rain-streaked erosion, deep hairline and map cracks, repair patches, grit. */
+/**
+ * Mud plaster: hand-troweled patches, rain-streaked erosion, bare eroded patches with ragged edges,
+ * hairline cracks that only run in some zones (not everywhere), and cell-based repair daubs with a
+ * slightly different, warmer tone and a darker seam. Warped lattice lookups stop the cracks from
+ * reading as one repeating grid.
+ */
 function mudFields(size: number): Fields {
   const N = size * size;
   const h = new Float32Array(N);
@@ -113,8 +118,11 @@ function mudFields(size: number): Fields {
   const grit = new Noise(256, 256, 9, 1);
   const streakN = new Noise(32, 2, 29, 2);
   const crackN = new Noise(16, 16, 21, 2);
+  const crackWarp = new Noise(4, 4, 61, 2);
+  const crackZone = new Noise(4, 4, 73, 2);
   const deepN = new Noise(8, 8, 37, 3);
-  const repairN = new Noise(4, 4, 53, 2);
+  const erodeN = new Noise(8, 8, 67, 3);
+  const DAUB = 6; // repair cells per texture tile
   for (let y = 0; y < size; y++) {
     const v = y / size;
     for (let x = 0; x < size; x++) {
@@ -126,31 +134,47 @@ function mudFields(size: number): Fields {
       // rain streaks run down the wall: long along v, thin along u, warped by a slow noise
       const sn = streakN.sample(u, v);
       const streak = Math.pow(Math.abs(Math.sin(u * Math.PI * 2 * 24 + sn * 6)), 10) * (0.35 + 0.65 * sn);
-      // hairline cracks: thin bands where a noise field crosses its midline
-      const c = crackN.sample(u, v);
-      const crack = 1 - smooth(0.0, 0.022, Math.abs(c - 0.5));
-      // deep fissures: rarer, wider, deeper
+      // hairline cracks: warped so they wander, and only in zones where the plaster is weak
+      const wu = (crackWarp.sample(u, v) - 0.5) * 0.14;
+      const wv = (crackWarp.sample(u + 0.41, v + 0.23) - 0.5) * 0.14;
+      const c = crackN.sample(u + wu, v + wv);
+      const zone = smooth(0.48, 0.66, crackZone.sample(u, v));
+      const crack = (1 - smooth(0.0, 0.02, Math.abs(c - 0.5))) * zone;
+      // deep fissures: rarer, wider, deeper, and also zoned
       const dn = deepN.sample(u, v);
-      const deep = 1 - smooth(0.0, 0.012, Math.abs(dn - 0.5));
-      // repair daubs: fresh patches of plaster on the wall
-      const r = repairN.sample(u, v);
-      const repair = smooth(0.6, 0.7, r);
+      const deep = (1 - smooth(0.0, 0.011, Math.abs(dn - 0.5))) * smooth(0.55, 0.72, crackZone.sample(u + 0.5, v + 0.5));
+      // eroded bare patches: ragged, irregular blobs where the fine plaster has worn back to the core
+      const er = erodeN.sample(u, v) + (g - 0.5) * 0.14;
+      const erode = smooth(0.6, 0.66, er);
+      // repair daubs: one rectangular cell in some grid cells, with a ragged outline
+      const cu = u * DAUB;
+      const cv = v * DAUB;
+      const gx = Math.floor(cu);
+      const gy = Math.floor(cv);
+      const has = hash(gx, gy, 91) > 0.6 ? 1 : 0;
+      const ax = Math.abs(cu - gx - 0.5) / 0.36;
+      const ay = Math.abs(cv - gy - 0.5) / 0.28;
+      const dd = Math.max(ax, ay) + (g - 0.5) * 0.25;
+      const daub = has ? 1 - smooth(0.9, 1.0, dd) : 0;
+      const seam = has ? smooth(0.72, 0.86, dd) * (1 - smooth(0.9, 1.0, dd)) : 0;
 
-      h[i] = b * 0.5 + p * 0.22 + g * 0.2 - streak * 0.2 - crack * 0.25 - deep * 0.6 + repair * 0.1;
-      lum[i] = 0.9 + (b - 0.5) * 0.12 + (p - 0.5) * 0.07 + (g - 0.5) * 0.09 - streak * 0.1 - crack * 0.28 - deep * 0.35 - repair * 0.07;
-      tint[i] = repair * 0.6 - streak * 0.3;
+      h[i] = b * 0.5 + p * 0.22 + g * 0.2 - streak * 0.2 - crack * 0.25 - deep * 0.6 - erode * 0.22 + daub * 0.12 - seam * 0.05;
+      lum[i] =
+        0.9 + (b - 0.5) * 0.12 + (p - 0.5) * 0.07 + (g - 0.5) * 0.09 - streak * 0.1 - crack * 0.28 - deep * 0.35 - erode * 0.12 + daub * 0.07 - seam * 0.08;
+      tint[i] = daub * 0.6 - streak * 0.3 - erode * 0.35;
     }
   }
   return { h, lum, tint };
 }
 
 /**
- * Palm-frond thatch. Long narrow fronds lie in overlapping courses: each course row holds FRONDS
- * fronds side by side (offset every other row), and every frond runs DOWN the slope for LEN rows,
- * so it overlaps the courses below it like a shingle. Each frond tapers to a point at its tip, has a
- * raised central rib, and combed leaflets that slant from the rib toward the tip. Colour runs from
- * fresh yellow-green near the root to golden and then brown toward the tip, with damp dark tips.
- * Texture u runs across the roof and v runs down the slope (see villageProps frondRoofUV).
+ * Palm-frond thatch. Long fronds lie in overlapping courses: each course row holds FRONDS fronds side by
+ * side (offset every other row), and every frond runs DOWN the slope for 1.5 to 2 m, so it overlaps
+ * several courses below it like real palm thatch. Each frond length varies per frond, and some fronds
+ * are missing from a course, so the layer edges stagger instead of forming a uniform tile.
+ * Each frond tapers to a point, has a raised central rib, and combed leaflets slanting toward the tip.
+ * Colour runs from fresh yellow-green near the root to golden and then brown toward the tip, with
+ * damp dark tips. Texture u runs across the roof and v runs down the slope (see villageProps frondRoofUV).
  */
 function thatchFields(size: number): Fields {
   const N = size * size;
@@ -158,9 +182,9 @@ function thatchFields(size: number): Fields {
   const lum = new Float32Array(N);
   const tint = new Float32Array(N);
   const rgb: [Float32Array, Float32Array, Float32Array] = [new Float32Array(N), new Float32Array(N), new Float32Array(N)];
-  const ROWS = 10;
-  const FRONDS = 30;
-  const LEN = 2.8;
+  const ROWS = 10; // one tile is 1.8 m of slope, so one row is 0.18 m
+  const FRONDS = 22;
+  const LEN = 9; // longest frond: 9 rows, about 1.6 m
   const wearN = new Noise(4, 4, 71, 2);
   const fineN = new Noise(64, 64, 79, 2);
   // sRGB anchors: yellow-green fresh frond, golden dried frond, brown sun-bleached frond, dark damp tip
@@ -179,13 +203,14 @@ function thatchFields(size: number): Fields {
       const i = y * size + x;
       let bestR = -1e9;
       let bestT = 0;
+      let bestLen = LEN;
       let bestA = 0;
       let bestFrond = 0;
-      // candidate fronds: the root row and the rows above it reach down over this pixel
-      for (let dr = 0; dr <= 3; dr++) {
+      // candidate fronds: every course that can reach down over this pixel (fronds are up to LEN rows long)
+      for (let dr = 0; dr <= LEN + 1; dr++) {
         const R = r0 - dr;
         const t = vr - R; // distance down the frond from its root, in rows
-        if (t < 0 || t > LEN) continue;
+        if (t < 0) continue;
         const rowOff = ((R % 2) + 2) % 2 * 0.5;
         const rowMod = ((R % ROWS) + ROWS) % ROWS;
         // the frond column nearest to this pixel in this row
@@ -193,17 +218,23 @@ function thatchFields(size: number): Fields {
         for (let dc = -1; dc <= 1; dc++) {
           const C = cFloor + dc;
           const cMod = ((C % FRONDS) + FRONDS) % FRONDS;
-          const sway = (hash(cMod, rowMod, 131) - 0.5) * 0.35 * (t / LEN);
+          // some fronds are missing from a course (broken layer edge): skip them
+          if (hash(cMod, rowMod, 157) > 0.93) continue;
+          // each frond has its own length, from 70 to 100 percent of LEN, so the tips stagger
+          const lenF = LEN * (0.7 + 0.3 * hash(cMod, rowMod, 151));
+          if (t > lenF) continue;
+          const sway = (hash(cMod, rowMod, 131) - 0.5) * 0.35 * (t / lenF);
           const centre = C + 0.5 + rowOff + sway;
           // halfwidth tapers from the root to a point at the tip
-          const taper = Math.max(0, 1 - Math.pow(t / LEN, 1.4));
-          const hw = 0.42 * (0.35 + 0.65 * taper);
+          const taper = Math.max(0, 1 - Math.pow(t / lenF, 1.4));
+          const hw = 0.46 * (0.35 + 0.65 * taper);
           const a = (uf - centre) / hw;
           if (Math.abs(a) > 1) continue;
           // later rows lie on top of earlier rows (shingle overlap), so the largest R wins
           if (R > bestR) {
             bestR = R;
             bestT = t;
+            bestLen = lenF;
             bestA = a;
             bestFrond = cMod + rowMod * FRONDS;
           }
@@ -225,7 +256,7 @@ function thatchFields(size: number): Fields {
 
       const a = bestA;
       const absA = Math.abs(a);
-      const tn = bestT / LEN; // 0 at the root, 1 at the tip
+      const tn = bestT / bestLen; // 0 at the root, 1 at the tip
       const fh = hash(bestFrond % FRONDS, Math.floor(bestFrond / FRONDS), 101);
       const fh2 = hash(bestFrond % FRONDS, Math.floor(bestFrond / FRONDS), 103);
       const rib = 1 - smooth(0.0, 0.09, absA);
