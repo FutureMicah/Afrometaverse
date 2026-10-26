@@ -845,7 +845,46 @@ export function addHut(batch: PropBatch, spec: HutSpec): void {
     firewoodStack(p, side * (w / 2 + 0.38), -d * 0.18);
     clayPot(p, side * (w / 2 + 0.2), d * 0.3, 1);
     clayPot(p, side * (w / 2 + 0.18), d * 0.3 + 0.32, 0.8);
+    // worn, trodden dirt in front of the door (threshold dip), then a few loose pebbles
+    p.part(new THREE.CircleGeometry(0.5 * Math.max(0.8, w * 0.7), 14), T.wornDirt, [0, 0.012, d / 2 + 0.45], [-Math.PI / 2, 0, 0], undefined, { receiveShadow: true });
+    scatterPebbles(p, w, d, seed);
+    if (kind === "family") cookingTripod(p, -side * (w / 2 + 0.55), d * 0.3 + 0.25, seed);
+    if (kind === "family" && hash3(spec.x, spec.z, 14) < 0.6) leaningSpear(p, side * (w / 2 + 0.05), d / 2 + 0.12, seed);
   }
+}
+
+/** Small loose stones scattered around the compound, merged with the hut. Deterministic per hut. */
+function scatterPebbles(p: Placer, w: number, d: number, seed: number): void {
+  const n = 5 + Math.floor(hash3(seed, 21, 1) * 4);
+  for (let i = 0; i < n; i++) {
+    const a = hash3(seed, i, 22) * Math.PI * 2;
+    const r = 0.65 + hash3(seed, i, 23) * 0.9;
+    const x = Math.cos(a) * r * (w / 1.25);
+    const z = Math.sin(a) * r * (d / 1.1);
+    const s = 0.025 + hash3(seed, i, 24) * 0.035;
+    p.part(new THREE.DodecahedronGeometry(s, 0), VILLAGE_PALETTE.rockBase, [x, s * 0.5, z], [hash3(seed, i, 25) * 3, a, 0], [1, 0.6, 1], { roughness: 0.95, receiveShadow: true });
+  }
+}
+
+/** Three-legged cooking tripod with a pot hung over an ash mound. */
+function cookingTripod(p: Placer, x: number, z: number, seed: number): void {
+  const T = VILLAGE_PALETTE;
+  p.part(new THREE.CylinderGeometry(0.2, 0.2, 0.02, 10), T.wornDirt, [x, 0.011, z], [-Math.PI / 2, 0, 0], undefined, { roughness: 1 });
+  for (let i = 0; i < 3; i++) {
+    const a = (i / 3) * Math.PI * 2 + hash3(seed, 31, i) * 0.4;
+    const lx = x + Math.cos(a) * 0.14;
+    const lz = z + Math.sin(a) * 0.14;
+    p.part(new THREE.CylinderGeometry(0.012, 0.014, 0.52, 5), T.postWood, [lx * 0.5 + x * 0.5, 0.26, lz * 0.5 + z * 0.5], [Math.cos(a) * 0.35, 0, -Math.sin(a) * 0.35], undefined, { castShadow: true });
+  }
+  p.part(new THREE.SphereGeometry(0.11, 8, 6, 0, Math.PI * 2, 0, Math.PI * 0.6), T.clayPot, [x, 0.42, z], undefined, [1, 0.8, 1], { roughness: 0.85, castShadow: true });
+}
+
+/** A spear, tip up, leaning against the wall beside the door. */
+function leaningSpear(p: Placer, x: number, z: number, seed: number): void {
+  const T = VILLAGE_PALETTE;
+  const lean = 0.18 + hash3(seed, 41, 1) * 0.1;
+  p.part(new THREE.CylinderGeometry(0.014, 0.018, 1.7, 5), T.postWood, [x + Math.sin(lean) * 0.85, 0.85, z - Math.cos(lean) * 0.85 * 0.2], [0, 0, -lean], undefined, { castShadow: true });
+  p.part(new THREE.ConeGeometry(0.035, 0.16, 5), T.woodDark, [x + Math.sin(lean) * 1.7, 1.7 * Math.cos(lean) - 0.02, z - Math.cos(lean) * 0.85 * 0.2], [0, 0, -lean], undefined, { castShadow: true });
 }
 
 export function addTree(batch: PropBatch, x: number, z: number, s: number, kind: TreeKind): void {

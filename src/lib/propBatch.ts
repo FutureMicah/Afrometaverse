@@ -78,6 +78,7 @@ export class PropBatch {
     const key = `${full.roughness}|${full.metalness}|${full.castShadow ? 1 : 0}|${full.receiveShadow ? 1 : 0}|${full.surface ?? ""}`;
     const geo = normaliseForMerge(geometry, new THREE.Color(color));
     geo.applyMatrix4(matrix);
+    applyContactAO(geo);
     if (geo !== geometry) geometry.dispose();
     let bucket = this.buckets.get(key);
     if (!bucket) {
@@ -102,6 +103,28 @@ export class PropBatch {
     this.partTotal = 0;
     return out;
   }
+}
+
+/**
+ * Baked ambient occlusion, per vertex, in world space (runs after the part is placed):
+ * - contact: vertices near the ground go darker, so wall bases, bush skirts and pots sit in shadow;
+ * - cavity: downward-facing surfaces (under eaves, the underside of a roof face) go darker.
+ * Multiplies the vertex colour, so it costs nothing at draw time and works on the merged mesh.
+ */
+function applyContactAO(geo: THREE.BufferGeometry): void {
+  const pos = geo.getAttribute("position") as THREE.BufferAttribute;
+  const nrm = geo.getAttribute("normal") as THREE.BufferAttribute | undefined;
+  const col = geo.getAttribute("color") as THREE.BufferAttribute | undefined;
+  if (!col || !nrm) return;
+  for (let i = 0; i < pos.count; i++) {
+    const y = pos.getY(i);
+    const t = Math.min(1, Math.max(0, y / 0.35));
+    let ao = 0.55 + 0.45 * t * t * (3 - 2 * t);
+    const ny = nrm.getY(i);
+    if (ny < 0) ao *= 1 + 0.3 * ny;
+    col.setXYZ(i, col.getX(i) * ao, col.getY(i) * ao, col.getZ(i) * ao);
+  }
+  col.needsUpdate = true;
 }
 
 /** Places local-space parts under a base transform (like a parent group would). */

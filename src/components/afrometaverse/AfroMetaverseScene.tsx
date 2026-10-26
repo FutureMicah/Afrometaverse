@@ -13,6 +13,7 @@ import {
 } from "@/stores/roamStore";
 import { INTERIOR_LIST, DOOR_RADIUS } from "@/data/interiors";
 import { getProceduralPBR } from "@/lib/proceduralTextures";
+import { undulatedGround } from "@/lib/groundRelief";
 import { useInteriorStore, enterBuilding, type InteriorId } from "@/stores/interiorStore";
 import { takeTouchLook, touchInput } from "@/lib/touchInput";
 
@@ -179,6 +180,8 @@ function VillageDaySky() {
 }
 
 const GROUND_PBR = getProceduralPBR("dust", 512);
+// built once: 64x64 grid, heights 0..0.18m, so the ground ripples under the light
+const GROUND_RELIEF = undulatedGround(WORLD_W, WORLD_D, 64, 0.18, 3);
 
 function NeonGround() {
   return (
@@ -187,14 +190,14 @@ function NeonGround() {
         <planeGeometry args={[80, 80]} />
         <meshStandardMaterial color={N.earthDeep} roughness={1} />
       </mesh>
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[-1, -0.015, -1]} receiveShadow>
-        <planeGeometry args={[WORLD_W, WORLD_D]} />
+      {/* relief: low noise undulation so the dust catches light instead of a dead flat sheet */}
+      <mesh geometry={GROUND_RELIEF} position={[-1, -0.015, -1]} receiveShadow>
         <meshStandardMaterial
           color={N.earth}
           roughness={0.95}
           map={GROUND_PBR?.map ?? null}
           normalMap={GROUND_PBR?.normal ?? null}
-          normalScale={new THREE.Vector2(0.5, 0.5)}
+          normalScale={new THREE.Vector2(1.1, 1.1)}
         />
       </mesh>
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[-1, 0.002, -1]} receiveShadow>

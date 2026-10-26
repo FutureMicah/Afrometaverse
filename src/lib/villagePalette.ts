@@ -13,6 +13,12 @@ export const VILLAGE_PALETTE = {
   grassGreen: "#3a6b28",
   grassLight: "#7a8a3a",
   groundDirt: "#a87848",
+  /** darker trodden earth at the base of a wall (packed skirt) */
+  packedEarth: "#7a5634",
+  /** trodden, worn dirt by doorways and the market: darker and packed */
+  wornDirt: "#8a5f38",
+  /** shadow pool under the eaves / by the door sill */
+  sillDark: "#5e3f25",
   leafDeep: "#3a5a28",
   leafMid: "#4a6b32",
   leafMid2: "#4a6b30",
