@@ -12,6 +12,7 @@ import {
   type TransportId,
 } from "@/stores/roamStore";
 import { INTERIOR_LIST, DOOR_RADIUS } from "@/data/interiors";
+import { getProceduralPBR } from "@/lib/proceduralTextures";
 import { useInteriorStore, enterBuilding, type InteriorId } from "@/stores/interiorStore";
 import { takeTouchLook, touchInput } from "@/lib/touchInput";
 
@@ -158,13 +159,15 @@ function VillageDaySky() {
   return (
     <>
       <color attach="background" args={[SCENE_PALETTE.skyHaze]} />
-      <fog attach="fog" args={[SCENE_PALETTE.fogSand, 16, 48]} />
-      <ambientLight intensity={0.62} />
+      <fog attach="fog" args={[SCENE_PALETTE.fogSand, 22, 72]} />
+      <ambientLight intensity={0.5} color="#f3dcc0" />
+      {/* ground bounce: warm earth light from below fills shadow sides */}
+      <hemisphereLight args={["#f2e2c4", "#8a5a3a", 0.55]} />
       <hemisphereLight args={[SCENE_PALETTE.skyPale, SCENE_PALETTE.groundBrown, 0.5]} />
       <directionalLight
         position={[12, 20, 8]}
-        intensity={1.45}
-        color={SCENE_PALETTE.sunWarm}
+        intensity={1.7}
+        color="#ffd29a"
         castShadow
         shadow-mapSize-width={2048}
         shadow-mapSize-height={2048}
@@ -175,6 +178,8 @@ function VillageDaySky() {
   );
 }
 
+const GROUND_PBR = getProceduralPBR("dust", 512);
+
 function NeonGround() {
   return (
     <>
@@ -184,7 +189,13 @@ function NeonGround() {
       </mesh>
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[-1, -0.015, -1]} receiveShadow>
         <planeGeometry args={[WORLD_W, WORLD_D]} />
-        <meshStandardMaterial color={N.earth} roughness={0.95} />
+        <meshStandardMaterial
+          color={N.earth}
+          roughness={0.95}
+          map={GROUND_PBR?.map ?? null}
+          normalMap={GROUND_PBR?.normal ?? null}
+          normalScale={new THREE.Vector2(0.5, 0.5)}
+        />
       </mesh>
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[-1, 0.002, -1]} receiveShadow>
         <planeGeometry args={[WORLD_W - 8, WORLD_D - 8]} />

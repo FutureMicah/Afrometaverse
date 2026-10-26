@@ -8,6 +8,7 @@ import { useMemo, useRef } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import { SCENE_PALETTE } from "@/lib/scenePalette";
+import { getProceduralPBR } from "@/lib/proceduralTextures";
 
 /** Adobe / bature mud — darkens when wet, dusty in Harmattan */
 export function MudWallMaterial({
@@ -26,7 +27,17 @@ export function MudWallMaterial({
     };
   }, [climateIntensity, baseColor]);
 
-  return <meshStandardMaterial {...props} />;
+  // plaster albedo + normal (procedural, shared). Gives walls grain instead of flat paint.
+  const pbr = useMemo(() => getProceduralPBR("mud", 512), []);
+  return (
+    <meshStandardMaterial
+      {...props}
+      map={pbr?.map ?? null}
+      normalMap={pbr?.normal ?? null}
+      normalScale={new THREE.Vector2(0.6, 0.6)}
+      envMapIntensity={0.6}
+    />
+  );
 }
 
 /** Conical or gable thatch that subtly rustles with wind */
@@ -60,7 +71,7 @@ export function ThatchedRoof({
         <>
           <mesh castShadow position={[0, height * 0.35, 0]}>
             <coneGeometry args={[radius, height, 10]} />
-            <meshStandardMaterial color={thatch} roughness={0.98} flatShading />
+            <meshStandardMaterial color={thatch} roughness={0.98} map={getProceduralPBR("thatch", 256)?.map ?? null} normalMap={getProceduralPBR("thatch", 256)?.normal ?? null} normalScale={new THREE.Vector2(0.8, 0.8)} />
           </mesh>
           <mesh position={[0, height * 0.55, 0]}>
             <coneGeometry args={[radius * 0.35, height * 0.35, 8]} />
