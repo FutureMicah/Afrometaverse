@@ -90,6 +90,9 @@ function dressFighterMaterials(root: THREE.Object3D) {
     if (!mesh.isMesh) return;
     mesh.castShadow = true;
     mesh.receiveShadow = true;
+    // Skinned primitives are culled against their rest-pose bounds, which hides hair and
+    // other parts once they bend with the animation. Keep every skinned part drawn.
+    if ((mesh as THREE.SkinnedMesh).isSkinnedMesh) mesh.frustumCulled = false;
     const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
     for (const raw of mats) {
       const m = raw as THREE.MeshStandardMaterial;

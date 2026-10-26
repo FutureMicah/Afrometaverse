@@ -465,22 +465,26 @@ export function addTree(batch: PropBatch, x: number, z: number, s: number, kind:
     }
     return;
   }
-  const trunkH = kind === "broad" ? 1.8 : 1.45;
-  p.part(new THREE.CylinderGeometry(0.09, 0.14, trunkH, 7), VILLAGE_PALETTE.trunk, [0, trunkH / 2, 0], undefined, undefined, { castShadow: true });
-  p.part(new THREE.SphereGeometry(kind === "broad" ? 0.85 : 0.6, 9, 9), VILLAGE_PALETTE.treeMid, [0, trunkH + 0.15, 0], undefined, undefined, {
-    roughness: 0.88,
-    castShadow: true,
-  });
-  p.part(new THREE.SphereGeometry(0.45, 8, 8), VILLAGE_PALETTE.leafMid2, [0.35, trunkH + 0.35, 0.15], undefined, undefined, {
-    roughness: 0.9,
-    castShadow: true,
-  });
-  p.part(new THREE.SphereGeometry(0.4, 8, 8), VILLAGE_PALETTE.treeDark, [-0.3, trunkH + 0.25, -0.2], undefined, undefined, {
-    roughness: 0.92,
-    castShadow: true,
-  });
-  if (kind === "broad") {
-    p.part(new THREE.SphereGeometry(0.5, 8, 8), VILLAGE_PALETTE.treeLight, [0.1, trunkH + 0.55, -0.25], undefined, undefined, {
+  const broad = kind === "broad";
+  const trunkH = broad ? 1.8 : 1.45;
+  // Trunk tapers and forks into two limbs so the canopy has something to sit on.
+  p.part(new THREE.CylinderGeometry(0.08, 0.15, trunkH, 7), VILLAGE_PALETTE.trunk, [0, trunkH / 2, 0], undefined, undefined, { castShadow: true });
+  const limbLen = broad ? 0.9 : 0.7;
+  for (const sign of [-1, 1]) {
+    p.part(new THREE.CylinderGeometry(0.05, 0.08, limbLen, 5), VILLAGE_PALETTE.trunk, [sign * 0.18, trunkH + 0.25, 0.04], [0, 0, sign * 0.5], undefined, { castShadow: true });
+  }
+  // Layered canopy: a dark base mass, mid clusters pushed outward and up, and light crowns on top.
+  // Each cluster is a low-poly sphere squashed flat so the crown reads as foliage, not a cone.
+  const crownR = broad ? 0.95 : 0.7;
+  const clusters: Array<[number, number, number, number, keyof typeof VILLAGE_PALETTE]> = [
+    [0, trunkH + 0.1, 0, crownR, "treeDark"],
+    [crownR * 0.62, trunkH + 0.3, crownR * 0.35, crownR * 0.6, "treeMid"],
+    [-crownR * 0.6, trunkH + 0.25, -crownR * 0.3, crownR * 0.58, "treeMid"],
+    [crownR * 0.1, trunkH + 0.55, -crownR * 0.45, crownR * 0.5, "leafMid2"],
+    [-crownR * 0.25, trunkH + 0.62, crownR * 0.42, crownR * 0.46, "treeLight"],
+  ];
+  for (const [cx, cy, cz, r, key] of clusters) {
+    p.part(new THREE.IcosahedronGeometry(r, 1), VILLAGE_PALETTE[key], [cx, cy, cz], [0.1, 0.25, 0.05], [1, 0.72, 1], {
       roughness: 0.9,
       castShadow: true,
     });

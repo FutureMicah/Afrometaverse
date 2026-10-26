@@ -163,6 +163,27 @@ export function MudHut({
         <boxGeometry args={[0.3 * scale * BUILDING_SCALE, h * 0.55, 0.04]} />
         <meshStandardMaterial color={SCENE_PALETTE.doorWood} roughness={1} />
       </mesh>
+      {/* window opening: dark recess with a frame, reads at distance */}
+      <mesh position={[isRound ? w * 0.42 : w * 0.5 + 0.01, h * 0.62, isRound ? -w * 0.2 : 0]} rotation={[0, isRound ? -Math.PI / 2 : Math.PI / 2, 0]}>
+        <boxGeometry args={[0.22 * scale * BUILDING_SCALE, 0.24 * scale * BUILDING_SCALE, 0.04]} />
+        <meshStandardMaterial color={SCENE_PALETTE.doorWood} roughness={1} />
+      </mesh>
+      <mesh position={[isRound ? w * 0.44 : w * 0.5 + 0.02, h * 0.62, isRound ? -w * 0.2 : 0]} rotation={[0, isRound ? -Math.PI / 2 : Math.PI / 2, 0]}>
+        <boxGeometry args={[0.16 * scale * BUILDING_SCALE, 0.18 * scale * BUILDING_SCALE, 0.02]} />
+        <meshStandardMaterial color={SCENE_PALETTE.asphalt} roughness={1} />
+      </mesh>
+
+      {/* veranda: a raised porch with posts in front of the door */}
+      <mesh position={[0, 0.06 * scale * BUILDING_SCALE, isRound ? w * 0.62 : w * 0.6]} castShadow receiveShadow>
+        <boxGeometry args={[w * 0.9, 0.08 * scale * BUILDING_SCALE, w * 0.36]} />
+        <meshStandardMaterial color={SCENE_PALETTE.wallPale} roughness={1} />
+      </mesh>
+      {[-0.4, 0.4].map((sx) => (
+        <mesh key={sx} position={[sx * w * 0.44, h * 0.35, isRound ? w * 0.78 : w * 0.76]} castShadow>
+          <cylinderGeometry args={[0.05 * scale * BUILDING_SCALE, 0.055 * scale * BUILDING_SCALE, h * 0.7, 6]} />
+          <meshStandardMaterial color={SCENE_PALETTE.doorWood} roughness={1} />
+        </mesh>
+      ))}
 
       <group position={[0, h + 0.05, 0]}>
         <ThatchedRoof
@@ -172,6 +193,13 @@ export function MudHut({
           windIntensity={windIntensity}
           isRainy={climateIntensity > 0.5}
         />
+        {/* ridge pole along the roof apex, so rectangular roofs read as built */}
+        {!isRound && (
+          <mesh position={[0, 0.84 * scale * BUILDING_SCALE, 0]} castShadow>
+            <boxGeometry args={[w * 1.1, 0.06 * scale * BUILDING_SCALE, 0.06 * scale * BUILDING_SCALE]} />
+            <meshStandardMaterial color={SCENE_PALETTE.doorWood} roughness={1} />
+          </mesh>
+        )}
       </group>
     </group>
   );
