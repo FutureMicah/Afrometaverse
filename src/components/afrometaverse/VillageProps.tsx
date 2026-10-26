@@ -3,6 +3,7 @@ import * as THREE from "three";
 import type { ChunkCoord } from "@/lib/chunkStreaming";
 import type { MergedPropMesh } from "@/lib/propBatch";
 import { buildChunkVillageProps, buildStaticVillageProps } from "@/lib/villageProps";
+import { getProceduralPBR } from "@/lib/proceduralTextures";
 
 /**
  * Renders merged village props: one mesh per material class (see lib/propBatch.ts). Each mesh
@@ -15,7 +16,7 @@ import { buildChunkVillageProps, buildStaticVillageProps } from "@/lib/villagePr
 const materialCache = new Map<string, THREE.MeshStandardMaterial>();
 
 function sharedMaterial(spec: MergedPropMesh["material"]): THREE.MeshStandardMaterial {
-  const key = `${spec.roughness}|${spec.metalness}`;
+  const key = `${spec.roughness}|${spec.metalness}|${spec.surface ?? ""}`;
   let m = materialCache.get(key);
   if (!m) {
     m = new THREE.MeshStandardMaterial({
@@ -24,6 +25,16 @@ function sharedMaterial(spec: MergedPropMesh["material"]): THREE.MeshStandardMat
       roughness: spec.roughness,
       metalness: spec.metalness,
     });
+    // thatch and mud walls get the procedural albedo + normal maps, so straw courses and wall cracks
+    // catch light. Vertex colour still tints them (damp bases, sun-faded walls).
+    if (spec.surface) {
+      const pbr = getProceduralPBR(spec.surface);
+      if (pbr) {
+        m.map = pbr.map;
+        m.normalMap = pbr.normal;
+        m.normalScale = new THREE.Vector2(spec.surface === "thatch" ? 1.1 : 0.8, spec.surface === "thatch" ? 1.1 : 0.8);
+      }
+    }
     materialCache.set(key, m);
   }
   return m;

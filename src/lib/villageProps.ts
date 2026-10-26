@@ -290,11 +290,66 @@ function doubleTri(a: V3, b: V3, c: V3): V3[] {
   return [a, b, c, a, c, b];
 }
 
+/** Metres per texture repeat for mud and thatch (the 2K maps then carry about 1 px per 1 mm). */
+const TILE_M = 1.8;
+
 function triGeometry(verts: V3[]): THREE.BufferGeometry {
   const g = new THREE.BufferGeometry();
   g.setAttribute("position", new THREE.Float32BufferAttribute(verts.flat(), 3));
   g.computeVertexNormals();
+  // planar UVs on the slope: u across the roof, v up the slope, so straw courses run level
+  const uv: number[] = [];
+  for (const [x, y, z] of verts) uv.push((x + z) / TILE_M, y / TILE_M);
+  g.setAttribute("uv", new THREE.Float32BufferAttribute(uv, 2));
   return g;
+}
+
+/** Scale the UVs a primitive already has (cylinders keep a seamless 0..1 wrap). */
+function scaleUV(geo: THREE.BufferGeometry, sx: number, sy: number): THREE.BufferGeometry {
+  const uv = geo.getAttribute("uv") as THREE.BufferAttribute | undefined;
+  if (!uv) return geo;
+  for (let i = 0; i < uv.count; i++) uv.setXY(i, uv.getX(i) * sx, uv.getY(i) * sy);
+  uv.needsUpdate = true;
+  return geo;
+}
+
+/**
+ * Per-vertex brightness: damp base and wear. `fn` gets the normalised height t (0 at the bottom, 1 at
+ * the top) and returns a multiplier. Folded into vertex colour when the batch merges.
+ */
+function shadeByHeight(geo: THREE.BufferGeometry, fn: (t: number, x: number, z: number) => number): THREE.BufferGeometry {
+  geo.computeBoundingBox();
+  const bb = geo.boundingBox ?? new THREE.Box3();
+  const y0 = bb.min.y;
+  const span = bb.max.y - bb.min.y || 1;
+  const pos = geo.getAttribute("position") as THREE.BufferAttribute;
+  const tone = new Float32Array(pos.count);
+  for (let i = 0; i < pos.count; i++) tone[i] = fn((pos.getY(i) - y0) / span, pos.getX(i), pos.getZ(i));
+  geo.setAttribute("tone", new THREE.BufferAttribute(tone, 1));
+  return geo;
+}
+
+/** Sun-faded wall shading: a darker, damp base that rises up the wall and a few stains. */
+function wallShade(damp: number, seed: number): (t: number, x: number, z: number) => number {
+  return (t, x, z) => {
+    const rise = damp + (1 - damp) * smooth01(0.02, 0.3, t);
+    const stain = 1 - 0.05 * smooth01(0.4, 0.9, hash3(Math.floor(x * 9), Math.floor(t * 14), seed));
+    return rise * stain;
+  };
+}
+
+/** Thatch wear: eaves and the lower courses go dark with weather; the top stays bright. */
+function thatchShade(seed: number): (t: number, x: number, z: number) => number {
+  return (t, x, z) => {
+    const eave = 0.72 + 0.28 * smooth01(0.0, 0.35, t);
+    const mottle = 0.94 + 0.06 * hash3(Math.floor((x + z) * 6), Math.floor(t * 10), seed + 3);
+    return eave * mottle;
+  };
+}
+
+function smooth01(e0: number, e1: number, x: number): number {
+  const t = Math.min(1, Math.max(0, (x - e0) / (e1 - e0)));
+  return t * t * (3 - 2 * t);
 }
 
 /**
@@ -338,41 +393,58 @@ function warp(geo: THREE.BufferGeometry, fn: (x: number, y: number, z: number, t
 }
 
 /** Rectangular mud wall: bulges mid-height, leans a little, with a hand-troweled wobble. Centred on its origin. */
-function mudWall(w: number, h: number, d: number, bulge: number, lean: number, seed: number): THREE.BufferGeometry {
+function mudWall(w: number, h: number, d: number, bulge: number, lean: number, seed: number, damp = 0.82): THREE.BufferGeometry {
   const g = new THREE.BoxGeometry(w, h, d, 3, 5, 2);
-  return warp(g, (x, y, z, t) => {
+  warp(g, (x, y, z, t) => {
     const s = Math.sin(Math.PI * t);
     const j = (hash3(x, y, z + seed) - 0.5) * 0.024;
     return [x * (1 + bulge * s * 0.5) + lean * t + j, y, z * (1 + bulge * s * 0.4) + j];
   });
+  return planarUV(shadeByHeight(g, wallShade(damp, seed)));
+}
+
+/** Planar UVs for boxes and warped boxes: wall faces run along x+z and y, at TILE_M per repeat. */
+function planarUV(geo: THREE.BufferGeometry): THREE.BufferGeometry {
+  const pos = geo.getAttribute("position") as THREE.BufferAttribute;
+  const uv = new Float32Array(pos.count * 2);
+  for (let i = 0; i < pos.count; i++) {
+    uv[i * 2] = (pos.getX(i) + pos.getZ(i)) / TILE_M;
+    uv[i * 2 + 1] = pos.getY(i) / TILE_M;
+  }
+  geo.setAttribute("uv", new THREE.BufferAttribute(uv, 2));
+  return geo;
 }
 
 /** Round mud wall (a batter that narrows slightly toward the top), bulged and slightly irregular. */
-function roundWall(R: number, h: number, seg: number, bulge: number, seed: number): THREE.BufferGeometry {
+function roundWall(R: number, h: number, seg: number, bulge: number, seed: number, damp = 0.82): THREE.BufferGeometry {
   const g = new THREE.CylinderGeometry(R * 0.93, R, h, seg, 4, false);
-  return warp(g, (x, y, z, t) => {
+  warp(g, (x, y, z, t) => {
     const a = Math.atan2(z, x);
     const s = Math.sin(Math.PI * t);
     const k = (1 + bulge * s) * (1 + (hash3(a * 4, t * 9, seed) - 0.5) * 0.05);
     return [x * k, y, z * k];
   });
+  const circ = 2 * Math.PI * R;
+  return shadeByHeight(scaleUV(g, Math.max(1, Math.round(circ / TILE_M)), Math.max(1, h / TILE_M)), wallShade(damp, seed));
 }
 
 /** Open thatch cone with a hand-tied, scalloped eave. Bottom at y=-h/2, top at y=+h/2. */
 function thatchCone(rBot: number, rTop: number, H: number, seed: number): THREE.BufferGeometry {
   const g = new THREE.CylinderGeometry(rTop, rBot, H, 12, 3, true);
-  return warp(g, (x, y, z, t) => {
+  warp(g, (x, y, z, t) => {
     const a = Math.atan2(z, x);
     const eave = 1 + 0.05 * Math.abs(Math.sin(a * 9)) * Math.max(0, 1 - t / 0.25);
     const j = 1 + (hash3(a * 3, t * 5, seed) - 0.5) * 0.025;
     const k = eave * j;
     return [x * k, y, z * k];
   });
+  const circ = 2 * Math.PI * Math.max(rBot, rTop);
+  return shadeByHeight(scaleUV(g, Math.max(1, Math.round(circ / TILE_M)), Math.max(1, H / TILE_M)), thatchShade(seed));
 }
 
 /** Material set for thatch and mud; kept as palette colours so the village stays one merged draw per class. */
-const SHELL = { roughness: 0.98, castShadow: true, receiveShadow: true };
-const THATCH_SPEC = { roughness: 0.98, castShadow: true };
+const SHELL = { roughness: 0.98, castShadow: true, receiveShadow: true, surface: "mud" as const };
+const THATCH_SPEC = { roughness: 0.98, castShadow: true, surface: "thatch" as const };
 
 interface HutCtx {
   p: Placer;
@@ -384,8 +456,14 @@ interface HutCtx {
 }
 
 function wallTone(wall: string, seed: number): string {
+  // sun-bleach: each building's walls drift toward pale clay by its own amount (0..0.3)
   const rTone = hash3(seed, 4, 1);
-  return `#${new THREE.Color(wall).lerp(new THREE.Color(VILLAGE_PALETTE.wallPale), rTone * 0.22).getHexString()}`;
+  return `#${new THREE.Color(wall).lerp(new THREE.Color(VILLAGE_PALETTE.wallPale), rTone * 0.3).getHexString()}`;
+}
+
+/** Per-building damp base: 0.7 (very damp, dark plinth) to 0.92 (dry). */
+function dampFor(seed: number): number {
+  return 0.7 + hash3(seed, 6, 2) * 0.22;
 }
 
 /** Door: planked panel, battens, side jambs and a visible lintel. Front face at frontZ. */
@@ -424,7 +502,7 @@ function buildRound(c: HutCtx): void {
   const R = c.w * 0.55;
   const top = 0.22 + h;
   p.part(new THREE.CylinderGeometry(R * 1.08, R * 1.12, 0.22, 12), T.wallStone, [0, 0.11, 0], undefined, undefined, { roughness: 1, receiveShadow: true });
-  p.part(roundWall(R, h, 12, 0.05, seed), wallTone(wall, seed), [0, 0.22 + h / 2, 0], undefined, undefined, SHELL);
+  p.part(roundWall(R, h, 12, 0.05, seed, dampFor(seed)), wallTone(wall, seed), [0, 0.22 + h / 2, 0], undefined, undefined, SHELL);
   p.part(new THREE.TorusGeometry(R * 0.95, 0.05, 4, 14), T.wallLight, [0, top - 0.02, 0], [Math.PI / 2, 0, 0], undefined, { roughness: 0.95 });
   doorway(c, R * 1.05 + 0.01, 0.22, h * 0.6, 0);
 
@@ -448,7 +526,7 @@ function buildFamily(c: HutCtx): void {
   const T = VILLAGE_PALETTE;
   const lean = (hash3(seed, 7, 3) - 0.5) * 0.06;
   p.part(new THREE.BoxGeometry(w * 1.04, 0.22, d * 1.04), T.wallStone, [0, 0.11, 0], undefined, undefined, { roughness: 1, receiveShadow: true });
-  p.part(mudWall(w, h, d, 0.05, lean, seed), wallTone(wall, seed), [0, 0.22 + h / 2, 0], undefined, undefined, SHELL);
+  p.part(mudWall(w, h, d, 0.05, lean, seed, dampFor(seed)), wallTone(wall, seed), [0, 0.22 + h / 2, 0], undefined, undefined, SHELL);
   const top = 0.22 + h;
   p.part(new THREE.BoxGeometry(w + 0.06, 0.07, d + 0.06), T.wallLight, [0, top - 0.02, 0], undefined, undefined, { roughness: 0.95, castShadow: true });
   const frontZ = (d / 2) * 1.03;
@@ -474,7 +552,7 @@ function buildChief(c: HutCtx): void {
   const base = 0.26;
   const lean = (hash3(seed, 8, 3) - 0.5) * 0.05;
   p.part(new THREE.BoxGeometry(w * 1.03, base, d * 1.03), T.wallStone, [0, base / 2, 0], undefined, undefined, { roughness: 1, receiveShadow: true });
-  p.part(mudWall(w, h, d, 0.04, lean, seed), wallTone(wall, seed), [0, base + h / 2, 0], undefined, undefined, SHELL);
+  p.part(mudWall(w, h, d, 0.04, lean, seed, dampFor(seed)), wallTone(wall, seed), [0, base + h / 2, 0], undefined, undefined, SHELL);
   const top = base + h;
   p.part(new THREE.BoxGeometry(w + 0.06, 0.07, d + 0.06), T.wallLight, [0, top - 0.02, 0], undefined, undefined, { roughness: 0.95, castShadow: true });
   const frontZ = (d / 2) * 1.03;
@@ -509,7 +587,7 @@ function buildGranary(c: HutCtx): void {
   }
   const platY = legH + 0.035;
   p.part(new THREE.BoxGeometry(w + 0.08, 0.07, d + 0.08), T.postWood, [0, platY, 0], undefined, undefined, { roughness: 0.9, castShadow: true, receiveShadow: true });
-  p.part(roundWall(R, bodyH, 12, 0.14, seed), wallTone(wall, seed), [0, legH + 0.07 + bodyH / 2, 0], undefined, undefined, SHELL);
+  p.part(roundWall(R, bodyH, 12, 0.14, seed, dampFor(seed)), wallTone(wall, seed), [0, legH + 0.07 + bodyH / 2, 0], undefined, undefined, SHELL);
   const capBase = legH + 0.07 + bodyH - 0.03;
   const capH = 0.5;
   p.part(thatchCone(R + 0.34, 0.08, capH, seed), T.thatch, [0, capBase + capH / 2, 0], undefined, undefined, THATCH_SPEC);
@@ -530,7 +608,7 @@ function buildSmith(c: HutCtx): void {
       p.part(new THREE.CylinderGeometry(0.05, 0.06, h, 6), T.postWood, [sx * (w / 2 - 0.05), h / 2, sz * (d / 2 - 0.05)], undefined, undefined, { castShadow: true });
     }
   }
-  p.part(mudWall(w - 0.1, h * 0.5, 0.16, 0.04, (hash3(seed, 9, 3) - 0.5) * 0.04, seed), wallTone(wall, seed), [0, (h * 0.5) / 2, -d / 2 + 0.06], undefined, undefined, SHELL);
+  p.part(mudWall(w - 0.1, h * 0.5, 0.16, 0.04, (hash3(seed, 9, 3) - 0.5) * 0.04, seed, dampFor(seed)), wallTone(wall, seed), [0, (h * 0.5) / 2, -d / 2 + 0.06], undefined, undefined, SHELL);
   hipRoofThick(p, w / 2 + 0.2, d / 2 + 0.2, 0.6, h - 0.02);
   // forge: clay dome and chimney pipe
   p.part(new THREE.SphereGeometry(0.3, 10, 6, 0, Math.PI * 2, 0, Math.PI / 2), T.wallClay, [w * 0.22, 0.02, -d * 0.12], undefined, [1, 0.9, 1], SHELL);

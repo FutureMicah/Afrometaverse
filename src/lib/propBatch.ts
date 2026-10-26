@@ -18,6 +18,8 @@ export interface PropMaterialSpec {
   metalness: number;
   castShadow: boolean;
   receiveShadow: boolean;
+  /** Procedural surface map for this bucket (see lib/proceduralTextures). Omit for flat vertex colour. */
+  surface?: "mud" | "thatch";
 }
 
 export interface MergedPropMesh {
@@ -33,10 +35,14 @@ const DEFAULT_SPEC: PropMaterialSpec = {
 };
 
 const KEEP_ATTRIBUTES = ["position", "normal", "uv"] as const;
+/** Optional per-vertex brightness multiplier (damp bases, sun fade). Folded into the vertex colour on merge. */
+const TONE_ATTRIBUTE = "tone";
 
 /** Normalise a part so every part shares the same attribute layout (merge requires it). */
 function normaliseForMerge(source: THREE.BufferGeometry, color: THREE.Color): THREE.BufferGeometry {
   const geo = source.index ? source.toNonIndexed() : source;
+  const toneAttr = geo.getAttribute(TONE_ATTRIBUTE) as THREE.BufferAttribute | undefined;
+  const tone = toneAttr ? Float32Array.from(toneAttr.array as ArrayLike<number>) : null;
   for (const name of Object.keys(geo.attributes)) {
     if (!(KEEP_ATTRIBUTES as readonly string[]).includes(name)) geo.deleteAttribute(name);
   }
@@ -45,9 +51,10 @@ function normaliseForMerge(source: THREE.BufferGeometry, color: THREE.Color): TH
   if (!geo.getAttribute("uv")) geo.setAttribute("uv", new THREE.Float32BufferAttribute(new Float32Array(count * 2), 2));
   const colors = new Float32Array(count * 3);
   for (let i = 0; i < count; i++) {
-    colors[i * 3] = color.r;
-    colors[i * 3 + 1] = color.g;
-    colors[i * 3 + 2] = color.b;
+    const k = tone && tone.length >= count ? tone[i]! : 1;
+    colors[i * 3] = color.r * k;
+    colors[i * 3 + 1] = color.g * k;
+    colors[i * 3 + 2] = color.b * k;
   }
   geo.setAttribute("color", new THREE.BufferAttribute(colors, 3));
   return geo;
@@ -68,7 +75,7 @@ export class PropBatch {
    */
   add(geometry: THREE.BufferGeometry, color: string, matrix: THREE.Matrix4, spec: Partial<PropMaterialSpec> = {}): void {
     const full: PropMaterialSpec = { ...DEFAULT_SPEC, ...spec };
-    const key = `${full.roughness}|${full.metalness}|${full.castShadow ? 1 : 0}|${full.receiveShadow ? 1 : 0}`;
+    const key = `${full.roughness}|${full.metalness}|${full.castShadow ? 1 : 0}|${full.receiveShadow ? 1 : 0}|${full.surface ?? ""}`;
     const geo = normaliseForMerge(geometry, new THREE.Color(color));
     geo.applyMatrix4(matrix);
     if (geo !== geometry) geometry.dispose();
