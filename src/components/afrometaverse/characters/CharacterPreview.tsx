@@ -8,7 +8,7 @@ import {
 } from "@/stores/characterStore";
 import type { WardrobeTier } from "@/lib/characterWardrobe";
 import { StylizedCharacter } from "./StylizedCharacter";
-import { FighterGLB, usesFighterGLB } from "./FighterGLB";
+import { FighterGLB } from "./FighterGLB";
 
 type Props = {
   appearance?: CharacterAppearance;
@@ -26,8 +26,9 @@ export function CharacterPreview({ appearance, equipped, height = 340 }: Props) 
   const e = equipped ?? storeEquipped;
   const storeTier = useCharacterStore((s) => s.wardrobeTier) as WardrobeTier;
   const tier: WardrobeTier = storeTier ?? "commoner";
-  // female warrior uses the rigged GLB (lazy-loaded, stylised fallback while loading or on failure)
-  const useGLB = usesFighterGLB(a, tier);
+  // every female appearance shows the rigged fighter GLB, regardless of wardrobe tier
+  // (the creator has no tier picker). lazy-loaded; stylised mannequin fallback while loading or on failure.
+  const useGLB = a.gender === "female";
 
   return (
     <div className="am-char-preview" style={{ height }}>
