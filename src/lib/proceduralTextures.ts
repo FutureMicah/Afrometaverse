@@ -1,5 +1,5 @@
 /**
- * Procedural PBR-style textures for the village: hand-daubed mud plaster, layered thatch and
+ * Procedural PBR-style textures for the village: hand-daubed mud plaster, layered palm-frond thatch and
  * trampled dust ground.
  *
  * Each surface is built once on a canvas and shared by every mesh, so there are no extra
@@ -98,6 +98,8 @@ interface Fields {
   lum: Float32Array;
   /** per-pixel warm/cool tint shift in -1..1 (repairs and sun-bleached patches) */
   tint: Float32Array;
+  /** optional direct albedo per channel (0..1, shading included); used by the palm thatch */
+  rgb?: [Float32Array, Float32Array, Float32Array];
 }
 
 /** Mud plaster: hand-troweled patches, rain-streaked erosion, deep hairline and map cracks, repair patches, grit. */
@@ -143,40 +145,124 @@ function mudFields(size: number): Fields {
 }
 
 /**
- * Thatch: stalks laid in courses. Long thin strands run down the slope (along v), each course is a
- * tied layer whose lower edge casts a dark tuck line, and worn patches darken the matting.
+ * Palm-frond thatch. Long narrow fronds lie in overlapping courses: each course row holds FRONDS
+ * fronds side by side (offset every other row), and every frond runs DOWN the slope for LEN rows,
+ * so it overlaps the courses below it like a shingle. Each frond tapers to a point at its tip, has a
+ * raised central rib, and combed leaflets that slant from the rib toward the tip. Colour runs from
+ * fresh yellow-green near the root to golden and then brown toward the tip, with damp dark tips.
+ * Texture u runs across the roof and v runs down the slope (see villageProps frondRoofUV).
  */
 function thatchFields(size: number): Fields {
   const N = size * size;
   const h = new Float32Array(N);
   const lum = new Float32Array(N);
   const tint = new Float32Array(N);
-  const strandN = new Noise(128, 4, 5, 2);
-  const wobble = new Noise(2, 8, 61, 2);
+  const rgb: [Float32Array, Float32Array, Float32Array] = [new Float32Array(N), new Float32Array(N), new Float32Array(N)];
+  const ROWS = 10;
+  const FRONDS = 30;
+  const LEN = 2.8;
   const wearN = new Noise(4, 4, 71, 2);
-  const flecks = new Noise(256, 256, 83, 1);
+  const fineN = new Noise(64, 64, 79, 2);
+  // sRGB anchors: yellow-green fresh frond, golden dried frond, brown sun-bleached frond, dark damp tip
+  const GREEN = [168, 176, 74];
+  const GOLD = [206, 156, 64];
+  const BROWN = [128, 90, 42];
+  const TIP = [70, 56, 26];
+  const GAP = [54, 42, 20];
   for (let y = 0; y < size; y++) {
     const v = y / size;
+    const vr = v * ROWS;
+    const r0 = Math.floor(vr);
     for (let x = 0; x < size; x++) {
       const u = x / size;
+      const uf = u * FRONDS;
       const i = y * size + x;
-      const s = strandN.sample(u, v);
-      // individual stalks: fine sine ripple along u so strands catch light, with random lean
-      const stalk = Math.abs(Math.sin(u * Math.PI * 2 * 128 + s * 4));
-      // courses: 9 layers per tile; the tile wraps because 9 is an integer
-      const t = 9 * v + (wobble.sample(u, v) - 0.5) * 0.5;
-      const c = t - Math.floor(t);
-      const layer = smooth(0.0, 0.35, c) * 0.4;
-      const tuck = 1 - smooth(0.82, 1.0, c);
-      const wear = wearN.sample(u, v);
-      const fleck = flecks.sample(u, v);
+      let bestR = -1e9;
+      let bestT = 0;
+      let bestA = 0;
+      let bestFrond = 0;
+      // candidate fronds: the root row and the rows above it reach down over this pixel
+      for (let dr = 0; dr <= 3; dr++) {
+        const R = r0 - dr;
+        const t = vr - R; // distance down the frond from its root, in rows
+        if (t < 0 || t > LEN) continue;
+        const rowOff = ((R % 2) + 2) % 2 * 0.5;
+        const rowMod = ((R % ROWS) + ROWS) % ROWS;
+        // the frond column nearest to this pixel in this row
+        const cFloor = Math.floor(uf - rowOff);
+        for (let dc = -1; dc <= 1; dc++) {
+          const C = cFloor + dc;
+          const cMod = ((C % FRONDS) + FRONDS) % FRONDS;
+          const sway = (hash(cMod, rowMod, 131) - 0.5) * 0.35 * (t / LEN);
+          const centre = C + 0.5 + rowOff + sway;
+          // halfwidth tapers from the root to a point at the tip
+          const taper = Math.max(0, 1 - Math.pow(t / LEN, 1.4));
+          const hw = 0.42 * (0.35 + 0.65 * taper);
+          const a = (uf - centre) / hw;
+          if (Math.abs(a) > 1) continue;
+          // later rows lie on top of earlier rows (shingle overlap), so the largest R wins
+          if (R > bestR) {
+            bestR = R;
+            bestT = t;
+            bestA = a;
+            bestFrond = cMod + rowMod * FRONDS;
+          }
+        }
+      }
 
-      h[i] = s * 0.45 + stalk * 0.3 + layer * tuck * 0.5 + (1 - tuck) * -0.35 + fleck * 0.1;
-      lum[i] = 0.92 + (s - 0.5) * 0.2 + (stalk - 0.5) * 0.14 - (1 - tuck) * 0.3 - smooth(0.6, 0.7, wear) * 0.16 + (fleck - 0.5) * 0.08;
-      tint[i] = smooth(0.6, 0.7, wear) * -0.3 + (s - 0.5) * 0.2;
+      if (bestR < -1e8) {
+        // gap between fronds: deep shadow with a little debris
+        const gN = fineN.sample(u, v);
+        h[i] = -0.3 + gN * 0.04;
+        lum[i] = 1;
+        tint[i] = 0;
+        const sh = 0.4 + gN * 0.08;
+        rgb[0][i] = (GAP[0]! / 255) * sh;
+        rgb[1][i] = (GAP[1]! / 255) * sh;
+        rgb[2][i] = (GAP[2]! / 255) * sh;
+        continue;
+      }
+
+      const a = bestA;
+      const absA = Math.abs(a);
+      const tn = bestT / LEN; // 0 at the root, 1 at the tip
+      const fh = hash(bestFrond % FRONDS, Math.floor(bestFrond / FRONDS), 101);
+      const fh2 = hash(bestFrond % FRONDS, Math.floor(bestFrond / FRONDS), 103);
+      const rib = 1 - smooth(0.0, 0.09, absA);
+      // combed leaflets: slanted fine ridges angled from the rib toward the outer edge and down-slope
+      const comb = Math.abs(Math.sin((bestT * 15 - absA * 3.2 + fh * 6.28) * Math.PI * 0.5));
+      const leaf = Math.pow(comb, 4);
+      const dome = 1 - absA * absA;
+      const under = smooth(0.62, 1.0, tn); // the tip end is the damp, dark underside at the eave
+      const wear = wearN.sample(u, v);
+      const sp = fineN.sample(u, v);
+
+      // height: raised rib, leaflet relief, cupped blade, tip curls down
+      const hF = 0.42 + 0.34 * rib + 0.12 * leaf * dome - 0.14 * under + (sp - 0.5) * 0.04 + 0.05 * dome;
+      // colour: fresh yellow-green at the root, golden in the middle, browned by weather
+      const gold = smooth(0.2, 0.7, tn * 0.8 + (fh - 0.5) * 0.4 + (wear - 0.5) * 0.4);
+      let cr = GREEN[0]! + (GOLD[0]! - GREEN[0]!) * gold;
+      let cg = GREEN[1]! + (GOLD[1]! - GREEN[1]!) * gold;
+      let cb = GREEN[2]! + (GOLD[2]! - GREEN[2]!) * gold;
+      const brown = smooth(0.6, 1.0, wear * 0.5 + fh * 0.6) * 0.45;
+      cr += (BROWN[0]! - cr) * brown;
+      cg += (BROWN[1]! - cg) * brown;
+      cb += (BROWN[2]! - cb) * brown;
+      cr += (TIP[0]! - cr) * under * 0.7;
+      cg += (TIP[1]! - cg) * under * 0.7;
+      cb += (TIP[2]! - cb) * under * 0.7;
+      // rib catches light, leaflet grooves go darker, each frond gets its own slight shade
+      const shade = (0.9 + 0.2 * rib - 0.16 * leaf * (1 - rib) + (fh2 - 0.5) * 0.1) * (1 - 0.45 * under) * (0.95 + 0.07 * sp);
+
+      h[i] = hF;
+      lum[i] = 1;
+      tint[i] = 0;
+      rgb[0][i] = Math.min(1, (cr / 255) * shade);
+      rgb[1][i] = Math.min(1, (cg / 255) * shade);
+      rgb[2][i] = Math.min(1, (cb / 255) * shade);
     }
   }
-  return { h, lum, tint };
+  return { h, lum, tint, rgb };
 }
 
 /** Trampled dust: compacted paths with foot pits, scattered pebbles, dead leaves, and soft patches. */
@@ -229,6 +315,7 @@ function dustFields(size: number): Fields {
 function buildTextures(kind: SurfaceKind, size: number) {
   const f = kind === "mud" ? mudFields(size) : kind === "thatch" ? thatchFields(size) : dustFields(size);
   const { h, lum, tint } = f;
+  const rgbF = f.rgb;
   const albedo = document.createElement("canvas");
   albedo.width = albedo.height = size;
   const actx = albedo.getContext("2d");
@@ -240,7 +327,8 @@ function buildTextures(kind: SurfaceKind, size: number) {
   const aData = actx.createImageData(size, size);
   const nData = nctx.createImageData(size, size);
   // slope strength: thatch and mud carry deep relief, ground stays gentle
-  const strength = kind === "thatch" ? 3.2 : kind === "mud" ? 3.0 : 1.6;
+  // palm fronds carry deeper relief so each spine and leaflet groove catches the light
+  const strength = kind === "thatch" ? 3.6 : kind === "mud" ? 3.0 : 1.6;
   for (let y = 0; y < size; y++) {
     const ym = ((y - 1 + size) % size) * size;
     const yp = ((y + 1) % size) * size;
@@ -250,10 +338,16 @@ function buildTextures(kind: SurfaceKind, size: number) {
       const p = i * 4;
       const L = lum[i]!;
       const tn = tint[i]!;
-      // slight warm/cool tint keeps the material colour from going grey on the sun-bleached areas
-      aData.data[p] = Math.min(255, Math.max(0, (L + 0.03 * tn) * 255));
-      aData.data[p + 1] = Math.min(255, Math.max(0, L * 255 * 0.98));
-      aData.data[p + 2] = Math.min(255, Math.max(0, (L - 0.04 * tn) * 255 * 0.94));
+      if (rgbF) {
+        aData.data[p] = Math.min(255, Math.max(0, rgbF[0][i]! * 255));
+        aData.data[p + 1] = Math.min(255, Math.max(0, rgbF[1][i]! * 255));
+        aData.data[p + 2] = Math.min(255, Math.max(0, rgbF[2][i]! * 255));
+      } else {
+        // slight warm/cool tint keeps the material colour from going grey on the sun-bleached areas
+        aData.data[p] = Math.min(255, Math.max(0, (L + 0.03 * tn) * 255));
+        aData.data[p + 1] = Math.min(255, Math.max(0, L * 255 * 0.98));
+        aData.data[p + 2] = Math.min(255, Math.max(0, (L - 0.04 * tn) * 255 * 0.94));
+      }
       aData.data[p + 3] = 255;
 
       const l = h[yc + ((x - 1 + size) % size)]!;

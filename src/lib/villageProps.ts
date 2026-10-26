@@ -365,9 +365,31 @@ function hipRoof(hw: number, hd: number, height: number): { faces: THREE.BufferG
   const R1: V3 = [-ridge, height, 0];
   const R2: V3 = [ridge, height, 0];
   return {
-    faces: triGeometry([...doubleQuad(FL, FR, R2, R1), ...doubleQuad(BR, BL, R1, R2)]),
-    ends: triGeometry([...doubleTri(FR, BR, R2), ...doubleTri(BL, FL, R1)]),
+    faces: frondRoofUV(triGeometry([...doubleQuad(FL, FR, R2, R1), ...doubleQuad(BR, BL, R1, R2)]), height, ridge),
+    ends: frondRoofUV(triGeometry([...doubleTri(FR, BR, R2), ...doubleTri(BL, FL, R1)]), height, ridge),
   };
+}
+
+/**
+ * Palm-frond UVs for a sloped roof face. u runs across the roof (x), v runs DOWN the slope: v is
+ * the distance from the ridge measured along the pitch, so the frond spines fall from ridge to
+ * eave instead of lying level. Every frond course therefore stacks down the roof like shingles.
+ */
+function frondRoofUV(geo: THREE.BufferGeometry, height: number, ridge: number): THREE.BufferGeometry {
+  const pos = geo.getAttribute("position") as THREE.BufferAttribute;
+  const uv = new Float32Array(pos.count * 2);
+  for (let i = 0; i < pos.count; i++) {
+    const x = pos.getX(i);
+    const y = pos.getY(i);
+    const z = pos.getZ(i);
+    // distance from the ridge line along the slope: pitch drop plus horizontal run from the ridge
+    const run = Math.max(Math.abs(z), Math.max(0, Math.abs(x) - ridge));
+    const pitch = Math.hypot(height - y, run);
+    uv[i * 2] = x / TILE_M;
+    uv[i * 2 + 1] = pitch / TILE_M;
+  }
+  geo.setAttribute("uv", new THREE.BufferAttribute(uv, 2));
+  return geo;
 }
 
 /**
