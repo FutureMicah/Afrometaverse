@@ -4,6 +4,7 @@ import { OrbitControls, Html } from "@react-three/drei";
 import "./interiors.css";
 import * as THREE from "three";
 import { INTERIORS, type InteriorDef } from "@/data/interiors";
+import { STARTER, type StarterItem } from "@/data/interiorStarter";
 import { useInteriorStore, DECORABLE_ID, type InteriorId } from "@/stores/interiorStore";
 import { useWeatherStore } from "@/stores/weatherStore";
 import { DECOR_CATALOG, type DecorItem } from "@/data/decor";
@@ -338,66 +339,170 @@ function WeatherTick({ audio }: { audio: InteriorAmbience }) {
   return null;
 }
 
-function SafehouseRoom() {
+/** Basket of woven reed or yams, low and round. */
+function Basket({ p }: { p: [number, number, number] }) {
   return (
-    <group>
-      <Shell w={6} d={5} h={2.8} />
-      <FirewoodHearth p={[-1.6, 0, -1.2]} />
-      <Mat p={[1, 0, -1]} />
-      <Stool p={[-1.2, 0, 0.6]} />
-      <Stool p={[-0.4, 0, 0.9]} />
-      <WaterPot p={[1.9, 0, -1.8]} />
-      <WaterPot p={[2.4, 0, -1.6]} />
-      <WoodBowl p={[0.5, 0.45, 0.2]} />
-      {/* rest spot by the hearth */}
-      <Mat p={[0, 0, -2.2]} />
+    <group position={p}>
+      <Cyl p={[0, 0.14, 0]} rt={0.3} rb={0.22} h={0.28} c={SCENE_PALETTE.matTan} />
+      <Box p={[0, 0.3, 0]} s={[0.5, 0.04, 0.5]} c={SCENE_PALETTE.woodWarm} />
     </group>
   );
 }
 
-function MarketShopRoom() {
+/** Calabash gourd on the floor, with a short neck. */
+function Calabash({ p }: { p: [number, number, number] }) {
   return (
-    <group>
-      <Shell w={6} d={5} h={2.8} />
-      {/* trader's mat with goods on it, at the back */}
-      <Mat p={[0, 0, -1.6]} />
-      <Goods p={[-0.4, 0.04, -1.6]} />
-      <WoodBowl p={[0.9, 0.06, -1.7]} />
-      <WoodBowl p={[1.3, 0.06, -1.5]} />
-      <ClothBolt p={[-1.7, 0, -1.7]} />
-      {/* pottery stacked by the wall */}
-      <WaterPot p={[1.8, 0, -0.2]} />
-      <WaterPot p={[2.3, 0, -0.2]} />
-      {/* woven mat for displays by the door */}
-      <Mat p={[1.6, 0, 1.2]} />
-      <Goods p={[1.6, 0.04, 1.2]} />
-      <Stool p={[-0.6, 0, -0.2]} />
-      <FirewoodHearth p={[-2, 0, 1.4]} />
+    <group position={p}>
+      <mesh position={[0, 0.2, 0]} castShadow>
+        <sphereGeometry args={[0.2, 10, 8]} />
+        <meshStandardMaterial color={SCENE_PALETTE.woodWarm} roughness={0.8} />
+      </mesh>
+      <Cyl p={[0, 0.4, 0]} rt={0.06} rb={0.08} h={0.12} c={SCENE_PALETTE.woodWarm} />
     </group>
   );
 }
 
-function WorkplaceRoom() {
+/** Tall palm oil jar in red clay. */
+function PalmOilJar({ p }: { p: [number, number, number] }) {
+  return <Cyl p={[p[0], 0.3, p[2]]} rt={0.16} rb={0.2} h={0.6} c={SCENE_PALETTE.lateriteDark} />;
+}
+
+/** Talking drum: a waisted body with a hide head on top. */
+function TalkingDrum({ p }: { p: [number, number, number] }) {
+  return (
+    <group position={p}>
+      <Cyl p={[0, 0.28, 0]} rt={0.14} rb={0.2} h={0.5} c={WOOD} />
+      <Cyl p={[0, 0.54, 0]} rt={0.18} rb={0.18} h={0.04} c={SCENE_PALETTE.matTan} />
+    </group>
+  );
+}
+
+/** Small clay oil lamp on a stand, with a warm flame. */
+function ClayLamp({ p }: { p: [number, number, number] }) {
+  return (
+    <group position={p}>
+      <Cyl p={[0, 0.2, 0]} rt={0.08} rb={0.12} h={0.4} c={SCENE_PALETTE.clay} />
+      <mesh position={[0, 0.44, 0]}>
+        <sphereGeometry args={[0.08, 8, 6]} />
+        <meshStandardMaterial color={SCENE_PALETTE.candleGold} emissive={SCENE_PALETTE.emberDeep} emissiveIntensity={0.8} />
+      </mesh>
+    </group>
+  );
+}
+
+/** Stack of split logs by the wall. */
+function LogPile({ p }: { p: [number, number, number] }) {
+  return (
+    <group position={p}>
+      <Box p={[0, 0.12, -0.12]} s={[0.7, 0.22, 0.22]} c={WOOD} />
+      <Box p={[0, 0.12, 0.12]} s={[0.7, 0.22, 0.22]} c={WOOD} />
+      <Box p={[0, 0.34, 0]} s={[0.7, 0.22, 0.22]} c={WOOD} />
+    </group>
+  );
+}
+
+/** Wall rack holding an adze and chisels. */
+function ToolRack({ p }: { p: [number, number, number] }) {
+  return (
+    <group position={p}>
+      <Box p={[0, 0.9, 0]} s={[0.06, 1.2, 0.8]} c={WOOD} />
+      <Box p={[0.06, 0.8, -0.2]} s={[0.04, 0.04, 0.3]} c={SCENE_PALETTE.dust} />
+      <Box p={[0.06, 1.0, 0.2]} s={[0.04, 0.04, 0.3]} c={SCENE_PALETTE.dust} />
+    </group>
+  );
+}
+
+/** Pile of carving blocks in soft wood. */
+function BlockPile({ p }: { p: [number, number, number] }) {
+  return (
+    <group position={p}>
+      <Box p={[0, 0.15, 0]} s={[0.5, 0.3, 0.4]} c={WOOD} />
+      <Box p={[0.1, 0.42, -0.05]} s={[0.4, 0.22, 0.3]} c={SCENE_PALETTE.woodWarm} r={0.3} />
+    </group>
+  );
+}
+
+/** Chisel resting on the bench top. */
+function BenchTool({ p }: { p: [number, number, number] }) {
+  return <Box p={p} s={[0.5, 0.04, 0.06]} c={MUD_DARK} r={0.2} />;
+}
+
+/** Balance scale with two pans on a post, for weighing goods. */
+function TradeScale({ p }: { p: [number, number, number] }) {
+  return (
+    <group position={p}>
+      <Box p={[0, 0.5, 0]} s={[0.04, 0.9, 0.04]} c={WOOD} />
+      <Box p={[0, 0.94, 0]} s={[0.6, 0.04, 0.04]} c={WOOD} />
+      <Cyl p={[-0.28, 0.82, 0]} rt={0.14} rb={0.1} h={0.04} c={SCENE_PALETTE.matTan} />
+      <Cyl p={[0.28, 0.82, 0]} rt={0.14} rb={0.1} h={0.04} c={SCENE_PALETTE.matTan} />
+    </group>
+  );
+}
+
+/** Maps one starter entry to its mesh. Each kind uses the palette, no inline colours. */
+function StarterPiece({ item }: { item: StarterItem }) {
+  const p: [number, number, number] = [item.x, item.y ?? 0, item.z];
+  switch (item.kind) {
+    case "hearth":
+      return <Hearth p={p} />;
+    case "firewood":
+      return <FirewoodHearth p={p} />;
+    case "mat":
+      return <Mat p={p} />;
+    case "stool":
+      return <Stool p={p} />;
+    case "waterPot":
+      return <WaterPot p={p} />;
+    case "woodBowl":
+      return <WoodBowl p={p} />;
+    case "calabash":
+      return <Calabash p={p} />;
+    case "goods":
+      return <Goods p={p} />;
+    case "clothBolt":
+      return <ClothBolt p={p} />;
+    case "basket":
+      return <Basket p={p} />;
+    case "palmOilJar":
+      return <PalmOilJar p={p} />;
+    case "drum":
+      return <TalkingDrum p={p} />;
+    case "clayLamp":
+      return <ClayLamp p={p} />;
+    case "logPile":
+      return <LogPile p={p} />;
+    case "toolRack":
+      return <ToolRack p={p} />;
+    case "blockPile":
+      return <BlockPile p={p} />;
+    case "benchTable":
+      return <Table p={p} />;
+    case "benchTool":
+      return <BenchTool p={p} />;
+    case "scale":
+      return <TradeScale p={p} />;
+    default:
+      return null;
+  }
+}
+
+/** One room: the shell plus every starter piece from data/interiorStarter.ts. */
+function StarterRoom({ id }: { id: InteriorId }) {
+  const items = STARTER[id].items;
   return (
     <group>
       <Shell w={6} d={5} h={2.8} />
-      {/* carver's bench and tools (wooden) */}
-      <Table p={[0, 0, -1.6]} />
-      <Box p={[0.3, 0.6, -1.6]} s={[0.5, 0.04, 0.06]} c={MUD_DARK} r={0.2} />
-      <WaterPot p={[1.6, 0, -1.8]} />
-      <WaterPot p={[-1.8, 0, -1.8]} />
-      <Stool p={[0, 0, -0.2]} />
-      <Stool p={[1.6, 0, 0.6]} />
-      <Mat p={[-1.4, 0, 1]} />
-      <FirewoodHearth p={[2, 0, 1.4]} />
+      {items.map((it) => (
+        <StarterPiece key={it.id} item={it} />
+      ))}
     </group>
   );
 }
 
 const ROOMS: Record<InteriorId, () => ReactElement> = {
-  safehouse: SafehouseRoom,
-  "market-shop": MarketShopRoom,
-  workplace: WorkplaceRoom,
+  safehouse: () => <StarterRoom id="safehouse" />,
+  "market-shop": () => <StarterRoom id="market-shop" />,
+  workplace: () => <StarterRoom id="workplace" />,
 };
 
 export interface InteriorGood {
