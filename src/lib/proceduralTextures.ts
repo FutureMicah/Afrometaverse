@@ -158,10 +158,10 @@ function mudFields(size: number): Fields {
       const daub = has ? 1 - smooth(0.9, 1.0, dd) : 0;
       const seam = has ? smooth(0.72, 0.86, dd) * (1 - smooth(0.9, 1.0, dd)) : 0;
 
-      h[i] = b * 0.5 + p * 0.22 + g * 0.2 - streak * 0.2 - crack * 0.25 - deep * 0.6 - erode * 0.22 + daub * 0.12 - seam * 0.05;
+      h[i] = b * 0.5 + p * 0.22 + g * 0.2 - streak * 0.2 - crack * 0.45 - deep * 0.8 - erode * 0.3 + daub * 0.25 - seam * 0.12;
       lum[i] =
-        0.9 + (b - 0.5) * 0.12 + (p - 0.5) * 0.07 + (g - 0.5) * 0.09 - streak * 0.1 - crack * 0.28 - deep * 0.35 - erode * 0.12 + daub * 0.07 - seam * 0.08;
-      tint[i] = daub * 0.6 - streak * 0.3 - erode * 0.35;
+        0.9 + (b - 0.5) * 0.12 + (p - 0.5) * 0.07 + (g - 0.5) * 0.09 - streak * 0.1 - crack * 0.5 - deep * 0.6 - erode * 0.3 + daub * 0.22 - seam * 0.2;
+      tint[i] = daub * 1.0 - streak * 0.3 - erode * 0.55 - crack * 0.25;
     }
   }
   return { h, lum, tint };
@@ -182,9 +182,9 @@ function thatchFields(size: number): Fields {
   const lum = new Float32Array(N);
   const tint = new Float32Array(N);
   const rgb: [Float32Array, Float32Array, Float32Array] = [new Float32Array(N), new Float32Array(N), new Float32Array(N)];
-  const ROWS = 10; // one tile is 1.8 m of slope, so one row is 0.18 m
+  const ROWS = 6; // one tile is 1.8 m of slope, so one row is 0.30 m
   const FRONDS = 22;
-  const LEN = 9; // longest frond: 9 rows, about 1.6 m
+  const LEN = 5; // longest frond: 5 rows, about 1.5 m
   const wearN = new Noise(4, 4, 71, 2);
   const fineN = new Noise(64, 64, 79, 2);
   // sRGB anchors: yellow-green fresh frond, golden dried frond, brown sun-bleached frond, dark damp tip

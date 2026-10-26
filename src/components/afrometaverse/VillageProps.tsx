@@ -49,12 +49,13 @@ export function applyFrondRim(m: THREE.MeshStandardMaterial): void {
   m.onBeforeCompile = (shader) => {
     shader.fragmentShader = shader.fragmentShader.replace(
       "#include <opaque_fragment>",
-      `float rimFac = pow(1.0 - saturate(dot(normalize(vNormal), normalize(vViewPosition))), 3.0);
-       outgoingLight += vec3(1.0, 0.62, 0.28) * rimFac * 0.22;
+      `float ndv = saturate(dot(normalize(vNormal), normalize(-vViewPosition)));
+       float rimFac = pow(1.0 - ndv, 1.5);
+       outgoingLight += vec3(1.0, 0.55, 0.18) * (rimFac * 2.4 + 0.25 * (1.0 - ndv));
        #include <opaque_fragment>`,
     );
   };
-  m.customProgramCacheKey = () => "frond-rim-v1";
+  m.customProgramCacheKey = () => "frond-rim-v4";
 }
 
 export function MergedProps({ parts }: { parts: MergedPropMesh[] }) {

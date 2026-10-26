@@ -379,7 +379,7 @@ function sagFace(a: V3, b: V3, c: V3, d: V3, hw: number, height: number, seed: n
   const rafters = Math.max(2, Math.round((2 * hw) / 0.3));
   const nS = rafters * 2;
   const nT = 3;
-  const sag = 0.035;
+  const sag = 0.18;
   const lerp3 = (p: V3, q: V3, k: number): V3 => [p[0] + (q[0] - p[0]) * k, p[1] + (q[1] - p[1]) * k, p[2] + (q[2] - p[2]) * k];
   const P = (i: number, j: number): V3 => {
     const s = i / nS;
@@ -578,18 +578,20 @@ function doorway(c: HutCtx, frontZ: number, baseY: number, doorH: number, dx: nu
 /** Birds-nest ridge cap: irregular clumps of frond ends tied along the ridge, each one leaning a different way. */
 function ridgeNest(ridge: number, seed: number): THREE.BufferGeometry {
   const verts: V3[] = [];
-  const clumps = 5;
-  for (let k = 0; k < clumps; k++) {
+  const strands = 14;
+  for (let k = 0; k < strands; k++) {
     const r = hash3(k, 1, seed);
-    const x = -ridge - 0.1 + ((k + 0.5 + (r - 0.5) * 0.5) / clumps) * (2 * ridge + 0.2);
-    const lean = (hash3(k, 2, seed) - 0.5) * 0.9;
-    const hgt = 0.1 + r * 0.06;
-    for (let s = 0; s < 4; s++) {
-      const ang = (s / 4) * Math.PI * 2 + r * 3;
-      const tip: V3 = [x + Math.cos(ang) * 0.09 + lean * 0.05, hgt, Math.sin(ang) * 0.09];
-      const root: V3 = [x, 0, 0];
-      verts.push(...doubleTri([root[0] - 0.012, root[1], root[2]], [root[0] + 0.012, root[1], root[2]], tip));
-    }
+    const r2 = hash3(k, 2, seed);
+    // strands spread irregularly along the ridge, each leaning out and drooping over the slope
+    const x = -ridge - 0.12 + r * (2 * ridge + 0.24);
+    const side = r2 < 0.5 ? -1 : 1;
+    const reach = 0.12 + hash3(k, 3, seed) * 0.16;
+    const sag = 0.02 + hash3(k, 4, seed) * 0.05;
+    const root: V3 = [x, 0.02, side * 0.03];
+    const tip: V3 = [x + (hash3(k, 5, seed) - 0.5) * 0.22, Math.max(0, 0.015 - sag * 0.4), side * (0.03 + reach * 1.4)];
+    const mid: V3 = [(root[0] + tip[0]) / 2, 0.03 + hash3(k, 6, seed) * 0.02, (root[2] + tip[2]) / 2];
+    verts.push(...doubleTri([root[0] - 0.008, root[1], root[2]], [root[0] + 0.008, root[1], root[2]], mid));
+    verts.push(...doubleTri([mid[0] - 0.007, mid[1], mid[2]], [mid[0] + 0.007, mid[1], mid[2]], tip));
   }
   return triGeometry(verts);
 }
