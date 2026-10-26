@@ -71,8 +71,8 @@ function Scene() {
   return (
     <>
       <color attach="background" args={[P.sky]} />
-      <fog attach="fog" args={[P.sky, 9, 26]} />
-      <ambientLight intensity={0.22} color="#4a3550" />
+      <fog attach="fog" args={[P.sky, 18, 55]} />
+      <ambientLight intensity={0.85} color="#ffd0a0" />
       <hemisphereLight args={["#3b2a4a", "#1a1008", 0.35]} />
       {/* red moon behind the village */}
       <mesh position={[-6, 9, -22]}>
@@ -80,8 +80,8 @@ function Scene() {
         <meshBasicMaterial color={moon} fog={false} />
       </mesh>
       {/* warm rim light from the torch side */}
-      <directionalLight position={[3, 4, 2]} intensity={0.9} color={P.rim} castShadow shadow-mapSize={[1024, 1024]} />
-      <directionalLight position={[-4, 3, -3]} intensity={0.25} color="#8fa3d6" />
+      <directionalLight position={[3, 4, 2]} intensity={2.6} color={P.rim} castShadow shadow-mapSize={[1024, 1024]} />
+      <directionalLight position={[-4, 3, -3]} intensity={0.9} color="#ffd0b0" />
 
       <mesh rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
         <circleGeometry args={[30, 64]} />
@@ -125,7 +125,7 @@ export function LobbyScene({ shot = "full" }: { shot?: "full" | "close" }) {
       shadows
       dpr={[1, 2]}
       camera={{ position: cam.pos as unknown as [number, number, number], fov: cam.fov }}
-      gl={{ antialias: true, preserveDrawingBuffer: true, toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1.1 }}
+      gl={{ antialias: true, preserveDrawingBuffer: true, toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1.5 }}
       style={{ width: "100%", height: "100%" }}
       onCreated={({ camera }) => camera.lookAt(...cam.target)}
     >
