@@ -19,7 +19,7 @@ import { DayNightSky } from "@/components/afrometaverse/DayNightSky";
 import { ChunkedWorld } from "@/components/afrometaverse/ChunkedWorld";
 import { ChunkVillageProps, StaticVillageProps } from "@/components/afrometaverse/VillageProps";
 import { groupByChunk, chunksContaining, chunkOrigin } from "@/lib/chunkAssign";
-import { NPC_SPECS, anchorFor, stepToward, reactToPlayer, type NpcRole } from "@/lib/npcSim";
+import { NPC_SPECS, anchorFor, stepToward, reactToPlayer } from "@/lib/npcSim";
 import { resolveCollision, villageObstacles } from "@/lib/villageCollision";
 import { CHIEF_COMPOUND, NPC_RADIUS, PLAYER_RADIUS, POND, LANDMARK_POSITIONS, WORLD_BOUNDS, MAIN_ROAD_Z, type Pt } from "@/lib/villageLayout";
 
@@ -30,6 +30,7 @@ import { VILLAGE_HEARTHS, VILLAGE_HERITAGE } from "@/lib/villageProps";
 import { chunkOf } from "@/lib/chunkStreaming";
 import { currentRenderTier } from "@/lib/renderTier";
 import { StylizedCharacter } from "@/components/afrometaverse/characters/StylizedCharacter";
+import { tierForRole } from "@/lib/characterWardrobe";
 import {
   HeritageTerrain,
   BiomeFlora,
@@ -593,13 +594,13 @@ function SimpleVehicle({
 
 function PlayerAvatar({ transport }: { transport: TransportId }) {
   const appearance = useCharacterStore((s) => s.appearance);
-  const equipped = useCharacterStore((s) => s.equipped);
+  const playerTier = useCharacterStore((s) => s.wardrobeTier);
   const moveState = useRoamStore((s) => s.moveState);
   void transport;
   return (
     <StylizedCharacter
       appearance={appearance}
-      equipped={equipped}
+      tier={playerTier}
       scale={1}
       animate
       detail
@@ -1079,16 +1080,6 @@ function TrafficFlow() {
   );
 }
 
-// Role outfits: the population reads by role at a glance (uses the existing equipment ids).
-const ROLE_OUTFIT: Record<NpcRole, { top: string; bottom: string; hat: string | null; shoes: string }> = {
-  trader: { top: "top-white-tee", bottom: "bottom-blue-jeans", hat: null, shoes: "shoes-basic" },
-  fisher: { top: "top-white-tee", bottom: "bottom-blue-jeans", hat: null, shoes: "shoes-basic" },
-  guard: { top: "top-white-tee", bottom: "bottom-blue-jeans", hat: null, shoes: "shoes-basic" },
-  elder: { top: "top-white-tee", bottom: "bottom-blue-jeans", hat: null, shoes: "shoes-basic" },
-  herder: { top: "top-white-tee", bottom: "bottom-blue-jeans", hat: null, shoes: "shoes-basic" },
-  farmer: { top: "top-white-tee", bottom: "bottom-blue-jeans", hat: null, shoes: "shoes-basic" },
-};
-
 // Purposeful NPCs: a fixed population (NPC_SPECS) with roles. Traders stand at stalls, fishers
 // at the shore, guards walk their route, elders idle at the compound. Each NPC walks its lane
 // towards its anchor, collision-resolved so it can't clip buildings, and steps aside from the player.
@@ -1108,7 +1099,7 @@ function NpcCrowd() {
         hairColor: SCENE_PALETTE.ink,
         displayName: spec.id,
       },
-      equipped: { ...ROLE_OUTFIT[spec.role], outer: null, accessory: null },
+      tier: tierForRole(spec.role),
     }));
   }, []);
   const refs = useRef<(THREE.Group | null)[]>([]);
@@ -1142,7 +1133,7 @@ function NpcCrowd() {
           }}
           position={[n.spec.home.x, 0, n.spec.home.z]}
         >
-          <StylizedCharacter appearance={n.appearance} equipped={n.equipped} scale={0.95} animate detail moveState="walk" />
+          <StylizedCharacter appearance={n.appearance} tier={n.tier} scale={0.95} animate detail moveState="walk" />
         </group>
       ))}
     </group>

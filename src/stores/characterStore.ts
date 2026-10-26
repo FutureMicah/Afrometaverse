@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { SKIN_TONE_SWATCHES } from "@/lib/swatchPalette";
 import { CLOTHING_PALETTE } from "@/lib/clothingPalette";
+import { WARDROBE_TIERS, type WardrobeTier } from "@/lib/characterWardrobe";
 
 export type Gender = "female" | "male";
 export type BodyShape = "slim" | "average" | "curvy" | "athletic" | "broad";
@@ -701,12 +702,15 @@ interface CharacterState {
   resetToStarter: () => void;
   hydrate: () => void;
   persist: () => void;
+  wardrobeTier: WardrobeTier;
+  setWardrobeTier: (tier: WardrobeTier) => void;
 }
 
 function save(state: {
   appearance: CharacterAppearance;
   equipped: EquippedLoadout;
   owned: string[];
+  wardrobeTier: WardrobeTier;
 }) {
   try {
     localStorage.setItem("am-character-v2", JSON.stringify(state));
@@ -719,6 +723,13 @@ export const useCharacterStore = create<CharacterState>((set, get) => ({
   appearance: { ...DEFAULT_APPEARANCE },
   equipped: { ...DEFAULT_EQUIPPED },
   owned: [...STARTER_OWNED],
+  wardrobeTier: "commoner",
+
+  setWardrobeTier: (tier) => {
+    if (!WARDROBE_TIERS.includes(tier)) return;
+    set({ wardrobeTier: tier });
+    get().persist();
+  },
 
   setGender: (gender) => {
     set({ appearance: { ...get().appearance, gender } });
@@ -899,8 +910,10 @@ export const useCharacterStore = create<CharacterState>((set, get) => ({
         appearance?: CharacterAppearance;
         equipped?: EquippedLoadout;
         owned?: string[];
+        wardrobeTier?: WardrobeTier;
       };
       set({
+        wardrobeTier: data.wardrobeTier && WARDROBE_TIERS.includes(data.wardrobeTier) ? data.wardrobeTier : "commoner",
         appearance: { ...DEFAULT_APPEARANCE, ...data.appearance },
         equipped: { ...DEFAULT_EQUIPPED, ...data.equipped },
         owned: data.owned?.length ? data.owned : [...STARTER_OWNED],
@@ -911,8 +924,8 @@ export const useCharacterStore = create<CharacterState>((set, get) => ({
   },
 
   persist: () => {
-    const { appearance, equipped, owned } = get();
-    save({ appearance, equipped, owned });
+    const { appearance, equipped, owned, wardrobeTier } = get();
+    save({ appearance, equipped, owned, wardrobeTier });
   },
 }));
 

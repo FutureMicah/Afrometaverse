@@ -7,7 +7,7 @@ import { resolveCollision, villageObstacles, isFree } from "@/lib/villageCollisi
  * Movement walks the lanes (LANES) and is pushed out of collision, so NPCs cannot clip walls.
  */
 
-export type NpcRole = "trader" | "fisher" | "guard" | "elder" | "herder" | "farmer";
+export type NpcRole = "trader" | "fisher" | "guard" | "elder" | "herder" | "farmer" | "chief";
 
 export interface NpcSpec {
   id: string;
@@ -67,6 +67,8 @@ function buildSpecs(): NpcSpec[] {
   push("guard", { x: GUARD_ROUTES[1]!.a.x + 4, z: MAIN_ROAD_Z }, Math.PI, "chief-gate");
   // elders idle at the chief's compound, inside the gate
   [0, 1, 2].forEach((i) => push("elder", { x: CHIEF_COMPOUND.x - 1 + i, z: CHIEF_COMPOUND.z + 0.5 }, Math.PI / 2));
+  // the chief stands in the compound, behind the elders (royal tier, static)
+  push("chief", { x: CHIEF_COMPOUND.x, z: CHIEF_COMPOUND.z - 1.2 }, Math.PI / 2);
   // farmers on the farm outskirts
   push("farmer", { x: FARM.x - 1.5, z: FARM.z - 1 }, Math.PI / 2);
   push("farmer", { x: FARM.x + 1.5, z: FARM.z }, -Math.PI / 2);

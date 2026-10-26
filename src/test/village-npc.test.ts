@@ -26,7 +26,7 @@ describe("npc population", () => {
   it("spawns 20 to 35 NPCs, each with a role", () => {
     expect(NPC_SPECS.length).toBeGreaterThanOrEqual(20);
     expect(NPC_SPECS.length).toBeLessThanOrEqual(35);
-    for (const s of NPC_SPECS) expect(s.role).toMatch(/trader|fisher|guard|elder|herder|farmer/);
+    for (const s of NPC_SPECS) expect(s.role).toMatch(/trader|fisher|guard|elder|herder|farmer|chief/);
   });
 
   it("every NPC spawns collision-free and inside the world", () => {
