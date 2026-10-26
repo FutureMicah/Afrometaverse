@@ -64,7 +64,7 @@ def tex_weave(n=256):
     weave = 0.6 * warp + 0.4 * weft
     slub = rng.normal(0, 0.03, (n, n))
     base = np.array([0.56, 0.08, 0.07])
-    img = base[None, None, :] * (0.78 + 0.22 * weave[..., None] + slub[..., None])
+    img = base[None, None, :] * (0.66 + 0.34 * weave[..., None] + slub[..., None])
     return to_png(img)
 
 
@@ -96,6 +96,9 @@ def tex_leather(n=256):
     noise = rng.normal(0, 0.04, (n, n))
     base = np.array([0.36, 0.20, 0.10])
     img = base[None, None, :] * (0.85 + 0.15 * grain[..., None] + noise[..., None])
+    # saddle stitching: dashes along the stitch row (v = 0.5), lighter thread
+    stitch = (np.abs(y - 0.5) < 0.03) & (((x * 16) % 1) < 0.55)
+    img[stitch] = np.array([0.62, 0.45, 0.22])
     return to_png(img)
 
 
@@ -157,15 +160,17 @@ def head_sdf(p):
     d = smin(d, ell(p, (0, 1.555, -0.05), (0.084, 0.10, 0.07)), 0.03)  # back of skull
     d = smin(d, ell(p, (0, 1.475, 0.02), (0.068, 0.058, 0.072)), 0.04)  # jaw/chin, strong not pointed
     for s in (-1, 1):
-        d = smin(d, ell(p, (s * 0.062, 1.535, 0.05), (0.034, 0.034, 0.035)), 0.03)  # cheekbones (high)
+        d = smin(d, ell(p, (s * 0.060, 1.545, 0.05), (0.036, 0.032, 0.036)), 0.03)  # cheekbones (high, defined)
         d = np.minimum(d, ell(p, (s * 0.088, 1.56, -0.005), (0.011, 0.03, 0.02)))  # ear
-    d = smin(d, ell(p, (0, 1.6, 0.082), (0.07, 0.013, 0.02)), 0.02)  # brow ridge
-    d = smin(d, ell(p, (0, 1.54, 0.10), (0.017, 0.036, 0.026)), 0.02)  # nose bridge (low, not sharp)
-    d = smin(d, ell(p, (0, 1.508, 0.113), (0.031, 0.02, 0.022)), 0.015)  # nose base, broad
+    d = smin(d, ell(p, (0, 1.6, 0.082), (0.072, 0.015, 0.022)), 0.02)  # brow ridge
+    d = smin(d, ell(p, (0, 1.54, 0.10), (0.019, 0.040, 0.028)), 0.02)  # nose bridge (low, broad)
+    d = smin(d, ell(p, (0, 1.508, 0.113), (0.037, 0.022, 0.024)), 0.015)  # nose base, broad
     for s in (-1, 1):
-        d = smin(d, sph(p, (s * 0.024, 1.506, 0.108), 0.011), 0.008)  # nostril wings
-    d = smin(d, ell(p, (0, 1.478, 0.107), (0.028, 0.011, 0.013)), 0.01)  # upper lip, full
-    d = smin(d, ell(p, (0, 1.462, 0.105), (0.031, 0.013, 0.015)), 0.01)  # lower lip, full
+        d = smin(d, sph(p, (s * 0.030, 1.504, 0.108), 0.013), 0.008)  # nostril wings
+    d = smin(d, ell(p, (0, 1.478, 0.107), (0.034, 0.013, 0.016)), 0.01)  # upper lip, full
+    for s_ in (-1, 1):  # cupid's bow
+        d = smin(d, sph(p, (s_ * 0.011, 1.486, 0.112), 0.008), 0.006)
+    d = smin(d, ell(p, (0, 1.462, 0.105), (0.036, 0.015, 0.018)), 0.01)  # lower lip, full
     for s in (-1, 1):
         d = np.maximum(d, -sph(p, (s * 0.034, 1.585, 0.078), 0.019))  # eye sockets
     return d
@@ -222,6 +227,68 @@ def skin_vertex_colors(V, N):
     return C.astype(np.float32)
 
 
+def camwood_body(V, C):
+    """Camwood (osun/camwood powder) bands on the visible arms and dots at the neck."""
+    cw = np.array(srgb_to_lin(CAMWOOD))
+    x, y = V[:, 0], V[:, 1]
+    arm = np.abs(x) > 0.19
+    bands = np.abs(np.sin(y * np.pi * 38)) > 0.80
+    marks = arm & bands & (y > 0.80) & (y < 1.20)
+    neck = (np.abs(x) < 0.06) & (y > 1.42) & (y < 1.50) & (np.abs(np.sin(x * 260)) > 0.75)
+    C[marks | neck] = cw
+    return C
+
+
+def braid_strands(pts, offset, n, turns):
+    """Split a braid centreline into n interleaved strands that twist around it (a plait)."""
+    P = np.asarray(pts, float)
+    m = len(P)
+    T = np.gradient(P, axis=0)
+    T /= np.linalg.norm(T, axis=1, keepdims=True) + 1e-9
+    ref = np.where(np.abs(T[:, 1:2]) < 0.9, np.array([[0.0, 1.0, 0.0]]), np.array([[0.0, 0.0, 1.0]]))
+    N = np.cross(T, ref)
+    N /= np.linalg.norm(N, axis=1, keepdims=True) + 1e-9
+    B = np.cross(T, N)
+    out = []
+    for k in range(n):
+        ph = 2 * math.pi * k / n
+        th = ph + 2 * math.pi * turns * np.arange(m) / max(m - 1, 1)
+        pts_k = P + offset * (np.cos(th)[:, None] * N + np.sin(th)[:, None] * B)
+        out.append([tuple(map(float, q)) for q in pts_k])
+    return out
+
+
+def blade_mesh(c, poly, half_t):
+    """Flat-shaded extruded polygon (the dagger blade). poly = [(u, v), ...] in the x/y plane."""
+    cx, cy, cz = c
+    P = [(cx + u, cy + v) for u, v in poly]
+    cen = np.mean(np.array(P), axis=0)
+    tris = []
+
+    def push(a, b, c_, outward):
+        a, b, c_ = (np.array(q, float) for q in (a, b, c_))
+        nrm = np.cross(b - a, c_ - a)
+        if np.dot(nrm, outward) < 0:
+            b, c_ = c_, b
+        tris.append((a, b, c_))
+
+    front = [(x, y, cz + half_t) for x, y in P]
+    back = [(x, y, cz - half_t) for x, y in P]
+    for i in range(1, len(P) - 1):
+        push(front[0], front[i], front[i + 1], np.array([0, 0, 1.0]))
+        push(back[0], back[i + 1], back[i], np.array([0, 0, -1.0]))
+    for i in range(len(P)):
+        j = (i + 1) % len(P)
+        mid = (np.array(P[i]) + np.array(P[j])) / 2 - cen
+        out3 = np.array([mid[0], mid[1], 0.0])
+        push(front[i], front[j], back[j], out3)
+        push(front[i], back[j], back[i], out3)
+    V = np.array([q for t in tris for q in t], np.float32)
+    F = np.arange(len(V), dtype=np.uint32).reshape(-1, 3)
+    N = np.repeat(np.array([np.cross(t[1] - t[0], t[2] - t[0]) / (np.linalg.norm(np.cross(t[1] - t[0], t[2] - t[0])) + 1e-12) for t in tris], np.float32), 3, axis=0)
+    return V, F, N
+
+
 def camwood_head(V, C):
     """Camwood (osun/camwood powder) marks: three forehead lines and two short cheek strokes."""
     cw = np.array(srgb_to_lin(CAMWOOD))
@@ -256,14 +323,15 @@ def make_glb():
     m_wood = g.material("dagger-handle", (0.30, 0.17, 0.09, 1), rough=0.6)
     m_hair = g.material("hair-braids", (0.07, 0.05, 0.04, 1), rough=0.9)
     m_eyew = g.material("eye-white", (0.86, 0.84, 0.78, 1), rough=0.2)
-    m_iris = g.material("iris", (0.08, 0.05, 0.03, 1), rough=0.2)
+    m_iris = g.material("iris", (0.26, 0.13, 0.05, 1), rough=0.2)
+    m_pupil = g.material("pupil", (0.012, 0.008, 0.006, 1), rough=0.15)
 
     meshes = []
 
     # ---- body (single skinned mesh, weights from bone segments)
     lo, hi = (-0.32, 0.03, -0.18), (0.32, 1.56, 0.18)
     Vb, Fb, Nb = sdf_mesh(body_sdf, lo, hi, 0.0105)
-    Cb = skin_vertex_colors(Vb, Nb)
+    Cb = camwood_body(Vb, skin_vertex_colors(Vb, Nb))
     Jb, Wb, _ = skin_weights(skel, Vb, sigma=0.035)
     meshes.append(("body", [dict(V=Vb, F=Fb, N=Nb, C=Cb, J=Jb, W=Wb, material=m_skin)]))
 
@@ -285,6 +353,10 @@ def make_glb():
         Vi, Fi, Ni = sdf_mesh(lambda p, ic=ic: sph(p, ic, 0.0068), np.array(ic) - 0.009, np.array(ic) + 0.009, 0.0008)
         Ji, Wi = rigid_weights(len(Vi), joint_idx["Head"])
         prims.append(dict(V=Vi, F=Fi, N=Ni, J=Ji, W=Wi, material=m_iris))
+        pc = (c[0], c[1], c[2] + r[2] * 0.52 + 0.0035)
+        Vp, Fp, Np = sdf_mesh(lambda p, pc=pc: sph(p, pc, 0.0034), np.array(pc) - 0.005, np.array(pc) + 0.005, 0.0006)
+        Jp, Wp = rigid_weights(len(Vp), joint_idx["Head"])
+        prims.append(dict(V=Vp, F=Fp, N=Np, J=Jp, W=Wp, material=m_pupil))
     meshes.append(("eyes", prims))
 
     # ---- braided crown + hanging braids (rigid to Head)
@@ -301,13 +373,14 @@ def make_glb():
         # hang down the back of the neck
         for t in np.linspace(0, 1, 10)[1:]:
             pts.append((pts[-1][0] * (1 - 0.1 * t), pts[-1][1] - 0.05 * t * 1.2, pts[-1][2] - 0.012 * t))
-        V_, F_, N_ = tube(pts, 0.0105 + 0.0015 * (k % 2), sides=7)
-        Jh_, Wh_ = rigid_weights(len(V_), joint_idx["Head"])
-        prims.append(dict(V=V_, F=F_, N=N_, J=Jh_, W=Wh_, material=m_hair))
+        for strand in braid_strands(pts, 0.0072, 3, 1.6):
+            V_, F_, N_ = tube(strand, 0.0040, sides=6)
+            Jh_, Wh_ = rigid_weights(len(V_), joint_idx["Head"])
+            prims.append(dict(V=V_, F=F_, N=N_, J=Jh_, W=Wh_, material=m_hair))
     # brows
     for s in (-1, 1):
-        bpts = [(s * (0.012 + 0.03 * t), 1.61 + 0.012 * math.sin(math.pi * t), 0.09) for t in np.linspace(0, 1, 8)]
-        V_, F_, N_ = tube(bpts, 0.0043, sides=5)
+        bpts = [(s * (0.012 + 0.032 * t), 1.612 + 0.013 * math.sin(math.pi * t), 0.092) for t in np.linspace(0, 1, 8)]
+        V_, F_, N_ = tube(bpts, 0.0052, sides=5)
         Jh_, Wh_ = rigid_weights(len(V_), joint_idx["Head"])
         prims.append(dict(V=V_, F=F_, N=N_, J=Jh_, W=Wh_, material=m_hair))
     meshes.append(("hair", prims))
@@ -330,18 +403,20 @@ def make_glb():
     pts = belt_points()
     Vbt, Fbt, Nbt = tube(pts, 0.017, sides=10, closed=True)
     Jbt, Wbt = rigid_weights(len(Vbt), joint_idx["Hips"])
-    UVbt = np.stack([np.linspace(0, 4, len(Vbt)), np.zeros(len(Vbt))], 1)
+    UVbt = np.stack([np.linspace(0, 4, len(Vbt)), np.full(len(Vbt), 0.5)], 1)
     meshes.append(("belt", [dict(V=Vbt, F=Fbt, N=Nbt, UV=UVbt, J=Jbt, W=Wbt, material=m_belt)]))
 
     # ---- dagger on the left hip (rigid to Hips): handle + blade
     hilt = [(0.158, 1.02, 0.075), (0.158, 1.06, 0.075)]
     Vdh, Fdh, Ndh = tube(hilt, 0.0115, sides=8)
     Jd, Wd = rigid_weights(len(Vdh), joint_idx["Hips"])
-    Vdb, Fdb, Ndb = box((0.158, 0.92, 0.09), (0.024, 0.19, 0.008), rot=None)
+    Vdb, Fdb, Ndb = blade_mesh((0.158, 0.92, 0.09), [(-0.013, 0.095), (0.013, 0.095), (0.013, -0.02), (0.0, -0.095), (-0.013, -0.02)], 0.004)
+    Vq, Fq, Nq = box((0.158, 1.012, 0.075), (0.05, 0.010, 0.014), rot=None)
     Jdb, Wdb = rigid_weights(len(Vdb), joint_idx["Hips"])
     meshes.append(("dagger", [
         dict(V=Vdh, F=Fdh, N=Ndh, J=Jd, W=Wd, material=m_wood),
         dict(V=Vdb, F=Fdb, N=Ndb, J=Jdb, W=Wdb, material=m_steel),
+        dict(V=Vq, F=Fq, N=Nq, J=np.tile(Jdb[:1], (len(Vq), 1)), W=np.tile(Wdb[:1], (len(Vq), 1)), material=m_wood),
     ]))
 
     # ---- gold bangles: stacked rings on each forearm, rigid to ForeArm

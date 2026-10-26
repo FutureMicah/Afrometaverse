@@ -6,7 +6,9 @@ import {
   type CharacterAppearance,
   type EquippedLoadout,
 } from "@/stores/characterStore";
+import type { WardrobeTier } from "@/lib/characterWardrobe";
 import { StylizedCharacter } from "./StylizedCharacter";
+import { FighterGLB, usesFighterGLB } from "./FighterGLB";
 
 type Props = {
   appearance?: CharacterAppearance;
@@ -22,6 +24,10 @@ export function CharacterPreview({ appearance, equipped, height = 340 }: Props) 
   const storeEquipped = useCharacterStore((s) => s.equipped);
   const a = appearance ?? storeAppearance;
   const e = equipped ?? storeEquipped;
+  const storeTier = useCharacterStore((s) => s.wardrobeTier) as WardrobeTier;
+  const tier: WardrobeTier = storeTier ?? "commoner";
+  // female warrior uses the rigged GLB (lazy-loaded, stylised fallback while loading or on failure)
+  const useGLB = usesFighterGLB(a, tier);
 
   return (
     <div className="am-char-preview" style={{ height }}>
@@ -59,7 +65,11 @@ export function CharacterPreview({ appearance, equipped, height = 340 }: Props) 
 
         <Suspense fallback={null}>
           <group position={[0, -0.02, 0]}>
-            <StylizedCharacter appearance={a} equipped={e} scale={1.2} animate detail />
+            {useGLB ? (
+              <FighterGLB appearance={a} tier={tier} scale={1.2} animate detail moveState="idle" />
+            ) : (
+              <StylizedCharacter appearance={a} equipped={e} scale={1.2} animate detail />
+            )}
           </group>
           <ContactShadows
             position={[0, 0.001, 0]}
