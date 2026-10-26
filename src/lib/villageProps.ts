@@ -17,6 +17,7 @@ export interface HutSpec {
   x: number;
   z: number;
   rot?: number;
+  kind?: HutKind;
   style?: "thatch" | "zinc" | "round";
   wall?: string;
   w?: number;
@@ -28,45 +29,50 @@ export type TreeKind = "acacia" | "broad" | "palm";
 
 export const VILLAGE_HUTS: HutSpec[] = [
   // Market compound (around the market square, MARKET_SQUARE)
-  { x: -4.4, z: 3.8, style: "thatch", wall: VILLAGE_PALETTE.wallSand, w: 1.25, d: 1.1 },
-  { x: -3.0, z: 4.4, style: "zinc", wall: VILLAGE_PALETTE.wallWarm, w: 1.35, d: 1.15, h: 1.05 },
-  { x: -5.2, z: 2.6, style: "thatch", wall: VILLAGE_PALETTE.wallClay, rot: 0.35, w: 1.2 },
-  { x: -3.5, z: 2.0, style: "round", wall: VILLAGE_PALETTE.wallTan, w: 1.35, h: 1.0 },
-  { x: -2.0, z: 3.2, style: "zinc", wall: VILLAGE_PALETTE.wallDusk, rot: -0.25 },
-  { x: -4.8, z: 4.6, style: "round", wall: VILLAGE_PALETTE.wallOchre, w: 1.1, h: 0.9 },
-  { x: -5.5, z: 3.5, style: "thatch", wall: VILLAGE_PALETTE.wallSand, rot: 0.6, w: 1.05 },
+  { kind: "family", x: -4.4, z: 3.8, style: "thatch", wall: VILLAGE_PALETTE.wallSand, w: 1.25, d: 1.1 },
+  { kind: "family", x: -3.0, z: 4.4, style: "zinc", wall: VILLAGE_PALETTE.wallWarm, w: 1.35, d: 1.15, h: 1.05 },
+  { kind: "granary", x: -5.2, z: 2.6, style: "thatch", wall: VILLAGE_PALETTE.wallClay, rot: 0.35, w: 1.2 },
+  { kind: "round", x: -3.5, z: 2.0, style: "round", wall: VILLAGE_PALETTE.wallTan, w: 1.35, h: 1.0 },
+  { kind: "family", x: -2.0, z: 3.2, style: "zinc", wall: VILLAGE_PALETTE.wallDusk, rot: -0.25 },
+  { kind: "round", x: -4.8, z: 4.6, style: "round", wall: VILLAGE_PALETTE.wallOchre, w: 1.1, h: 0.9 },
+  { kind: "family", x: -5.5, z: 3.5, style: "thatch", wall: VILLAGE_PALETTE.wallSand, rot: 0.6, w: 1.05 },
   // Chief's compound (CHIEF_COMPOUND, gate faces the main road)
-  { x: 2.8, z: -10.6, style: "thatch", wall: VILLAGE_PALETTE.wallOchre, w: 1.3, d: 1.15 },
-  { x: 5.6, z: -11.4, style: "round", wall: VILLAGE_PALETTE.wallPale, w: 1.3, h: 1.05 },
-  { x: 5.9, z: -8.6, style: "zinc", wall: VILLAGE_PALETTE.wallGrey, w: 1.2 },
+  { kind: "chief", x: 2.8, z: -10.6, style: "thatch", wall: VILLAGE_PALETTE.wallOchre, w: 1.3, d: 1.15 },
+  { kind: "round", x: 5.6, z: -11.4, style: "round", wall: VILLAGE_PALETTE.wallPale, w: 1.3, h: 1.05 },
+  { kind: "family", x: 5.9, z: -8.6, style: "zinc", wall: VILLAGE_PALETTE.wallGrey, w: 1.2 },
   // Waterside / creekside (north-west shore of the pond)
-  { x: -11.3, z: -5.4, style: "round", wall: VILLAGE_PALETTE.wallOchre, w: 1.4, h: 1.05 },
-  { x: -10.5, z: -8.4, style: "thatch", wall: VILLAGE_PALETTE.wallClay, rot: -0.2, w: 1.25 },
-  { x: -11.8, z: -3.6, style: "zinc", wall: VILLAGE_PALETTE.wallDusk, w: 1.2 },
-  { x: -8.4, z: -10.8, style: "round", wall: VILLAGE_PALETTE.wallSand, w: 1.15, h: 1.0 },
-  { x: -5.2, z: -11.4, style: "thatch", wall: VILLAGE_PALETTE.wallClay, w: 1.1 },
-  { x: -2.2, z: -10.6, style: "zinc", wall: VILLAGE_PALETTE.wallGrey, rot: 0.3, w: 1.2 },
+  { kind: "round", x: -11.3, z: -5.4, style: "round", wall: VILLAGE_PALETTE.wallOchre, w: 1.4, h: 1.05 },
+  { kind: "family", x: -10.5, z: -8.4, style: "thatch", wall: VILLAGE_PALETTE.wallClay, rot: -0.2, w: 1.25 },
+  { kind: "granary", x: -11.8, z: -3.6, style: "zinc", wall: VILLAGE_PALETTE.wallDusk, w: 1.2 },
+  { kind: "round", x: -8.4, z: -10.8, style: "round", wall: VILLAGE_PALETTE.wallSand, w: 1.15, h: 1.0 },
+  { kind: "family", x: -5.2, z: -11.4, style: "thatch", wall: VILLAGE_PALETTE.wallClay, w: 1.1 },
+  { kind: "smith", x: -2.2, z: -10.6, style: "zinc", wall: VILLAGE_PALETTE.wallGrey, rot: 0.3, w: 1.2 },
   // Port edge (PORT compound, south of the main road)
-  { x: 10.4, z: 5.6, style: "zinc", wall: VILLAGE_PALETTE.wallStone, w: 1.55, d: 1.25, h: 1.1 },
-  { x: 11.8, z: 4.5, style: "thatch", wall: VILLAGE_PALETTE.wallOchre, w: 1.2 },
-  { x: 9.7, z: 3.7, style: "zinc", wall: VILLAGE_PALETTE.wallGrey, rot: 0.3, w: 1.3 },
-  { x: 12.4, z: 5.9, style: "round", wall: VILLAGE_PALETTE.wallWarm, w: 1.2 },
-  { x: 11.0, z: 6.5, style: "thatch", wall: VILLAGE_PALETTE.wallClay, rot: 0.15 },
-  { x: 13.0, z: 4.8, style: "zinc", wall: VILLAGE_PALETTE.wallStone, w: 1.15 },
+  { kind: "smith", x: 10.4, z: 5.6, style: "zinc", wall: VILLAGE_PALETTE.wallStone, w: 1.55, d: 1.25, h: 1.1 },
+  { kind: "family", x: 11.8, z: 4.5, style: "thatch", wall: VILLAGE_PALETTE.wallOchre, w: 1.2 },
+  { kind: "family", x: 9.7, z: 3.7, style: "zinc", wall: VILLAGE_PALETTE.wallGrey, rot: 0.3, w: 1.3 },
+  { kind: "round", x: 12.4, z: 5.9, style: "round", wall: VILLAGE_PALETTE.wallWarm, w: 1.2 },
+  { kind: "granary", x: 11.0, z: 6.5, style: "thatch", wall: VILLAGE_PALETTE.wallClay, rot: 0.15 },
+  { kind: "family", x: 13.0, z: 4.8, style: "zinc", wall: VILLAGE_PALETTE.wallStone, w: 1.15 },
   // Farm outskirts (FARM, south-east)
-  { x: 13.0, z: 12.6, style: "thatch", wall: VILLAGE_PALETTE.wallClay, rot: 0.4, w: 1.15 },
-  { x: 19.0, z: 13.2, style: "zinc", wall: VILLAGE_PALETTE.wallStone, rot: -0.3, w: 1.1 },
+  { kind: "round", x: 13.0, z: 12.6, style: "thatch", wall: VILLAGE_PALETTE.wallClay, rot: 0.4, w: 1.15 },
+  { kind: "family", x: 19.0, z: 13.2, style: "zinc", wall: VILLAGE_PALETTE.wallStone, rot: -0.3, w: 1.1 },
   // Path-side, set back from the main road
-  { x: -8.0, z: 8.0, style: "zinc", wall: VILLAGE_PALETTE.wallWarm, w: 1.35, d: 1.15, h: 1.05 },
-  { x: -11.0, z: 3.0, style: "thatch", wall: VILLAGE_PALETTE.wallClay, rot: 0.35, w: 1.2 },
-  { x: -4.0, z: 10.5, style: "round", wall: VILLAGE_PALETTE.wallTan, w: 1.35, h: 1.0 },
-  { x: 2.6, z: 8.0, style: "zinc", wall: VILLAGE_PALETTE.wallDusk, rot: -0.25 },
+  { kind: "family", x: -8.0, z: 8.0, style: "zinc", wall: VILLAGE_PALETTE.wallWarm, w: 1.35, d: 1.15, h: 1.05 },
+  { kind: "family", x: -11.0, z: 3.0, style: "thatch", wall: VILLAGE_PALETTE.wallClay, rot: 0.35, w: 1.2 },
+  { kind: "pavilion", x: -4.0, z: 10.5, style: "round", wall: VILLAGE_PALETTE.wallTan, w: 1.35, h: 1.0 },
+  { kind: "family", x: 2.6, z: 8.0, style: "zinc", wall: VILLAGE_PALETTE.wallDusk, rot: -0.25 },
 ];
 
 /** Hut footprint radius for collision (circle approximation of the walls). */
 export function hutRadius(h: HutSpec): number {
-  const { w = 1.15, d = 1.05, style = "thatch" } = h;
-  if (style === "round") return w * 0.6;
+  const kind = h.kind ?? (h.style === "round" ? "round" : "family");
+  const def = kindDefaults(kind);
+  const w = h.w ?? def.w;
+  const d = h.d ?? def.d;
+  if (kind === "round") return w * 0.6;
+  if (kind === "pavilion") return w * 0.5;
+  if (kind === "chief") return (Math.hypot(w, d) / 2) * 1.05 + 0.3;
   return (Math.hypot(w, d) / 2) * 1.05;
 }
 
@@ -266,9 +272,9 @@ export function addCompoundWall(batch: PropBatch, x: number, z: number, radius: 
   });
 }
 
-/** Deterministic 0..1 value per hut from its position, so every player sees the same village. */
-function hash01(x: number, z: number, salt: number): number {
-  const s = Math.sin(x * 12.9898 + z * 78.233 + salt * 37.719) * 43758.5453;
+/** Deterministic 0..1 value from three numbers (geometry jitter, so every player sees the same village). */
+function hash3(a: number, b: number, c: number): number {
+  const s = Math.sin(a * 127.1 + b * 311.7 + c * 74.7) * 43758.5453;
   return s - Math.floor(s);
 }
 
@@ -309,142 +315,320 @@ function hipRoof(hw: number, hd: number, height: number): { faces: THREE.BufferG
   };
 }
 
-/** Gable roof with the ridge along z: two slopes, plus the two end triangles (wall-coloured). */
-function gableRoof(hw: number, hd: number, height: number): { slopes: THREE.BufferGeometry; ends: THREE.BufferGeometry } {
-  // eaves at x=±hw, z=±hd (y=0); ridge along z at x=0 (y=height)
-  const LF: V3 = [-hw, 0, hd];
-  const LB: V3 = [-hw, 0, -hd];
-  const RF: V3 = [hw, 0, hd];
-  const RB: V3 = [hw, 0, -hd];
-  const PF: V3 = [0, height, hd];
-  const PB: V3 = [0, height, -hd];
-  return {
-    slopes: triGeometry([...doubleQuad(LF, PF, PB, LB), ...doubleQuad(PF, RF, RB, PB)]),
-    ends: triGeometry([...doubleTri(LF, RF, PF), ...doubleTri(LB, RB, PB)]),
-  };
+/**
+ * Warp geometry vertices in place. fn receives (x, y, z) in geometry space and t, the normalised
+ * height (0 at the bottom, 1 at the top), and returns the new position. Normals are recomputed.
+ */
+function warp(geo: THREE.BufferGeometry, fn: (x: number, y: number, z: number, t: number) => V3): THREE.BufferGeometry {
+  geo.computeBoundingBox();
+  const bb = geo.boundingBox ?? new THREE.Box3();
+  const y0 = bb.min.y;
+  const span = bb.max.y - bb.min.y || 1;
+  const pos = geo.getAttribute("position") as THREE.BufferAttribute;
+  for (let i = 0; i < pos.count; i++) {
+    const x = pos.getX(i);
+    const y = pos.getY(i);
+    const z = pos.getZ(i);
+    const [nx, ny, nz] = fn(x, y, z, (y - y0) / span);
+    pos.setXYZ(i, nx, ny, nz);
+  }
+  pos.needsUpdate = true;
+  geo.computeVertexNormals();
+  return geo;
+}
+
+/** Rectangular mud wall: bulges mid-height, leans a little, with a hand-troweled wobble. Centred on its origin. */
+function mudWall(w: number, h: number, d: number, bulge: number, lean: number, seed: number): THREE.BufferGeometry {
+  const g = new THREE.BoxGeometry(w, h, d, 3, 5, 2);
+  return warp(g, (x, y, z, t) => {
+    const s = Math.sin(Math.PI * t);
+    const j = (hash3(x, y, z + seed) - 0.5) * 0.024;
+    return [x * (1 + bulge * s * 0.5) + lean * t + j, y, z * (1 + bulge * s * 0.4) + j];
+  });
+}
+
+/** Round mud wall (a batter that narrows slightly toward the top), bulged and slightly irregular. */
+function roundWall(R: number, h: number, seg: number, bulge: number, seed: number): THREE.BufferGeometry {
+  const g = new THREE.CylinderGeometry(R * 0.93, R, h, seg, 4, false);
+  return warp(g, (x, y, z, t) => {
+    const a = Math.atan2(z, x);
+    const s = Math.sin(Math.PI * t);
+    const k = (1 + bulge * s) * (1 + (hash3(a * 4, t * 9, seed) - 0.5) * 0.05);
+    return [x * k, y, z * k];
+  });
+}
+
+/** Open thatch cone with a hand-tied, scalloped eave. Bottom at y=-h/2, top at y=+h/2. */
+function thatchCone(rBot: number, rTop: number, H: number, seed: number): THREE.BufferGeometry {
+  const g = new THREE.CylinderGeometry(rTop, rBot, H, 12, 3, true);
+  return warp(g, (x, y, z, t) => {
+    const a = Math.atan2(z, x);
+    const eave = 1 + 0.05 * Math.abs(Math.sin(a * 9)) * Math.max(0, 1 - t / 0.25);
+    const j = 1 + (hash3(a * 3, t * 5, seed) - 0.5) * 0.025;
+    const k = eave * j;
+    return [x * k, y, z * k];
+  });
+}
+
+/** Material set for thatch and mud; kept as palette colours so the village stays one merged draw per class. */
+const SHELL = { roughness: 0.98, castShadow: true, receiveShadow: true };
+const THATCH_SPEC = { roughness: 0.98, castShadow: true };
+
+interface HutCtx {
+  p: Placer;
+  wall: string;
+  seed: number;
+  w: number;
+  d: number;
+  h: number;
+}
+
+function wallTone(wall: string, seed: number): string {
+  const rTone = hash3(seed, 4, 1);
+  return `#${new THREE.Color(wall).lerp(new THREE.Color(VILLAGE_PALETTE.wallPale), rTone * 0.22).getHexString()}`;
+}
+
+/** Door: planked panel, battens, side jambs and a visible lintel. Front face at frontZ. */
+function doorway(c: HutCtx, frontZ: number, baseY: number, doorH: number, dx: number): void {
+  const { p, seed } = c;
+  const T = VILLAGE_PALETTE;
+  const doorW = 0.3 + hash3(seed, 1, 2) * 0.12;
+  p.part(new THREE.BoxGeometry(doorW, doorH, 0.03), T.doorWood, [dx, baseY + doorH / 2, frontZ + 0.01]);
+  for (const f of [0.35, 0.7]) {
+    p.part(new THREE.BoxGeometry(doorW * 0.9, 0.04, 0.035), T.timberDark, [dx, baseY + doorH * f, frontZ + 0.025]);
+  }
+  for (const s of [-1, 1]) {
+    p.part(new THREE.BoxGeometry(0.07, doorH + 0.06, 0.08), T.timberDark, [dx + s * (doorW / 2 + 0.03), baseY + (doorH + 0.06) / 2, frontZ + 0.02]);
+  }
+  p.part(new THREE.BoxGeometry(doorW + 0.18, 0.09, 0.1), T.timberDark, [dx, baseY + doorH + 0.05, frontZ + 0.03]);
+}
+
+/** Thick layered hip roof: sloping thatch, a rolled eave board on all four sides, and a rounded ridge cap. */
+function hipRoofThick(p: Placer, hw: number, hd: number, H: number, base: number): void {
+  const T = VILLAGE_PALETTE;
+  const r = hipRoof(hw, hd, H);
+  p.part(r.faces, T.thatch, [0, base, 0], undefined, undefined, THATCH_SPEC);
+  p.part(r.ends, T.thatchDark, [0, base, 0], undefined, undefined, THATCH_SPEC);
+  p.part(new THREE.BoxGeometry(2 * hw + 0.06, 0.07, 0.08), T.thatchDark, [0, base + 0.03, hd], undefined, undefined, THATCH_SPEC);
+  p.part(new THREE.BoxGeometry(2 * hw + 0.06, 0.07, 0.08), T.thatchDark, [0, base + 0.03, -hd], undefined, undefined, THATCH_SPEC);
+  p.part(new THREE.BoxGeometry(0.08, 0.07, 2 * hd + 0.06), T.thatchDark, [hw, base + 0.03, 0], undefined, undefined, THATCH_SPEC);
+  p.part(new THREE.BoxGeometry(0.08, 0.07, 2 * hd + 0.06), T.thatchDark, [-hw, base + 0.03, 0], undefined, undefined, THATCH_SPEC);
+  const ridge = Math.max(0, hw - hd) * 0.6;
+  p.part(new THREE.CylinderGeometry(0.07, 0.07, 2 * ridge + 0.2, 6), T.thatchDark, [0, base + H + 0.01, 0], [0, 0, Math.PI / 2], undefined, THATCH_SPEC);
+}
+
+/** Round thatched hut: a bulged mud ring with a coping course, a tall layered thatch cone with rolled eave and tie rings. */
+function buildRound(c: HutCtx): void {
+  const { p, seed, wall, h } = c;
+  const T = VILLAGE_PALETTE;
+  const R = c.w * 0.55;
+  const top = 0.22 + h;
+  p.part(new THREE.CylinderGeometry(R * 1.08, R * 1.12, 0.22, 12), T.wallStone, [0, 0.11, 0], undefined, undefined, { roughness: 1, receiveShadow: true });
+  p.part(roundWall(R, h, 12, 0.05, seed), wallTone(wall, seed), [0, 0.22 + h / 2, 0], undefined, undefined, SHELL);
+  p.part(new THREE.TorusGeometry(R * 0.95, 0.05, 4, 14), T.wallLight, [0, top - 0.02, 0], [Math.PI / 2, 0, 0], undefined, { roughness: 0.95 });
+  doorway(c, R * 1.05 + 0.01, 0.22, h * 0.6, 0);
+
+  const rBot = R + 0.3;
+  const H = 1.0 + R * 0.5;
+  const base = top - 0.04;
+  p.part(thatchCone(rBot, 0.1, H, seed), T.thatch, [0, base + H / 2, 0], undefined, undefined, THATCH_SPEC);
+  p.part(thatchCone(rBot + 0.1, rBot * 0.7, 0.28, seed + 5), T.thatchDark, [0, base + 0.14, 0], undefined, undefined, THATCH_SPEC);
+  p.part(new THREE.TorusGeometry(rBot, 0.05, 4, 14), T.thatchDark, [0, base + 0.03, 0], [Math.PI / 2, 0, 0], undefined, THATCH_SPEC);
+  for (const t of [0.35, 0.68]) {
+    const r = rBot * (1 - t) + 0.1 * t;
+    p.part(new THREE.TorusGeometry(r * 0.99, 0.02, 3, 14), T.thatchDark, [0, base + H * t, 0], [Math.PI / 2, 0, 0]);
+  }
+  p.part(new THREE.SphereGeometry(0.1, 6, 5), T.thatchDark, [0, base + H + 0.02, 0], undefined, [1, 0.7, 1], THATCH_SPEC);
+  p.part(new THREE.CylinderGeometry(0.02, 0.02, 0.2, 4), T.timberDark, [0, base + H + 0.14, 0]);
+}
+
+/** Rectangular family compound house: bulged mud walls, thick coping, hip roof with overhang, optional porch. */
+function buildFamily(c: HutCtx): void {
+  const { p, seed, wall, w, d, h } = c;
+  const T = VILLAGE_PALETTE;
+  const lean = (hash3(seed, 7, 3) - 0.5) * 0.06;
+  p.part(new THREE.BoxGeometry(w * 1.04, 0.22, d * 1.04), T.wallStone, [0, 0.11, 0], undefined, undefined, { roughness: 1, receiveShadow: true });
+  p.part(mudWall(w, h, d, 0.05, lean, seed), wallTone(wall, seed), [0, 0.22 + h / 2, 0], undefined, undefined, SHELL);
+  const top = 0.22 + h;
+  p.part(new THREE.BoxGeometry(w + 0.06, 0.07, d + 0.06), T.wallLight, [0, top - 0.02, 0], undefined, undefined, { roughness: 0.95, castShadow: true });
+  const frontZ = (d / 2) * 1.03;
+  doorway(c, frontZ, 0.22, h * 0.62, (hash3(seed, 2, 2) - 0.5) * w * 0.2);
+  if (hash3(seed, 3, 3) > 0.5) {
+    const wx = (hash3(seed, 6, 6) - 0.5) * w * 0.4;
+    p.part(new THREE.BoxGeometry(0.2, 0.18, 0.03), T.windowDark, [wx, 0.22 + h * 0.6, -frontZ - 0.01]);
+    p.part(new THREE.BoxGeometry(0.26, 0.04, 0.06), T.timberDark, [wx, 0.22 + h * 0.6 - 0.11, -frontZ - 0.02]);
+  }
+  hipRoofThick(p, w / 2 + 0.26, d / 2 + 0.26, 0.55, top - 0.02);
+  if (hash3(seed, 5, 5) < 0.35) {
+    for (const s of [-1, 1]) {
+      p.part(new THREE.CylinderGeometry(0.04, 0.05, h * 0.8, 6), T.postWood, [s * (w * 0.42), 0.22 + h * 0.4, frontZ + 0.55], undefined, undefined, { castShadow: true });
+    }
+    p.part(new THREE.BoxGeometry(w * 0.98, 0.06, 0.9), T.thatchDark, [0, 0.22 + h * 0.8, frontZ + 0.36], [0.14, 0, 0], undefined, THATCH_SPEC);
+  }
+}
+
+/** Chief's compound: a larger hall with a raised veranda on posts under a lower sloped slab, plus a deeper roof. */
+function buildChief(c: HutCtx): void {
+  const { p, seed, wall, w, d, h } = c;
+  const T = VILLAGE_PALETTE;
+  const base = 0.26;
+  const lean = (hash3(seed, 8, 3) - 0.5) * 0.05;
+  p.part(new THREE.BoxGeometry(w * 1.03, base, d * 1.03), T.wallStone, [0, base / 2, 0], undefined, undefined, { roughness: 1, receiveShadow: true });
+  p.part(mudWall(w, h, d, 0.04, lean, seed), wallTone(wall, seed), [0, base + h / 2, 0], undefined, undefined, SHELL);
+  const top = base + h;
+  p.part(new THREE.BoxGeometry(w + 0.06, 0.07, d + 0.06), T.wallLight, [0, top - 0.02, 0], undefined, undefined, { roughness: 0.95, castShadow: true });
+  const frontZ = (d / 2) * 1.03;
+  doorway(c, frontZ, base, h * 0.7, 0);
+  // veranda: raised floor, posts, sloped slab
+  const vd = 0.95;
+  const vz = d / 2 + vd / 2;
+  p.part(new THREE.BoxGeometry(w + 0.5, 0.12, vd), T.postWood, [0, base - 0.04, vz], undefined, undefined, { roughness: 0.95, receiveShadow: true });
+  const postH = h * 0.92;
+  for (let i = 0; i < 5; i++) {
+    const x = -(w / 2 + 0.2) + (i * (w + 0.4)) / 4;
+    p.part(new THREE.CylinderGeometry(0.05, 0.06, postH, 6), T.postWood, [x, base + postH / 2, d / 2 + vd - 0.05], undefined, undefined, { castShadow: true });
+  }
+  p.part(new THREE.BoxGeometry(w + 0.5, 0.07, vd + 0.35), T.thatchDark, [0, base + postH + 0.02, d / 2 + vd / 2 + 0.1], [0.3, 0, 0], undefined, THATCH_SPEC);
+  hipRoofThick(p, w / 2 + 0.32, d / 2 + 0.32, 0.72, top - 0.02);
+}
+
+/** Granary on stilts: raised plank platform, round woven body with a bulge, and a thatch cap with overhang. */
+function buildGranary(c: HutCtx): void {
+  const { p, seed, wall, w, d } = c;
+  const T = VILLAGE_PALETTE;
+  const legH = 0.55;
+  const bodyH = 0.6;
+  const R = Math.min(w, d) * 0.4;
+  for (const sx of [-1, 1]) {
+    for (const sz of [-1, 1]) {
+      const lx = sx * (w / 2 - 0.1);
+      const lz = sz * (d / 2 - 0.1);
+      p.part(new THREE.CylinderGeometry(0.075, 0.06, legH + 0.04, 8), T.postWood, [lx, legH / 2, lz], [0, 0, sx * 0.05], undefined, { castShadow: true });
+      p.part(new THREE.CylinderGeometry(0.11, 0.11, 0.05, 8), T.rockBase, [lx, 0.025, lz], undefined, undefined, { roughness: 1, castShadow: true });
+    }
+  }
+  const platY = legH + 0.035;
+  p.part(new THREE.BoxGeometry(w + 0.08, 0.07, d + 0.08), T.postWood, [0, platY, 0], undefined, undefined, { roughness: 0.9, castShadow: true, receiveShadow: true });
+  p.part(roundWall(R, bodyH, 12, 0.14, seed), wallTone(wall, seed), [0, legH + 0.07 + bodyH / 2, 0], undefined, undefined, SHELL);
+  const capBase = legH + 0.07 + bodyH - 0.03;
+  const capH = 0.5;
+  p.part(thatchCone(R + 0.34, 0.08, capH, seed), T.thatch, [0, capBase + capH / 2, 0], undefined, undefined, THATCH_SPEC);
+  p.part(thatchCone(R + 0.22, 0.1, capH * 0.5, seed + 3), T.thatchDark, [0, capBase + capH * 0.25, 0], undefined, undefined, THATCH_SPEC);
+  p.part(new THREE.TorusGeometry(R + 0.34, 0.055, 4, 14), T.thatchDark, [0, capBase + 0.03, 0], [Math.PI / 2, 0, 0], undefined, THATCH_SPEC);
+  p.part(new THREE.SphereGeometry(0.09, 6, 5), T.thatchDark, [0, capBase + capH + 0.02, 0], undefined, [1, 0.7, 1], THATCH_SPEC);
+  // ladder leaning on the platform
+  const L = 0.82;
+  p.part(new THREE.BoxGeometry(0.05, L, 0.05), T.timberDark, [0, legH / 2, d / 2 + 0.3], [-0.74, 0, 0], undefined, { castShadow: true });
+}
+
+/** Smith's workshop: open-fronted shed, back mud wall, clay forge with chimney, anvil on a stump, charcoal heap. */
+function buildSmith(c: HutCtx): void {
+  const { p, seed, wall, w, d, h } = c;
+  const T = VILLAGE_PALETTE;
+  for (const sx of [-1, 1]) {
+    for (const sz of [-1, 1]) {
+      p.part(new THREE.CylinderGeometry(0.05, 0.06, h, 6), T.postWood, [sx * (w / 2 - 0.05), h / 2, sz * (d / 2 - 0.05)], undefined, undefined, { castShadow: true });
+    }
+  }
+  p.part(mudWall(w - 0.1, h * 0.5, 0.16, 0.04, (hash3(seed, 9, 3) - 0.5) * 0.04, seed), wallTone(wall, seed), [0, (h * 0.5) / 2, -d / 2 + 0.06], undefined, undefined, SHELL);
+  hipRoofThick(p, w / 2 + 0.2, d / 2 + 0.2, 0.6, h - 0.02);
+  // forge: clay dome and chimney pipe
+  p.part(new THREE.SphereGeometry(0.3, 10, 6, 0, Math.PI * 2, 0, Math.PI / 2), T.wallClay, [w * 0.22, 0.02, -d * 0.12], undefined, [1, 0.9, 1], SHELL);
+  p.part(new THREE.CylinderGeometry(0.06, 0.09, 0.42, 7), T.wallClay, [w * 0.22, 0.52, -d * 0.12], undefined, undefined, { roughness: 0.98, castShadow: true });
+  // anvil on a stump
+  p.part(new THREE.CylinderGeometry(0.1, 0.12, 0.25, 7), T.timberDark, [-w * 0.25, 0.125, d * 0.1], undefined, undefined, { castShadow: true });
+  p.part(new THREE.BoxGeometry(0.24, 0.1, 0.12), T.roofSteel, [-w * 0.25, 0.3, d * 0.1], undefined, undefined, { roughness: 0.5, metalness: 0.4, castShadow: true });
+  // charcoal heap
+  for (let i = 0; i < 4; i++) {
+    p.part(new THREE.SphereGeometry(0.05, 5, 4), T.windowDark, [-w * 0.05 + (i % 2) * 0.1, 0.04, -d * 0.25 + (i >> 1) * 0.08]);
+  }
+}
+
+/** Meeting pavilion: eight open posts under a broad thatch cone, a ring of log benches and a firepit. */
+function buildPavilion(c: HutCtx): void {
+  const { p, seed, w, h } = c;
+  const T = VILLAGE_PALETTE;
+  const R = w / 2 * 0.7;
+  const ph = h;
+  for (let i = 0; i < 8; i++) {
+    const a = (i / 8) * Math.PI * 2;
+    p.part(new THREE.CylinderGeometry(0.07, 0.085, ph, 7), T.postWood, [Math.cos(a) * R, ph / 2, Math.sin(a) * R], [0, 0, Math.cos(a) * 0.025], undefined, { castShadow: true });
+  }
+  const rBot = R + 0.5;
+  const H = 0.95;
+  const base = ph - 0.04;
+  p.part(thatchCone(rBot, 0.12, H, seed), T.thatch, [0, base + H / 2, 0], undefined, undefined, THATCH_SPEC);
+  p.part(new THREE.TorusGeometry(rBot, 0.05, 4, 16), T.thatchDark, [0, base + 0.03, 0], [Math.PI / 2, 0, 0], undefined, THATCH_SPEC);
+  p.part(new THREE.SphereGeometry(0.11, 6, 5), T.thatchDark, [0, base + H + 0.02, 0], undefined, [1, 0.7, 1], THATCH_SPEC);
+  for (let i = 0; i < 6; i++) {
+    const a = (i / 6) * Math.PI * 2;
+    p.part(new THREE.BoxGeometry(0.5, 0.08, 0.16), T.postWood, [Math.cos(a) * (R * 0.7), 0.22, Math.sin(a) * (R * 0.7)], [0, -a, 0], undefined, { castShadow: true });
+  }
+  for (let i = 0; i < 5; i++) {
+    const a = (i / 5) * Math.PI * 2;
+    p.part(new THREE.DodecahedronGeometry(0.07, 0), T.rockBase, [Math.cos(a) * 0.35, 0.04, Math.sin(a) * 0.35], undefined, undefined, { castShadow: true });
+  }
+}
+
+/** Clay pot and a stacked firewood pile, placed in hut-local coordinates. */
+function clayPot(p: Placer, x: number, z: number, s: number): void {
+  p.part(new THREE.SphereGeometry(0.13, 7, 5), VILLAGE_PALETTE.clayPot, [x, 0.13 * s, z], undefined, [s, s * 0.85, s], { roughness: 0.85, castShadow: true });
+}
+
+function firewoodStack(p: Placer, x: number, z: number): void {
+  for (let row = 0; row < 3; row++) {
+    const n = 4 - row;
+    for (let i = 0; i < n; i++) {
+      p.part(new THREE.CylinderGeometry(0.05, 0.05, 0.5, 5), VILLAGE_PALETTE.woodDark, [x + (i - (n - 1) / 2) * 0.11, 0.05 + row * 0.09, z], [0, 0, Math.PI / 2], undefined, { castShadow: true });
+    }
+  }
+}
+
+export type HutKind = "family" | "round" | "chief" | "granary" | "smith" | "pavilion";
+
+/** Default footprint per archetype when a spec leaves w/d/h out. */
+function kindDefaults(kind: HutKind): { w: number; d: number; h: number } {
+  switch (kind) {
+    case "round": return { w: 1.25, d: 1.25, h: 1.0 };
+    case "chief": return { w: 2.1, d: 1.5, h: 1.25 };
+    case "granary": return { w: 0.95, d: 0.95, h: 0.6 };
+    case "smith": return { w: 1.6, d: 1.2, h: 1.0 };
+    case "pavilion": return { w: 2.0, d: 2.0, h: 1.55 };
+    default: return { w: 1.2, d: 1.05, h: 0.95 };
+  }
 }
 
 export function addHut(batch: PropBatch, spec: HutSpec): void {
-  const { x, z, rot = 0, w = 1.15, d = 1.05, h = 0.95, style = "thatch", wall = VILLAGE_PALETTE.wallOchre } = spec;
+  const kind: HutKind = spec.kind ?? (spec.style === "round" ? "round" : "family");
+  const def = kindDefaults(kind);
+  const jitter = 0.96 + hash3(spec.x, spec.z, 9) * 0.08;
+  const w = (spec.w ?? def.w) * jitter;
+  const d = (spec.d ?? def.d) * jitter;
+  const h = (spec.h ?? def.h) * (0.97 + hash3(spec.x, spec.z, 12) * 0.06);
+  const rot = (spec.rot ?? 0) + (hash3(spec.x, spec.z, 10) - 0.5) * 0.3;
   const T = VILLAGE_PALETTE;
-  const p = new Placer(batch, groupMatrix([x, 0, z], rot));
-  const isRound = style === "round";
-  const isZinc = style === "zinc";
+  const p = new Placer(batch, groupMatrix([spec.x, 0, spec.z], rot));
+  const seed = Math.floor(hash3(spec.x, spec.z, 11) * 1000);
+  const c: HutCtx = { p, wall: spec.wall ?? T.wallOchre, seed, w, d, h };
 
-  // Per-hut variation from position: door width and offset, window and porch, wall tone.
-  const rDoor = hash01(x, z, 1);
-  const rDoorX = hash01(x, z, 2);
-  const rWin = hash01(x, z, 3);
-  const rTone = hash01(x, z, 4);
-  const wallCol = `#${new THREE.Color(wall).lerp(new THREE.Color(T.wallPale), rTone * 0.22).getHexString()}`;
-  const shell = { roughness: 0.98, castShadow: true, receiveShadow: true };
+  // packed earth pad under every archetype
+  p.part(new THREE.CircleGeometry(Math.max(w, d) * 0.8, 12), T.groundDirt, [0, 0.01, 0], [-Math.PI / 2, 0, 0], undefined, { receiveShadow: true });
 
-  const R = isRound ? w * 0.55 : 0; // round wall radius at the base
-  const frontZ = isRound ? R * 0.96 : d / 2;
-
-  // packed earth pad
-  p.part(new THREE.CircleGeometry(Math.max(w, d) * 0.8, 14), T.groundDirt, [0, 0.01, 0], [-Math.PI / 2, 0, 0], undefined, {
-    receiveShadow: true,
-  });
-
-  // stone plinth: the walls rest on it, so the hut reads as built, not stuck on the ground
-  p.part(
-    isRound ? new THREE.CylinderGeometry(R * 1.08, R * 1.12, 0.26, 14) : new THREE.BoxGeometry(w * 1.04, 0.26, d * 1.04),
-    T.wallStone,
-    [0, 0.13, 0],
-    undefined,
-    undefined,
-    { roughness: 1, receiveShadow: true },
-  );
-
-  // walls: round walls batter slightly inwards at the top
-  p.part(
-    isRound ? new THREE.CylinderGeometry(R * 0.93, R, h, 14) : new THREE.BoxGeometry(w, h, d),
-    wallCol,
-    [0, h / 2, 0],
-    undefined,
-    undefined,
-    shell,
-  );
-
-  // timber corner posts, proud of the wall, so the walls read as a frame
-  const postCount = isRound ? 6 : 4;
-  for (let i = 0; i < postCount; i++) {
-    const a = (i / postCount) * Math.PI * 2 + Math.PI / postCount;
-    const px = isRound ? Math.cos(a) * R * 0.97 : (i % 2 ? 1 : -1) * (w / 2 + 0.01);
-    const pz = isRound ? Math.sin(a) * R * 0.97 : (i < 2 ? 1 : -1) * (d / 2 + 0.01);
-    p.part(new THREE.BoxGeometry(0.08, h + 0.04, 0.08), T.timberDark, [px, (h + 0.04) / 2, pz], undefined, undefined, {
-      castShadow: true,
-    });
+  switch (kind) {
+    case "round": buildRound(c); break;
+    case "chief": buildChief(c); break;
+    case "granary": buildGranary(c); break;
+    case "smith": buildSmith(c); break;
+    case "pavilion": buildPavilion(c); break;
+    default: buildFamily(c); break;
   }
 
-  // door: planked panel with batten bars, side posts and a lintel. Width and offset vary per hut.
-  const doorW = 0.3 + rDoor * 0.12;
-  const doorH = h * (0.6 + rDoorX * 0.08);
-  const doorX = isRound ? 0 : (rDoorX - 0.5) * w * 0.24;
-  p.part(new THREE.BoxGeometry(doorW, doorH, 0.03), T.doorWood, [doorX, doorH / 2, frontZ + 0.012]);
-  for (const f of [0.35, 0.72]) {
-    p.part(new THREE.BoxGeometry(doorW * 0.9, 0.04, 0.035), T.timberDark, [doorX, doorH * f, frontZ + 0.024]);
-  }
-  for (const s of [-1, 1]) {
-    p.part(new THREE.BoxGeometry(0.06, doorH + 0.06, 0.07), T.timberDark, [doorX + s * (doorW / 2 + 0.03), (doorH + 0.06) / 2, frontZ + 0.02]);
-  }
-  p.part(new THREE.BoxGeometry(doorW + 0.16, 0.07, 0.08), T.timberDark, [doorX, doorH + 0.05, frontZ + 0.02]);
-
-  // shuttered window on the back wall (rectangular huts only, about half of them)
-  if (!isRound && rWin > 0.45) {
-    const wx = (rWin - 0.5) * w * 0.4;
-    p.part(new THREE.BoxGeometry(0.2, 0.18, 0.03), T.windowDark, [wx, h * 0.62, -d / 2 - 0.012]);
-    for (const s of [-1, 1]) {
-      p.part(new THREE.BoxGeometry(0.07, 0.22, 0.04), T.timberDark, [wx + s * 0.135, h * 0.62, -d / 2 - 0.02]);
-    }
-    p.part(new THREE.BoxGeometry(0.26, 0.04, 0.06), T.timberDark, [wx, h * 0.62 - 0.11, -d / 2 - 0.02]);
-  }
-
-  // porch shade on about a third of rectangular huts: two posts and a slanted thatch slab over the door
-  if (!isRound && rWin < 0.33) {
-    for (const s of [-1, 1]) {
-      p.part(new THREE.BoxGeometry(0.07, h * 0.8, 0.07), T.postWood, [s * (w * 0.42), h * 0.4, d / 2 + 0.55], undefined, undefined, {
-        castShadow: true,
-      });
-    }
-    p.part(new THREE.BoxGeometry(w * 0.98, 0.06, 0.9), T.thatchDark, [0, h * 0.8, d / 2 + 0.36], [-0.14, 0, 0], undefined, {
-      roughness: 0.98,
-      castShadow: true,
-    });
-  }
-
-  // roof
-  if (isRound) {
-    const rr = R + 0.22;
-    p.part(new THREE.CylinderGeometry(rr * 0.5, rr, 0.32, 16), T.thatch, [0, h + 0.14, 0], undefined, undefined, {
-      roughness: 0.95,
-      castShadow: true,
-    });
-    p.part(new THREE.ConeGeometry(rr * 0.6, 0.6, 16), T.thatchDark, [0, h + 0.6, 0], undefined, undefined, {
-      roughness: 0.95,
-      castShadow: true,
-    });
-    p.part(new THREE.SphereGeometry(0.08, 8, 6), T.timberDark, [0, h + 0.92, 0]);
-  } else if (isZinc) {
-    const hw = w / 2 + 0.14;
-    const hd = d / 2 + 0.14;
-    const H = 0.5;
-    const g = gableRoof(hw, hd, H);
-    p.part(g.slopes, T.zincRoof, [0, h, 0], undefined, undefined, { roughness: 0.5, metalness: 0.4, castShadow: true });
-    p.part(g.ends, wallCol, [0, h, 0], undefined, undefined, { roughness: 0.98, castShadow: true });
-    p.part(new THREE.BoxGeometry(0.06, 0.06, hd * 2 + 0.06), T.roofSteel, [0, h + H, 0], undefined, undefined, {
-      roughness: 0.45,
-      metalness: 0.5,
-    });
-  } else {
-    const hw = w / 2 + 0.14;
-    const hd = d / 2 + 0.14;
-    const H = 0.62;
-    const r = hipRoof(hw, hd, H);
-    p.part(r.faces, T.thatch, [0, h, 0], undefined, undefined, { roughness: 0.98, castShadow: true });
-    p.part(r.ends, T.thatchDark, [0, h, 0], undefined, undefined, { roughness: 0.98, castShadow: true });
-    p.part(new THREE.BoxGeometry(0.1, 0.08, 0.1), T.beamWood, [0, h + H, 0]);
+  // dressing: a firewood pile and a couple of pots at the side of the compound
+  if (kind !== "pavilion") {
+    const side = hash3(spec.x, spec.z, 13) < 0.5 ? -1 : 1;
+    firewoodStack(p, side * (w / 2 + 0.38), -d * 0.18);
+    clayPot(p, side * (w / 2 + 0.2), d * 0.3, 1);
+    clayPot(p, side * (w / 2 + 0.18), d * 0.3 + 0.32, 0.8);
   }
 }
 
