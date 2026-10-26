@@ -111,13 +111,14 @@ def tex_hair(n=128):
 
 
 def torso_sdf(p):
-    d = ell(p, (0, 1.26, 0.01), (0.150, 0.135, 0.100))  # chest/ribcage
-    d = smin(d, ell(p, (0, 1.37, 0.0), (0.185, 0.06, 0.085)), 0.04)  # shoulders
-    d = smin(d, ell(p, (0, 1.06, 0.0), (0.122, 0.085, 0.088)), 0.05)  # waist
-    d = smin(d, ell(p, (0, 0.95, 0.0), (0.168, 0.105, 0.112)), 0.05)  # hips
-    d = smin(d, ell(p, (0, 0.92, -0.07), (0.142, 0.09, 0.07)), 0.03)  # glutes
-    for s in (-1, 1):  # bust
-        d = smin(d, sph(p, (s * 0.066, 1.225, 0.082), 0.058), 0.03)
+    # feminine hourglass: narrower shoulders, defined waist, wider hips and glutes
+    d = ell(p, (0, 1.26, 0.01), (0.140, 0.130, 0.094))  # ribcage, slimmer than before
+    d = smin(d, ell(p, (0, 1.37, 0.0), (0.168, 0.058, 0.078)), 0.04)  # shoulders, narrower
+    d = smin(d, ell(p, (0, 1.07, 0.0), (0.122, 0.092, 0.082)), 0.05)  # waist, defined
+    d = smin(d, ell(p, (0, 0.95, 0.0), (0.192, 0.108, 0.120)), 0.05)  # hips, wider and fuller
+    d = smin(d, ell(p, (0, 0.93, -0.085), (0.168, 0.094, 0.082)), 0.03)  # glutes, rounded
+    for s in (-1, 1):  # bust, natural shape and projection
+        d = smin(d, sph(p, (s * 0.068, 1.23, 0.090), 0.062), 0.03)
     d = smin(d, cap(p, (0, 1.40, 0), (0, 1.52, 0.005), 0.052, 0.046), 0.02)  # neck
     return d
 
@@ -126,14 +127,14 @@ def limbs_sdf(p):
     d = np.full(len(p), 9.0)
     for s in (-1, 1):
         # arm
-        a = cap(p, (s * 0.19, 1.36, 0), (s * 0.235, 1.11, 0.02), 0.052, 0.040)
-        b = cap(p, (s * 0.235, 1.11, 0.02), (s * 0.265, 0.88, 0.04), 0.038, 0.026)
+        a = cap(p, (s * 0.19, 1.36, 0), (s * 0.235, 1.11, 0.02), 0.050, 0.040)  # toned upper arm
+        b = cap(p, (s * 0.235, 1.11, 0.02), (s * 0.265, 0.88, 0.04), 0.036, 0.026)
         hand = ell(p, (s * 0.272, 0.82, 0.03), (0.03, 0.06, 0.018))
         d = np.minimum(d, smin(smin(a, b, 0.02), hand, 0.012))
         # leg
-        thigh = cap(p, (s * 0.09, 0.95, 0), (s * 0.095, 0.52, 0.005), 0.082, 0.058)
+        thigh = cap(p, (s * 0.09, 0.95, 0), (s * 0.095, 0.52, 0.005), 0.086, 0.060)  # toned thigh
         knee = sph(p, (s * 0.095, 0.50, 0.0), 0.055)
-        calf = ell(p, (s * 0.093, 0.36, -0.012), (0.056, 0.13, 0.058))
+        calf = ell(p, (s * 0.093, 0.36, -0.012), (0.060, 0.13, 0.060))  # shapely calf
         shin = cap(p, (s * 0.095, 0.47, 0), (s * 0.09, 0.12, 0), 0.045, 0.032)
         ankle = sph(p, (s * 0.09, 0.09, 0), 0.03)
         foot = ell(p, (s * 0.09, 0.05, 0.06), (0.045, 0.034, 0.11))
@@ -195,8 +196,8 @@ def wrap_top_sdf(p):
 def skirt_sdf(p):
     y = p[:, 1]
     t = np.clip((y - 0.30) / 0.70, 0, 1)  # 0 at hem, 1 at waist
-    rx = 0.24 - 0.05 * t  # hem wider than waist
-    rz = 0.18 - 0.04 * t
+    rx = 0.275 - 0.065 * t  # hem flares; top clears the new hips (hip half-width ~0.19)
+    rz = 0.20 - 0.05 * t
     e = np.sqrt((p[:, 0] / rx) ** 2 + ((p[:, 2] + 0.01) / rz) ** 2) - 1.0
     m = np.minimum(rx, rz)
     d = e * m
@@ -206,7 +207,7 @@ def skirt_sdf(p):
 
 def belt_points():
     th = np.linspace(0, 2 * math.pi, 48, endpoint=False)
-    return np.stack([0.14 * np.sin(th), np.full_like(th, 1.005), 0.108 * np.cos(th)], 1)
+    return np.stack([0.135 * np.sin(th), np.full_like(th, 1.02), 0.100 * np.cos(th)], 1)
 
 
 # ------------------------------------------------------------------------------------------------
@@ -312,14 +313,14 @@ def make_glb():
     meshes.append(("hair", prims))
 
     # ---- wrap top (cloth shell over torso, skinned to spine/arm roots)
-    Vw, Fw, Nw = sdf_mesh(wrap_top_sdf, (-0.2, 0.96, -0.14), (0.2, 1.40, 0.14), 0.0095)
+    Vw, Fw, Nw = sdf_mesh(wrap_top_sdf, (-0.22, 0.96, -0.17), (0.22, 1.40, 0.17), 0.0095)
     ang = np.arctan2(Vw[:, 0], Vw[:, 2])
     UVw = np.stack([ang / (2 * math.pi) * 3.0, Vw[:, 1] * 4.0], 1)
     Jw, Ww, _ = skin_weights(skel, Vw, sigma=0.04)
     meshes.append(("wrap", [dict(V=Vw, F=Fw, N=Nw, UV=UVw, J=Jw, W=Ww, material=m_wrap)]))
 
     # ---- adire wrapper skirt
-    Vs, Fs, Ns = sdf_mesh(skirt_sdf, (-0.27, 0.27, -0.22), (0.27, 1.03, 0.22), 0.0115)
+    Vs, Fs, Ns = sdf_mesh(skirt_sdf, (-0.31, 0.27, -0.25), (0.31, 1.03, 0.25), 0.0115)
     ang = np.arctan2(Vs[:, 0], Vs[:, 2])
     UVs = np.stack([ang / (2 * math.pi) * 4.0, Vs[:, 1] * 3.0], 1)
     Js, Ws, _ = skin_weights(skel, Vs, sigma=0.05)
@@ -333,10 +334,10 @@ def make_glb():
     meshes.append(("belt", [dict(V=Vbt, F=Fbt, N=Nbt, UV=UVbt, J=Jbt, W=Wbt, material=m_belt)]))
 
     # ---- dagger on the left hip (rigid to Hips): handle + blade
-    hilt = [(0.152, 1.005, 0.07), (0.152, 1.045, 0.07)]
+    hilt = [(0.158, 1.02, 0.075), (0.158, 1.06, 0.075)]
     Vdh, Fdh, Ndh = tube(hilt, 0.0115, sides=8)
     Jd, Wd = rigid_weights(len(Vdh), joint_idx["Hips"])
-    Vdb, Fdb, Ndb = box((0.152, 0.91, 0.085), (0.024, 0.19, 0.008), rot=None)
+    Vdb, Fdb, Ndb = box((0.158, 0.92, 0.09), (0.024, 0.19, 0.008), rot=None)
     Jdb, Wdb = rigid_weights(len(Vdb), joint_idx["Hips"])
     meshes.append(("dagger", [
         dict(V=Vdh, F=Fdh, N=Ndh, J=Jd, W=Wd, material=m_wood),
