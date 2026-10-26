@@ -20,6 +20,7 @@ import {
 } from "@/lib/interiorWeather";
 import { InteriorAmbience } from "@/lib/interiorAudio";
 import { SCENE_PALETTE } from "@/lib/scenePalette";
+import { getProceduralPBR, type SurfaceKind } from "@/lib/proceduralTextures";
 
 /**
  * Built from primitives only (no imported models or textures), so it adds almost no
@@ -34,21 +35,73 @@ const WOOD = SCENE_PALETTE.woodDark;
 const CLAY = SCENE_PALETTE.clay;
 const FLOOR = SCENE_PALETTE.floorWood;
 
-function Box({ p, s, c, r = 0 }: { p: [number, number, number]; s: [number, number, number]; c: string; r?: number }) {
+/**
+ * Procedural PBR surface (albedo + normal map) from the shared proceduralTextures cache. `tint` multiplies
+ * the albedo, so mud and thatch keep their palette colour while woven and carved surfaces stay white.
+ */
+function SurfMat({ kind, tint = "#ffffff", rough = 0.9 }: { kind: SurfaceKind; tint?: string; rough?: number }) {
+  const pbr = useMemo(() => getProceduralPBR(kind), [kind]);
+  const scale = useMemo(() => new THREE.Vector2(0.9, 0.9), []);
+  return (
+    <meshStandardMaterial
+      map={pbr?.map ?? null}
+      normalMap={pbr?.normal ?? null}
+      normalScale={scale}
+      color={tint}
+      roughness={rough}
+    />
+  );
+}
+
+type Surf = { surf?: SurfaceKind; tint?: string };
+
+function Box({ p, s, c, r = 0, surf, rough = 0.95 }: { p: [number, number, number]; s: [number, number, number]; c: string; r?: number; rough?: number } & Surf) {
   return (
     <mesh position={p} rotation={[0, r, 0]} castShadow receiveShadow>
       <boxGeometry args={s} />
-      <meshStandardMaterial color={c} roughness={0.95} />
+      {surf ? <SurfMat kind={surf} tint={c} rough={rough} /> : <meshStandardMaterial color={c} roughness={rough} />}
     </mesh>
   );
 }
 
-function Cyl({ p, rt, rb, h, c }: { p: [number, number, number]; rt: number; rb: number; h: number; c: string }) {
+function Cyl({ p, rt, rb, h, c, surf, rough = 0.9 }: { p: [number, number, number]; rt: number; rb: number; h: number; c: string; rough?: number } & Surf) {
   return (
-    <mesh position={p} castShadow>
-      <cylinderGeometry args={[rt, rb, h, 12]} />
-      <meshStandardMaterial color={c} roughness={0.9} />
+    <mesh position={p} castShadow receiveShadow>
+      <cylinderGeometry args={[rt, rb, h, 14]} />
+      {surf ? <SurfMat kind={surf} tint={c} rough={rough} /> : <meshStandardMaterial color={c} roughness={rough} />}
     </mesh>
+  );
+}
+
+/** Round-bodied piece (bowl, gourd, ball) with an optional procedural surface. */
+function Ball({ p, r, c, surf, rough = 0.9, seg = 12 }: { p: [number, number, number]; r: number; c: string; surf?: SurfaceKind; rough?: number; seg?: number }) {
+  return (
+    <mesh position={p} castShadow receiveShadow>
+      <sphereGeometry args={[r, seg, Math.max(6, seg - 4)]} />
+      {surf ? <SurfMat kind={surf} tint={c} rough={rough} /> : <meshStandardMaterial color={c} roughness={rough} />}
+    </mesh>
+  );
+}
+
+/** Warm fire light with a slow, uneven flicker so the hearth reads as alive and throws moving shadows. */
+function FireLight({ p, intensity, distance = 6 }: { p: [number, number, number]; intensity: number; distance?: number }) {
+  const lt = useRef<THREE.PointLight>(null);
+  useFrame(({ clock }) => {
+    const t = clock.elapsedTime;
+    if (lt.current) lt.current.intensity = intensity * (0.86 + 0.09 * Math.sin(t * 7.3) + 0.05 * Math.sin(t * 19.1 + 1.7));
+  });
+  return (
+    <pointLight
+      ref={lt}
+      position={p}
+      color={SCENE_PALETTE.emberLight}
+      intensity={intensity}
+      distance={distance}
+      decay={2}
+      castShadow
+      shadow-mapSize={[512, 512]}
+      shadow-bias={-0.002}
+    />
   );
 }
 
@@ -58,19 +111,19 @@ function Shell({ w, d, h }: { w: number; d: number; h: number }) {
     <group>
       <mesh position={[0, -0.02, 0]} receiveShadow>
         <boxGeometry args={[w, 0.05, d]} />
-        <meshStandardMaterial color={FLOOR} roughness={1} />
+        <SurfMat kind="dust" tint={FLOOR} rough={1} />
       </mesh>
-      {/* back and side walls */}
-      <Box p={[0, h / 2, -d / 2]} s={[w, h, 0.2]} c={MUD} />
-      <Box p={[-w / 2, h / 2, 0]} s={[0.2, h, d]} c={MUD_DARK} />
-      <Box p={[w / 2, h / 2, 0]} s={[0.2, h, d]} c={MUD_DARK} />
+      {/* back and side walls: hand-daubed mud plaster */}
+      <Box p={[0, h / 2, -d / 2]} s={[w, h, 0.2]} c={MUD} surf="mud" />
+      <Box p={[-w / 2, h / 2, 0]} s={[0.2, h, d]} c={MUD_DARK} surf="mud" />
+      <Box p={[w / 2, h / 2, 0]} s={[0.2, h, d]} c={MUD_DARK} surf="mud" />
       {/* front wall split for the doorway */}
-      <Box p={[-w / 2 + 0.6, h / 2, d / 2]} s={[w - 1.2, h, 0.2]} c={MUD} />
-      <Box p={[w / 2 - 0.3, h / 2, d / 2]} s={[0.6, h, 0.2]} c={MUD} />
-      {/* thatch roof */}
+      <Box p={[-w / 2 + 0.6, h / 2, d / 2]} s={[w - 1.2, h, 0.2]} c={MUD} surf="mud" />
+      <Box p={[w / 2 - 0.3, h / 2, d / 2]} s={[0.6, h, 0.2]} c={MUD} surf="mud" />
+      {/* thatch roof: palm-frond courses */}
       <mesh position={[0, h + 0.5, 0]} rotation={[0, Math.PI / 4, 0]} castShadow>
         <coneGeometry args={[Math.max(w, d) * 0.75, 1.4, 4]} />
-        <meshStandardMaterial color={THATCH} roughness={1} />
+        <SurfMat kind="thatch" rough={1} />
       </mesh>
     </group>
   );
@@ -79,12 +132,20 @@ function Shell({ w, d, h }: { w: number; d: number; h: number }) {
 function Hearth({ p }: { p: [number, number, number] }) {
   return (
     <group position={p}>
-      <Cyl p={[0, 0.15, 0]} rt={0.5} rb={0.6} h={0.3} c={MUD_DARK} />
-      <mesh position={[0, 0.35, 0]}>
+      {/* clay and stone ring, ash bed, glowing coals */}
+      <Cyl p={[0, 0.15, 0]} rt={0.5} rb={0.6} h={0.3} c="#ffffff" surf="mud" rough={1} />
+      <Cyl p={[0, 0.31, 0]} rt={0.42} rb={0.42} h={0.02} c="#3a2a22" rough={1} />
+      {[[0.14, 0.4, 0.06], [-0.12, 0.38, -0.1], [0.02, 0.4, 0.12]].map((q, i) => (
+        <mesh key={i} position={q as [number, number, number]}>
+          <sphereGeometry args={[0.07, 8, 6]} />
+          <meshStandardMaterial color={SCENE_PALETTE.ember} emissive={SCENE_PALETTE.emberDeep} emissiveIntensity={1.6} />
+        </mesh>
+      ))}
+      <mesh position={[0, 0.36, 0]}>
         <sphereGeometry args={[0.18, 10, 8]} />
         <meshStandardMaterial color={SCENE_PALETTE.ember} emissive={SCENE_PALETTE.emberDeep} emissiveIntensity={1.4} />
       </mesh>
-      <pointLight position={[0, 0.6, 0]} color={SCENE_PALETTE.emberLight} intensity={1.1} distance={4} />
+      <FireLight p={[0, 0.7, 0]} intensity={2.4} distance={5} />
     </group>
   );
 }
@@ -92,28 +153,28 @@ function Hearth({ p }: { p: [number, number, number] }) {
 function Stool({ p }: { p: [number, number, number] }) {
   return (
     <group position={p}>
-      <Cyl p={[0, 0.35, 0]} rt={0.28} rb={0.22} h={0.1} c={WOOD} />
-      <Cyl p={[0, 0.17, 0]} rt={0.1} rb={0.12} h={0.34} c={WOOD} />
+      <Cyl p={[0, 0.35, 0]} rt={0.28} rb={0.22} h={0.1} c="#ffffff" surf="wood" />
+      <Cyl p={[0, 0.17, 0]} rt={0.1} rb={0.12} h={0.34} c="#e2c9a6" surf="wood" />
     </group>
   );
 }
 
 function Pot({ p }: { p: [number, number, number] }) {
-  return <Cyl p={p} rt={0.22} rb={0.14} h={0.45} c={CLAY} />;
+  return <Cyl p={p} rt={0.22} rb={0.14} h={0.45} c="#ffffff" surf="clay" />;
 }
 
 function Mat({ p }: { p: [number, number, number] }) {
-  return <Box p={[p[0], 0.02, p[2]]} s={[1.8, 0.04, 1.2]} c={MAT} />;
+  return <Box p={[p[0], 0.02, p[2]]} s={[1.8, 0.04, 1.2]} c="#ffffff" surf="mat" rough={0.95} />;
 }
 
 function Table({ p }: { p: [number, number, number] }) {
   return (
     <group position={p}>
-      <Box p={[0, 0.5, 0]} s={[1.2, 0.08, 0.8]} c={WOOD} />
-      <Box p={[-0.5, 0.25, -0.3]} s={[0.08, 0.5, 0.08]} c={WOOD} />
-      <Box p={[0.5, 0.25, -0.3]} s={[0.08, 0.5, 0.08]} c={WOOD} />
-      <Box p={[-0.5, 0.25, 0.3]} s={[0.08, 0.5, 0.08]} c={WOOD} />
-      <Box p={[0.5, 0.25, 0.3]} s={[0.08, 0.5, 0.08]} c={WOOD} />
+      <Box p={[0, 0.5, 0]} s={[1.2, 0.08, 0.8]} c="#ffffff" surf="wood" />
+      <Box p={[-0.5, 0.25, -0.3]} s={[0.08, 0.5, 0.08]} c="#ffffff" surf="wood" />
+      <Box p={[0.5, 0.25, -0.3]} s={[0.08, 0.5, 0.08]} c="#ffffff" surf="wood" />
+      <Box p={[-0.5, 0.25, 0.3]} s={[0.08, 0.5, 0.08]} c="#ffffff" surf="wood" />
+      <Box p={[0.5, 0.25, 0.3]} s={[0.08, 0.5, 0.08]} c="#ffffff" surf="wood" />
     </group>
   );
 }
@@ -121,8 +182,8 @@ function Table({ p }: { p: [number, number, number] }) {
 function Bowl({ p }: { p: [number, number, number] }) {
   return (
     <mesh position={p}>
-      <sphereGeometry args={[0.18, 10, 6, 0, Math.PI * 2, 0, Math.PI / 2]} />
-      <meshStandardMaterial color={WOOD} />
+      <sphereGeometry args={[0.18, 12, 8, 0, Math.PI * 2, 0, Math.PI / 2]} />
+      <SurfMat kind="wood" rough={0.85} />
     </mesh>
   );
 }
@@ -131,16 +192,18 @@ function Bowl({ p }: { p: [number, number, number] }) {
 function FirewoodHearth({ p }: { p: [number, number, number] }) {
   return (
     <group position={p}>
-      <Box p={[-0.2, 0.08, 0]} s={[0.5, 0.12, 0.1]} c={WOOD} r={0.4} />
-      <Box p={[0.2, 0.08, 0.05]} s={[0.5, 0.12, 0.1]} c={WOOD} r={-0.5} />
-      {([[-0.45, 0.3], [0.45, 0.3], [0, -0.4]] as [number, number][]).map((q, i) => (
-        <Cyl key={i} p={[q[0], 0.07, q[1]]} rt={0.12} rb={0.14} h={0.14} c={MUD_DARK} />
+      {/* stone ring with split logs laid over the coals */}
+      {([[-0.45, 0.3], [0.45, 0.3], [0, -0.4], [-0.3, -0.3], [0.32, -0.25]] as [number, number][]).map((q, i) => (
+        <Cyl key={i} p={[q[0], 0.07, q[1]]} rt={0.12} rb={0.14} h={0.14} c={i % 2 ? "#ffffff" : "#d6c4ad"} surf="mud" rough={1} />
       ))}
+      <Log p={[-0.2, 0.14, 0]} len={0.6} r={0.09} rz={0.4} />
+      <Log p={[0.18, 0.16, 0.06]} len={0.6} r={0.09} rz={-0.5} />
+      <Log p={[0, 0.27, 0]} len={0.5} r={0.08} rz={0.1} />
       <mesh position={[0, 0.2, 0]}>
         <sphereGeometry args={[0.16, 10, 8]} />
         <meshStandardMaterial color={SCENE_PALETTE.ember} emissive={SCENE_PALETTE.emberDeep} emissiveIntensity={1.4} />
       </mesh>
-      <pointLight position={[0, 0.6, 0]} color={SCENE_PALETTE.emberLight} intensity={1.1} distance={4} />
+      <FireLight p={[0, 0.7, 0]} intensity={2.4} distance={5} />
     </group>
   );
 }
@@ -149,37 +212,31 @@ function FirewoodHearth({ p }: { p: [number, number, number] }) {
 function WaterPot({ p }: { p: [number, number, number] }) {
   return (
     <group position={p}>
-      <Cyl p={[0, 0.22, 0]} rt={0.24} rb={0.15} h={0.45} c={CLAY} />
-      <Cyl p={[0, 0.5, 0]} rt={0.12} rb={0.2} h={0.1} c={CLAY} />
+      <Cyl p={[0, 0.22, 0]} rt={0.24} rb={0.15} h={0.45} c="#ffffff" surf="clay" />
+      <Cyl p={[0, 0.5, 0]} rt={0.12} rb={0.2} h={0.1} c="#d9a27a" surf="clay" />
     </group>
   );
 }
 
 /** Wooden bowl on the floor or a table. */
 function WoodBowl({ p }: { p: [number, number, number] }) {
-  return (
-    <mesh position={p}>
-      <sphereGeometry args={[0.2, 10, 6, 0, Math.PI * 2, 0, Math.PI / 2]} />
-      <meshStandardMaterial color={WOOD} />
-    </mesh>
-  );
+  return <Bowl p={p} />;
 }
 
 /** Goods piled on a mat: yams (tan ovals), kola (red nuts), salt (white heap), cloth bolt. */
 function Goods({ p }: { p: [number, number, number] }) {
   return (
     <group position={p}>
-      <Box p={[-0.35, 0.09, 0]} s={[0.5, 0.14, 0.3]} c={SCENE_PALETTE.woodWarm} />
-      <Box p={[0.1, 0.09, 0.2]} s={[0.5, 0.14, 0.3]} c={SCENE_PALETTE.wood} r={0.3} />
-      <mesh position={[0.45, 0.06, -0.2]}>
-        <sphereGeometry args={[0.1, 8, 6]} />
-        <meshStandardMaterial color={SCENE_PALETTE.brickRed} />
-      </mesh>
-      <mesh position={[0.6, 0.06, -0.05]}>
-        <sphereGeometry args={[0.1, 8, 6]} />
-        <meshStandardMaterial color={SCENE_PALETTE.brickRed} />
-      </mesh>
-      <Cyl p={[-0.1, 0.1, -0.35]} rt={0.14} rb={0.1} h={0.18} c={SCENE_PALETTE.creamPot} />
+      {/* yams: long tubers in a loose heap */}
+      <Box p={[-0.35, 0.09, 0]} s={[0.5, 0.14, 0.3]} c="#e6c28a" surf="gourd" rough={0.9} />
+      <Box p={[0.1, 0.09, 0.2]} s={[0.5, 0.14, 0.3]} c="#c8a070" surf="gourd" r={0.3} rough={0.9} />
+      <Box p={[-0.05, 0.22, 0.05]} s={[0.4, 0.14, 0.26]} c="#d6b07a" surf="gourd" r={-0.2} rough={0.9} />
+      {/* kola nuts */}
+      <Ball p={[0.45, 0.06, -0.2]} r={0.1} c="#ffffff" surf="clay" seg={8} />
+      <Ball p={[0.6, 0.06, -0.05]} r={0.1} c="#ffffff" surf="clay" seg={8} />
+      <Ball p={[0.52, 0.05, 0.16]} r={0.09} c="#ffffff" surf="clay" seg={8} />
+      {/* salt in a clay dish */}
+      <Cyl p={[-0.1, 0.1, -0.35]} rt={0.14} rb={0.1} h={0.18} c={SCENE_PALETTE.creamPot} rough={1} />
     </group>
   );
 }
@@ -188,8 +245,8 @@ function Goods({ p }: { p: [number, number, number] }) {
 function ClothBolt({ p }: { p: [number, number, number] }) {
   return (
     <group position={p}>
-      <Cyl p={[0, 0.1, 0]} rt={0.13} rb={0.13} h={0.3} c={SCENE_PALETTE.stoneBlue} />
-      <Box p={[0, 0.1, 0]} s={[0.27, 0.02, 0.27]} c={SCENE_PALETTE.matTan} />
+      <Cyl p={[0, 0.1, 0]} rt={0.13} rb={0.13} h={0.3} c="#ffffff" surf="cloth" rough={0.95} />
+      <Box p={[0, 0.1, 0]} s={[0.27, 0.02, 0.27]} c="#ffffff" surf="wood" />
     </group>
   );
 }
@@ -343,8 +400,8 @@ function WeatherTick({ audio }: { audio: InteriorAmbience }) {
 function Basket({ p }: { p: [number, number, number] }) {
   return (
     <group position={p}>
-      <Cyl p={[0, 0.14, 0]} rt={0.3} rb={0.22} h={0.28} c={SCENE_PALETTE.matTan} />
-      <Box p={[0, 0.3, 0]} s={[0.5, 0.04, 0.5]} c={SCENE_PALETTE.woodWarm} />
+      <Cyl p={[0, 0.14, 0]} rt={0.3} rb={0.22} h={0.28} c="#ffffff" surf="basket" rough={0.95} />
+      <Cyl p={[0, 0.3, 0]} rt={0.31} rb={0.3} h={0.03} c="#c99a5c" surf="basket" rough={0.95} />
     </group>
   );
 }
@@ -353,26 +410,29 @@ function Basket({ p }: { p: [number, number, number] }) {
 function Calabash({ p }: { p: [number, number, number] }) {
   return (
     <group position={p}>
-      <mesh position={[0, 0.2, 0]} castShadow>
-        <sphereGeometry args={[0.2, 10, 8]} />
-        <meshStandardMaterial color={SCENE_PALETTE.woodWarm} roughness={0.8} />
-      </mesh>
-      <Cyl p={[0, 0.4, 0]} rt={0.06} rb={0.08} h={0.12} c={SCENE_PALETTE.woodWarm} />
+      <Ball p={[0, 0.2, 0]} r={0.2} c="#ffffff" surf="gourd" rough={0.7} />
+      <Cyl p={[0, 0.4, 0]} rt={0.06} rb={0.08} h={0.12} c="#ffffff" surf="gourd" rough={0.7} />
     </group>
   );
 }
 
 /** Tall palm oil jar in red clay. */
 function PalmOilJar({ p }: { p: [number, number, number] }) {
-  return <Cyl p={[p[0], 0.3, p[2]]} rt={0.16} rb={0.2} h={0.6} c={SCENE_PALETTE.lateriteDark} />;
+  return (
+    <group position={p}>
+      <Cyl p={[0, 0.3, 0]} rt={0.16} rb={0.2} h={0.6} c="#ffffff" surf="clay" />
+      <Cyl p={[0, 0.66, 0]} rt={0.1} rb={0.13} h={0.08} c="#c27a4c" surf="clay" />
+    </group>
+  );
 }
 
 /** Talking drum: a waisted body with a hide head on top. */
 function TalkingDrum({ p }: { p: [number, number, number] }) {
   return (
     <group position={p}>
-      <Cyl p={[0, 0.28, 0]} rt={0.14} rb={0.2} h={0.5} c={WOOD} />
-      <Cyl p={[0, 0.54, 0]} rt={0.18} rb={0.18} h={0.04} c={SCENE_PALETTE.matTan} />
+      <Cyl p={[0, 0.28, 0]} rt={0.14} rb={0.2} h={0.5} c="#ffffff" surf="wood" />
+      <Cyl p={[0, 0.54, 0]} rt={0.18} rb={0.18} h={0.04} c={SCENE_PALETTE.matTan} rough={0.8} />
+      <Cyl p={[0, 0.02, 0]} rt={0.2} rb={0.2} h={0.04} c="#6b4a2b" surf="wood" />
     </group>
   );
 }
@@ -381,7 +441,7 @@ function TalkingDrum({ p }: { p: [number, number, number] }) {
 function ClayLamp({ p }: { p: [number, number, number] }) {
   return (
     <group position={p}>
-      <Cyl p={[0, 0.2, 0]} rt={0.08} rb={0.12} h={0.4} c={SCENE_PALETTE.clay} />
+      <Cyl p={[0, 0.2, 0]} rt={0.08} rb={0.12} h={0.4} c="#ffffff" surf="clay" />
       <mesh position={[0, 0.44, 0]}>
         <sphereGeometry args={[0.08, 8, 6]} />
         <meshStandardMaterial color={SCENE_PALETTE.candleGold} emissive={SCENE_PALETTE.emberDeep} emissiveIntensity={0.8} />
@@ -392,11 +452,15 @@ function ClayLamp({ p }: { p: [number, number, number] }) {
 
 /** Stack of split logs by the wall. */
 function LogPile({ p }: { p: [number, number, number] }) {
+  // stacked split logs, alternating direction, bark-brown and pale cut ends
   return (
     <group position={p}>
-      <Box p={[0, 0.12, -0.12]} s={[0.7, 0.22, 0.22]} c={WOOD} />
-      <Box p={[0, 0.12, 0.12]} s={[0.7, 0.22, 0.22]} c={WOOD} />
-      <Box p={[0, 0.34, 0]} s={[0.7, 0.22, 0.22]} c={WOOD} />
+      <Log p={[0, 0.08, -0.14]} len={0.7} r={0.1} rz={0} />
+      <Log p={[0, 0.08, 0.0]} len={0.7} r={0.1} rz={0} />
+      <Log p={[0, 0.08, 0.14]} len={0.7} r={0.1} rz={0} />
+      <Log p={[0, 0.2, -0.07]} len={0.7} r={0.1} rz={0} />
+      <Log p={[0, 0.2, 0.07]} len={0.7} r={0.1} rz={0} />
+      <Log p={[0, 0.32, 0]} len={0.7} r={0.1} rz={0} />
     </group>
   );
 }
@@ -405,9 +469,10 @@ function LogPile({ p }: { p: [number, number, number] }) {
 function ToolRack({ p }: { p: [number, number, number] }) {
   return (
     <group position={p}>
-      <Box p={[0, 0.9, 0]} s={[0.06, 1.2, 0.8]} c={WOOD} />
-      <Box p={[0.06, 0.8, -0.2]} s={[0.04, 0.04, 0.3]} c={SCENE_PALETTE.dust} />
-      <Box p={[0.06, 1.0, 0.2]} s={[0.04, 0.04, 0.3]} c={SCENE_PALETTE.dust} />
+      <Box p={[0, 0.9, 0]} s={[0.06, 1.2, 0.8]} c="#ffffff" surf="wood" />
+      <Box p={[0.06, 0.8, -0.2]} s={[0.04, 0.04, 0.3]} c="#c9b4a0" rough={0.5} />
+      <Box p={[0.06, 1.0, 0.2]} s={[0.04, 0.04, 0.3]} c="#c9b4a0" rough={0.5} />
+      <Box p={[0.06, 0.6, 0.0]} s={[0.04, 0.04, 0.36]} c="#c9b4a0" rough={0.5} />
     </group>
   );
 }
@@ -416,25 +481,25 @@ function ToolRack({ p }: { p: [number, number, number] }) {
 function BlockPile({ p }: { p: [number, number, number] }) {
   return (
     <group position={p}>
-      <Box p={[0, 0.15, 0]} s={[0.5, 0.3, 0.4]} c={WOOD} />
-      <Box p={[0.1, 0.42, -0.05]} s={[0.4, 0.22, 0.3]} c={SCENE_PALETTE.woodWarm} r={0.3} />
+      <Box p={[0, 0.15, 0]} s={[0.5, 0.3, 0.4]} c="#ffffff" surf="wood" />
+      <Box p={[0.1, 0.42, -0.05]} s={[0.4, 0.22, 0.3]} c="#e6c9a2" surf="wood" r={0.3} />
     </group>
   );
 }
 
 /** Chisel resting on the bench top. */
 function BenchTool({ p }: { p: [number, number, number] }) {
-  return <Box p={p} s={[0.5, 0.04, 0.06]} c={MUD_DARK} r={0.2} />;
+  return <Box p={p} s={[0.5, 0.04, 0.06]} c="#8a8a84" r={0.2} rough={0.4} />;
 }
 
 /** Balance scale with two pans on a post, for weighing goods. */
 function TradeScale({ p }: { p: [number, number, number] }) {
   return (
     <group position={p}>
-      <Box p={[0, 0.5, 0]} s={[0.04, 0.9, 0.04]} c={WOOD} />
-      <Box p={[0, 0.94, 0]} s={[0.6, 0.04, 0.04]} c={WOOD} />
-      <Cyl p={[-0.28, 0.82, 0]} rt={0.14} rb={0.1} h={0.04} c={SCENE_PALETTE.matTan} />
-      <Cyl p={[0.28, 0.82, 0]} rt={0.14} rb={0.1} h={0.04} c={SCENE_PALETTE.matTan} />
+      <Box p={[0, 0.5, 0]} s={[0.04, 0.9, 0.04]} c="#ffffff" surf="wood" />
+      <Box p={[0, 0.94, 0]} s={[0.6, 0.04, 0.04]} c="#ffffff" surf="wood" />
+      <Cyl p={[-0.28, 0.82, 0]} rt={0.14} rb={0.1} h={0.04} c="#ffffff" surf="basket" />
+      <Cyl p={[0.28, 0.82, 0]} rt={0.14} rb={0.1} h={0.04} c="#ffffff" surf="basket" />
     </group>
   );
 }
@@ -443,18 +508,11 @@ function TradeScale({ p }: { p: [number, number, number] }) {
 function WallShelf({ p }: { p: [number, number, number] }) {
   return (
     <group position={p}>
-      <mesh position={[0, 0.6, 0]} castShadow>
-        <boxGeometry args={[0.9, 0.06, 0.4]} />
-        <meshStandardMaterial color="#6b4a2b" roughness={0.9} />
-      </mesh>
-      <mesh position={[-0.3, 0.8, 0]} castShadow>
-        <cylinderGeometry args={[0.12, 0.09, 0.3, 12]} />
-        <meshStandardMaterial color="#b5653a" roughness={0.95} />
-      </mesh>
-      <mesh position={[0.25, 0.75, 0]} castShadow>
-        <sphereGeometry args={[0.13, 12, 10]} />
-        <meshStandardMaterial color="#c9a15c" roughness={0.9} />
-      </mesh>
+      <Box p={[0, 0.6, 0]} s={[0.9, 0.06, 0.4]} c="#ffffff" surf="wood" />
+      <Cyl p={[-0.3, 0.8, 0]} rt={0.12} rb={0.09} h={0.3} c="#ffffff" surf="clay" />
+      <Cyl p={[-0.02, 0.76, 0.02]} rt={0.1} rb={0.08} h={0.22} c="#d9a27a" surf="clay" />
+      <Ball p={[0.25, 0.75, 0]} r={0.13} c="#ffffff" surf="gourd" />
+      <Ball p={[0.02, 0.7, -0.08]} r={0.1} c="#ffffff" surf="gourd" />
     </group>
   );
 }
@@ -467,10 +525,56 @@ function HangingGourd({ p }: { p: [number, number, number] }) {
         <cylinderGeometry args={[0.012, 0.012, 0.25, 6]} />
         <meshStandardMaterial color="#3a2a18" />
       </mesh>
-      <mesh position={[0, -0.12, 0]} castShadow>
-        <sphereGeometry args={[0.14, 12, 10]} />
-        <meshStandardMaterial color="#8a6a3a" roughness={0.9} />
+      <Ball p={[0, -0.12, 0]} r={0.14} c="#ffffff" surf="gourd" rough={0.7} />
+    </group>
+  );
+}
+
+/** A single split log lying along x (rz tilts it), with a rough bark surface. */
+function Log({ p, len, r, rz }: { p: [number, number, number]; len: number; r: number; rz: number }) {
+  return (
+    <mesh position={p} rotation={[0, 0, Math.PI / 2 + rz]} castShadow receiveShadow>
+      <cylinderGeometry args={[r, r, len, 12]} />
+      <SurfMat kind="wood" tint="#e8d2b2" rough={0.9} />
+    </mesh>
+  );
+}
+
+/** Three clay pots of different sizes and fired tones, set close together. */
+function PotCluster({ p }: { p: [number, number, number] }) {
+  return (
+    <group position={p}>
+      <Cyl p={[-0.22, 0.2, 0.05]} rt={0.2} rb={0.13} h={0.4} c="#ffffff" surf="clay" />
+      <Cyl p={[0.2, 0.14, -0.08]} rt={0.14} rb={0.1} h={0.28} c="#d9a27a" surf="clay" />
+      <Cyl p={[0.02, 0.12, 0.22]} rt={0.11} rb={0.08} h={0.24} c="#b8805a" surf="clay" />
+    </group>
+  );
+}
+
+/** Stack of three wooden bowls, nested and staggered. */
+function BowlStack({ p }: { p: [number, number, number] }) {
+  return (
+    <group position={p}>
+      <Bowl p={[0, 0, 0]} />
+      <mesh position={[0.02, 0.09, 0]}>
+        <sphereGeometry args={[0.16, 12, 8, 0, Math.PI * 2, 0, Math.PI / 2]} />
+        <SurfMat kind="wood" tint="#d8b890" rough={0.85} />
       </mesh>
+      <mesh position={[-0.01, 0.17, 0.01]}>
+        <sphereGeometry args={[0.12, 10, 6, 0, Math.PI * 2, 0, Math.PI / 2]} />
+        <SurfMat kind="wood" tint="#f0dcc0" rough={0.85} />
+      </mesh>
+    </group>
+  );
+}
+
+/** Three calabashes on the floor, different sizes. */
+function CalabashPile({ p }: { p: [number, number, number] }) {
+  return (
+    <group position={p}>
+      <Ball p={[0, 0.16, 0]} r={0.16} c="#ffffff" surf="gourd" rough={0.7} />
+      <Ball p={[0.26, 0.12, 0.08]} r={0.12} c="#e3c79a" surf="gourd" rough={0.7} />
+      <Ball p={[-0.18, 0.1, 0.14]} r={0.1} c="#c9a774" surf="gourd" rough={0.7} />
     </group>
   );
 }
@@ -523,6 +627,12 @@ function StarterPiece({ item }: { item: StarterItem }) {
       return <HangingGourd p={p} />;
     case "matLayer":
       return <Mat p={[p[0], 0.02, p[2]]} />;
+    case "potCluster":
+      return <PotCluster p={p} />;
+    case "bowlStack":
+      return <BowlStack p={p} />;
+    case "calabashPile":
+      return <CalabashPile p={p} />;
     default:
       return null;
   }
@@ -726,8 +836,23 @@ export default function InteriorScene({
           scene.background = new THREE.Color(SCENE_PALETTE.interiorBg);
         }}
       >
-        <ambientLight intensity={0.55} />
-        <directionalLight position={[2, 4, 3]} intensity={0.6} castShadow />
+        <ambientLight intensity={0.2} color="#ffe2b8" />
+        <hemisphereLight args={["#fff1d6", "#3a2514", 0.3]} />
+        {/* daylight through the doorway (front wall, +z): casts the door shadow across the floor */}
+        <directionalLight
+          position={[1.4, 3.6, 6]}
+          intensity={0.95}
+          color="#ffd9a6"
+          castShadow
+          shadow-mapSize={[1024, 1024]}
+          shadow-camera-left={-4}
+          shadow-camera-right={4}
+          shadow-camera-top={4}
+          shadow-camera-bottom={-4}
+          shadow-camera-near={0.5}
+          shadow-camera-far={14}
+          shadow-bias={-0.0005}
+        />
         <Room />
         {decorable && <SafehouseLive ghost={ghost} selectedUid={null} />}
         {decorable && <WeatherTick audio={audio} />}

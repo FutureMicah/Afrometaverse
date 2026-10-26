@@ -12,10 +12,23 @@
  */
 import * as THREE from "three";
 
-export type SurfaceKind = "mud" | "thatch" | "dust";
+export type SurfaceKind = "mud" | "thatch" | "dust" | "mat" | "basket" | "cloth" | "wood" | "clay" | "gourd";
 
-/** Resolution per surface. Mud and thatch are 2K for close walls and roofs; the ground is 1K to keep GPU memory small on phones. */
-const SIZE: Record<SurfaceKind, number> = { mud: 2048, thatch: 2048, dust: 1024 };
+/**
+ * Resolution per surface. Mud and thatch are 2K for close walls and roofs; the ground is 1K to keep GPU memory small on phones.
+ * Interior props (woven mats, baskets, cloth, wood, fired clay, calabash) are 512: they are small on screen and mobile GPUs are tight.
+ */
+const SIZE: Record<SurfaceKind, number> = {
+  mud: 2048,
+  thatch: 2048,
+  dust: 1024,
+  mat: 512,
+  basket: 512,
+  cloth: 512,
+  wood: 512,
+  clay: 512,
+  gourd: 512,
+};
 
 const cache = new Map<SurfaceKind, { map: THREE.CanvasTexture; normal: THREE.CanvasTexture }>();
 
@@ -343,8 +356,183 @@ function dustFields(size: number): Fields {
   return { h, lum, tint };
 }
 
+type RGB = [number, number, number];
+
+/**
+ * Over/under weave (mats, baskets, cloth). Horizontal strands lie on top in even cells, vertical strands
+ * in odd cells. Each strand is rounded (bright crown, dark crossing edges), gets its own tone and an
+ * optional dyed stripe every few strands, and a little grit and wear on top.
+ */
+function weaveFields(size: number, nU: number, nV: number, colA: RGB, colB: RGB, dye: { every: number; col: RGB } | null, seed: number): Fields {
+  const N = size * size;
+  const h = new Float32Array(N);
+  const lum = new Float32Array(N);
+  const tint = new Float32Array(N);
+  const rgb: [Float32Array, Float32Array, Float32Array] = [new Float32Array(N), new Float32Array(N), new Float32Array(N)];
+  const grit = new Noise(128, 128, seed + 5, 1);
+  const wear = new Noise(4, 4, seed + 9, 2);
+  for (let y = 0; y < size; y++) {
+    const v = y / size;
+    for (let x = 0; x < size; x++) {
+      const u = x / size;
+      const i = y * size + x;
+      const cu = u * nU;
+      const cv = v * nV;
+      const ix = Math.floor(cu);
+      const iy = Math.floor(cv);
+      const fu = cu - ix;
+      const fv = cv - iy;
+      const horiz = (ix + iy) % 2 === 0;
+      const sIdx = horiz ? iy : ix;
+      const prof = horiz ? Math.sin(Math.PI * fv) : Math.sin(Math.PI * fu);
+      const tone = hash(sIdx, horiz ? 3 : 5, seed);
+      let base = tone > 0.5 ? colA : colB;
+      if (dye && sIdx % dye.every === 0) base = dye.col;
+      const g = grit.sample(u, v);
+      const wr = wear.sample(u, v);
+      const shade = (0.5 + 0.5 * prof) * (0.9 + 0.2 * tone) * (0.9 + 0.2 * g) * (0.9 + 0.12 * wr);
+      rgb[0][i] = Math.min(1, (base[0] / 255) * shade);
+      rgb[1][i] = Math.min(1, (base[1] / 255) * shade);
+      rgb[2][i] = Math.min(1, (base[2] / 255) * shade);
+      h[i] = prof * 0.6 + (g - 0.5) * 0.12;
+      lum[i] = 1;
+      tint[i] = 0;
+    }
+  }
+  return { h, lum, tint, rgb };
+}
+
+/** Hewn wood: long grain along the face, wavy ring lines, fibre streaks and the odd dark knot. */
+function woodFields(size: number): Fields {
+  const N = size * size;
+  const h = new Float32Array(N);
+  const lum = new Float32Array(N);
+  const tint = new Float32Array(N);
+  const rgb: [Float32Array, Float32Array, Float32Array] = [new Float32Array(N), new Float32Array(N), new Float32Array(N)];
+  const warp = new Noise(2, 8, 111, 2);
+  const fibre = new Noise(4, 128, 113, 2);
+  const knot = new Noise(4, 4, 117, 2);
+  const DARK: RGB = [92, 58, 32];
+  const LIGHT: RGB = [166, 118, 70];
+  for (let y = 0; y < size; y++) {
+    const v = y / size;
+    for (let x = 0; x < size; x++) {
+      const u = x / size;
+      const i = y * size + x;
+      const w = warp.sample(u, v) * 5;
+      const ring = 0.5 + 0.5 * Math.sin((v * 26 + w) * Math.PI * 2);
+      const f = fibre.sample(u, v);
+      const k = smooth(0.6, 0.7, knot.sample(u, v));
+      const t = Math.min(1, Math.max(0, ring * 0.65 + f * 0.35 - 0.1));
+      const dim = 1 - k * 0.35;
+      rgb[0][i] = ((DARK[0] + (LIGHT[0] - DARK[0]) * t) / 255) * dim;
+      rgb[1][i] = ((DARK[1] + (LIGHT[1] - DARK[1]) * t) / 255) * dim;
+      rgb[2][i] = ((DARK[2] + (LIGHT[2] - DARK[2]) * t) / 255) * dim;
+      h[i] = f * 0.25 + ring * 0.1;
+      lum[i] = 1;
+      tint[i] = 0;
+    }
+  }
+  return { h, lum, tint, rgb };
+}
+
+/** Hand-thrown, fired clay: fire clouds (darker, smoky blotches), pale grit, dark specks and throwing rings. */
+function clayFields(size: number): Fields {
+  const N = size * size;
+  const h = new Float32Array(N);
+  const lum = new Float32Array(N);
+  const tint = new Float32Array(N);
+  const rgb: [Float32Array, Float32Array, Float32Array] = [new Float32Array(N), new Float32Array(N), new Float32Array(N)];
+  const cloud = new Noise(8, 8, 131, 3);
+  const grit = new Noise(256, 256, 137, 1);
+  const rings = new Noise(2, 32, 139, 1);
+  const BASE: RGB = [178, 98, 54];
+  const BURN: RGB = [116, 54, 28];
+  const PALE: RGB = [212, 152, 102];
+  for (let y = 0; y < size; y++) {
+    const v = y / size;
+    for (let x = 0; x < size; x++) {
+      const u = x / size;
+      const i = y * size + x;
+      const burn = smooth(0.45, 0.7, cloud.sample(u, v)) * 0.8;
+      const gr = grit.sample(u, v);
+      const pale = gr < 0.2 ? 0.25 : 0;
+      const speck = gr > 0.8 ? 1 : 0;
+      const th = rings.sample(u, v);
+      const r = BASE[0] + (BURN[0] - BASE[0]) * burn + (PALE[0] - BASE[0]) * pale;
+      const g = BASE[1] + (BURN[1] - BASE[1]) * burn + (PALE[1] - BASE[1]) * pale;
+      const b = BASE[2] + (BURN[2] - BASE[2]) * burn + (PALE[2] - BASE[2]) * pale;
+      const shade = (0.9 + 0.14 * th) * (1 - 0.35 * speck);
+      rgb[0][i] = Math.min(1, (r / 255) * shade);
+      rgb[1][i] = Math.min(1, (g / 255) * shade);
+      rgb[2][i] = Math.min(1, (b / 255) * shade);
+      h[i] = gr * 0.35 + th * 0.2 - speck * 0.2;
+      lum[i] = 1;
+      tint[i] = 0;
+    }
+  }
+  return { h, lum, tint, rgb };
+}
+
+/** Calabash / dried gourd: buff skin with rough mottled spots, fine pitting and a faint waxy sheen. */
+function gourdFields(size: number): Fields {
+  const N = size * size;
+  const h = new Float32Array(N);
+  const lum = new Float32Array(N);
+  const tint = new Float32Array(N);
+  const rgb: [Float32Array, Float32Array, Float32Array] = [new Float32Array(N), new Float32Array(N), new Float32Array(N)];
+  const blot = new Noise(4, 4, 151, 3);
+  const fine = new Noise(256, 256, 153, 1);
+  const sheen = new Noise(4, 4, 157, 2);
+  const BUFF: RGB = [190, 156, 100];
+  const SPOT: RGB = [120, 86, 46];
+  for (let y = 0; y < size; y++) {
+    const v = y / size;
+    for (let x = 0; x < size; x++) {
+      const u = x / size;
+      const i = y * size + x;
+      const t = smooth(0.52, 0.66, blot.sample(u, v)) * 0.8;
+      const fn = fine.sample(u, v);
+      const sh = sheen.sample(u, v);
+      const shade = (0.88 + 0.22 * sh) * (0.85 + 0.3 * fn);
+      rgb[0][i] = Math.min(1, ((BUFF[0] + (SPOT[0] - BUFF[0]) * t) / 255) * shade);
+      rgb[1][i] = Math.min(1, ((BUFF[1] + (SPOT[1] - BUFF[1]) * t) / 255) * shade);
+      rgb[2][i] = Math.min(1, ((BUFF[2] + (SPOT[2] - BUFF[2]) * t) / 255) * shade);
+      h[i] = fn * 0.5 - t * 0.2;
+      lum[i] = 1;
+      tint[i] = 0;
+    }
+  }
+  return { h, lum, tint, rgb };
+}
+
+const FIELDS: Record<SurfaceKind, (size: number) => Fields> = {
+  mud: mudFields,
+  thatch: thatchFields,
+  dust: dustFields,
+  mat: (s) => weaveFields(s, 24, 24, [196, 160, 98], [168, 132, 76], { every: 6, col: [124, 70, 40] }, 171),
+  basket: (s) => weaveFields(s, 16, 16, [190, 138, 72], [160, 110, 54], { every: 4, col: [92, 54, 30] }, 181),
+  cloth: (s) => weaveFields(s, 96, 96, [44, 64, 116], [30, 44, 86], { every: 16, col: [200, 160, 84] }, 163),
+  wood: woodFields,
+  clay: clayFields,
+  gourd: gourdFields,
+};
+
+/** Normal-map slope strength per surface. */
+const STRENGTH: Record<SurfaceKind, number> = {
+  thatch: 3.6,
+  mud: 3.0,
+  dust: 1.6,
+  mat: 2.2,
+  basket: 2.6,
+  cloth: 1.2,
+  wood: 1.4,
+  clay: 2.4,
+  gourd: 2.2,
+};
+
 function buildTextures(kind: SurfaceKind, size: number) {
-  const f = kind === "mud" ? mudFields(size) : kind === "thatch" ? thatchFields(size) : dustFields(size);
+  const f = FIELDS[kind](size);
   const { h, lum, tint } = f;
   const rgbF = f.rgb;
   const albedo = document.createElement("canvas");
@@ -359,7 +547,7 @@ function buildTextures(kind: SurfaceKind, size: number) {
   const nData = nctx.createImageData(size, size);
   // slope strength: thatch and mud carry deep relief, ground stays gentle
   // palm fronds carry deeper relief so each spine and leaflet groove catches the light
-  const strength = kind === "thatch" ? 3.6 : kind === "mud" ? 3.0 : 1.6;
+  const strength = STRENGTH[kind];
   for (let y = 0; y < size; y++) {
     const ym = ((y - 1 + size) % size) * size;
     const yp = ((y + 1) % size) * size;

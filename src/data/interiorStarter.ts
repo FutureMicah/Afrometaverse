@@ -31,7 +31,10 @@ export type StarterKind =
   | "scale"
   | "shelf"
   | "hangingGourd"
-  | "matLayer";
+  | "matLayer"
+  | "potCluster"
+  | "bowlStack"
+  | "calabashPile";
 
 export interface StarterItem {
   id: string;
@@ -78,6 +81,14 @@ export const STARTER: Record<InteriorId, RoomStarter> = {
       { id: "sh-gourd-1", kind: "hangingGourd", name: "Gourd hanging from the roof beam", x: 0.3, z: 0.4, y: 1.9 },
       { id: "sh-gourd-2", kind: "hangingGourd", name: "Gourd hanging from the roof beam", x: -0.8, z: -0.4, y: 2.0 },
       { id: "sh-layer", kind: "matLayer", name: "Rush mat laid over the sitting mat", x: 1, z: -1 },
+      { id: "sh-pots-cluster", kind: "potCluster", name: "Cluster of three clay pots", x: -2.1, z: -1.9 },
+      { id: "sh-firewood", kind: "logPile", name: "Firewood stack by the wall", x: -2.2, z: 0.4 },
+      { id: "sh-bowls", kind: "bowlStack", name: "Stack of wooden bowls", x: 1.3, z: -0.1 },
+      { id: "sh-pots-2", kind: "potCluster", name: "Cluster of clay pots by the door", x: 2.0, z: 0 },
+      { id: "sh-calabashes", kind: "calabashPile", name: "Three calabashes", x: -0.8, z: 1.9 },
+      { id: "sh-shelf-2", kind: "shelf", name: "Second wall shelf of calabashes", x: -2.6, z: -0.9 },
+      { id: "sh-gourd-3", kind: "hangingGourd", name: "Gourd hanging from the roof beam", x: 1.6, z: 0.0, y: 2.0 },
+      { id: "sh-gourd-4", kind: "hangingGourd", name: "Gourd hanging from the roof beam", x: -2.0, z: 0.2, y: 2.1 },
     ],
     later: [
       { decorId: "woven-mat", how: "craft", note: "weave a reed mat at home" },
@@ -108,6 +119,13 @@ export const STARTER: Record<InteriorId, RoomStarter> = {
       { id: "mk-scale", kind: "scale", name: "Trade scale", x: 0.2, z: 0.9 },
       { id: "mk-shelf", kind: "shelf", name: "Shelf of dyed cloth and pots", x: 2.6, z: -1.8 },
       { id: "mk-cloth-hang", kind: "hangingGourd", name: "Dyed cloth hung from the beam", x: -0.8, z: 0.6, y: 1.9 },
+      { id: "mk-pots-cluster", kind: "potCluster", name: "Cluster of clay pots", x: -2.1, z: -1.8 },
+      { id: "mk-bowls", kind: "bowlStack", name: "Stack of wooden bowls", x: -1.2, z: 0.7 },
+      { id: "mk-calabashes", kind: "calabashPile", name: "Calabashes for sale", x: 1.1, z: -0.7 },
+      { id: "mk-cloth-2", kind: "clothBolt", name: "Cloth bolt", x: -1.4, z: -0.4 },
+      { id: "mk-basket-2", kind: "basket", name: "Reed basket of kola", x: -1.2, z: 1.9 },
+      { id: "mk-cloth-hang-2", kind: "hangingGourd", name: "Dyed cloth hung from the beam", x: 1.0, z: 0.9, y: 1.9 },
+      { id: "mk-firewood", kind: "logPile", name: "Stacked firewood", x: 1.9, z: 1.9 },
     ],
     later: [
       { decorId: "market-cloth", how: "buy", price: 90, note: "indigo cloth from this stall" },
@@ -130,6 +148,13 @@ export const STARTER: Record<InteriorId, RoomStarter> = {
       { id: "wp-blocks", kind: "blockPile", name: "Carving blocks", x: 1.9, z: -0.6 },
       { id: "wp-shelf", kind: "shelf", name: "Shelf of finished stools", x: 2.6, z: 0.6 },
       { id: "wp-hang", kind: "hangingGourd", name: "Bundled dried herbs from the beam", x: -0.6, z: 0.8, y: 1.9 },
+      { id: "wp-bowls", kind: "bowlStack", name: "Stack of wooden bowls", x: 0.9, z: -0.9 },
+      { id: "wp-pots-cluster", kind: "potCluster", name: "Cluster of clay pots", x: -1.1, z: -0.5 },
+      { id: "wp-stool-3", kind: "stool", name: "Wooden stool", x: 0.9, z: 1.5 },
+      { id: "wp-calabashes", kind: "calabashPile", name: "Calabashes by the bench", x: -2.3, z: 1.9 },
+      { id: "wp-firewood", kind: "logPile", name: "Firewood stack", x: 2.2, z: -0.4 },
+      { id: "wp-tool-2", kind: "benchTool", name: "Adze on the bench", x: -0.1, z: -1.45, y: 0.6 },
+      { id: "wp-hang-2", kind: "hangingGourd", name: "Bundled dried herbs from the beam", x: 1.2, z: 1.9, y: 1.9 },
     ],
     later: [
       { decorId: "carved-stool", how: "craft", note: "carve it at this bench" },
@@ -163,4 +188,7 @@ export const STARTER_KINDS: StarterKind[] = [
   "shelf",
   "hangingGourd",
   "matLayer",
+  "potCluster",
+  "bowlStack",
+  "calabashPile",
 ];
