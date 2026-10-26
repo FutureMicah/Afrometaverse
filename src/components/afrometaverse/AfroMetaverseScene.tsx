@@ -30,6 +30,7 @@ import { VILLAGE_HEARTHS, VILLAGE_HERITAGE } from "@/lib/villageProps";
 import { chunkOf } from "@/lib/chunkStreaming";
 import { currentRenderTier } from "@/lib/renderTier";
 import { StylizedCharacter } from "@/components/afrometaverse/characters/StylizedCharacter";
+import { FighterGLB, usesFighterGLB } from "@/components/afrometaverse/characters/FighterGLB";
 import { tierForRole } from "@/lib/characterWardrobe";
 import {
   HeritageTerrain,
@@ -597,6 +598,9 @@ function PlayerAvatar({ transport }: { transport: TransportId }) {
   const playerTier = useCharacterStore((s) => s.wardrobeTier);
   const moveState = useRoamStore((s) => s.moveState);
   void transport;
+  if (usesFighterGLB(appearance, playerTier)) {
+    return <FighterGLB appearance={appearance} tier={playerTier} scale={1} animate detail moveState={moveState} />;
+  }
   return (
     <StylizedCharacter
       appearance={appearance}
@@ -1133,7 +1137,7 @@ function NpcCrowd() {
           }}
           position={[n.spec.home.x, 0, n.spec.home.z]}
         >
-          <StylizedCharacter appearance={n.appearance} tier={n.tier} scale={0.95} animate detail moveState="walk" />
+          {usesFighterGLB(n.appearance, n.tier) ? <FighterGLB appearance={n.appearance} tier={n.tier} scale={0.95} animate detail moveState="walk" /> : <StylizedCharacter appearance={n.appearance} tier={n.tier} scale={0.95} animate detail moveState="walk" />}
         </group>
       ))}
     </group>
