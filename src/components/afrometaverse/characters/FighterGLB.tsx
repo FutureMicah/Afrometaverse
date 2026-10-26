@@ -99,6 +99,11 @@ function dressFighterMaterials(root: THREE.Object3D) {
       const m = raw as THREE.MeshStandardMaterial;
       if (!m || !("roughness" in m)) continue;
       m.envMapIntensity = 0.8;
+      // sharper texture sampling at close range: the GLB ships small (256-512px) maps,
+      // so max anisotropy keeps braids and wrap patterns from going to mush when the camera is near
+      for (const tex of [m.map, m.normalMap, m.roughnessMap]) {
+        if (tex) tex.anisotropy = 8;
+      }
       const n = (m.name || "").toLowerCase();
       if (n.includes("skirt") || n.includes("wrap") || n.includes("cloth") || n.includes("adire")) {
         // woven cloth: matte, with a soft sheen at grazing angles

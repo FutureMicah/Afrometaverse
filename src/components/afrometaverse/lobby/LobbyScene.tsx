@@ -72,16 +72,19 @@ function Scene() {
     <>
       <color attach="background" args={[P.sky]} />
       <fog attach="fog" args={[P.sky, 18, 55]} />
-      <ambientLight intensity={0.85} color="#ffd0a0" />
-      <hemisphereLight args={["#3b2a4a", "#1a1008", 0.35]} />
+      <ambientLight intensity={0.7} color="#ffd0a0" />
+      <hemisphereLight args={["#3b2a4a", "#1a1008", 0.3]} />
       {/* red moon behind the village */}
       <mesh position={[-6, 9, -22]}>
         <sphereGeometry args={[2.2, 32, 32]} />
         <meshBasicMaterial color={moon} fog={false} />
       </mesh>
-      {/* warm rim light from the torch side */}
-      <directionalLight position={[3, 4, 2]} intensity={2.6} color={P.rim} castShadow shadow-mapSize={[1024, 1024]} />
-      <directionalLight position={[-4, 3, -3]} intensity={0.9} color="#ffd0b0" />
+      {/* golden-hour key sits behind and above the fighter: warm rim edge separates the silhouette from the huts */}
+      <directionalLight position={[-2.5, 3.5, -3.5]} intensity={6} color={P.rim} />
+      <directionalLight position={[2.5, 2.5, -4]} intensity={3.2} color="#ffb070" />
+      <directionalLight position={[3, 4, 2]} intensity={1.6} color={P.rim} castShadow shadow-mapSize={[1024, 1024]} />
+      {/* soft front fill so the face and cloth stay readable */}
+      <directionalLight position={[0.6, 1.2, 3]} intensity={0.55} color="#ffe2bd" />
 
       <mesh rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
         <circleGeometry args={[30, 64]} />
@@ -119,7 +122,8 @@ function Scene() {
 
 /** Camera rig: 'full' frames the whole body, 'close' frames the head and shoulders for checks. */
 export function LobbyScene({ shot = "full" }: { shot?: "full" | "close" }) {
-  const cam = shot === "close" ? { pos: [0, 1.28, 1.35] as const, target: [0, 1.28, 0] as const, fov: 30 } : { pos: [0, 1.05, 3.7] as const, target: [0, 0.9, 0] as const, fov: 32 };
+  // hero framing: camera low and close so the fighter reads big; full body fills most of the height
+  const cam = shot === "close" ? { pos: [0, 1.42, 1.5] as const, target: [0, 1.42, 0] as const, fov: 28 } : { pos: [0, 0.92, 3.5] as const, target: [0, 0.86, 0] as const, fov: 32 };
   return (
     <Canvas
       shadows
