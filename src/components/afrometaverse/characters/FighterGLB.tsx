@@ -14,7 +14,8 @@ import { StylizedCharacter } from "./StylizedCharacter";
  * The stylised figure is shown while the GLB downloads and if the load fails, so the scene is never blank.
  */
 
-export const FIGHTER_GLB_URL = "/models/characters/female-fighter.glb";
+// Harper CC0 base (Innerscene), repainted to the fighter spec and draco-compressed; ~1.7m, Idle_Standing clip.
+export const FIGHTER_GLB_URL = "/models/characters/fighter-harper.glb";
 const DRACO_PATH = "/draco/";
 
 export function usesFighterGLB(appearance: CharacterAppearance, tier: WardrobeTier): boolean {
@@ -196,18 +197,26 @@ export function FighterGLB({ appearance, tier, scale = 1, animate = true, detail
 
   useEffect(() => {
     let alive = true;
-    getFighter()
-      .then((l) => {
-        if (alive) setLoaded(l);
-      })
-      .catch(() => {
-        if (alive) setFailed(true);
-      });
+    // one silent retry before giving up, so a flaky mobile connection doesn't drop to the mannequin
+    const attempt = (n: number) =>
+      getFighter()
+        .then((l) => {
+          if (alive) setLoaded(l);
+        })
+        .catch(() => {
+          if (!alive) return;
+          if (n < 1) attempt(n + 1);
+          else setFailed(true);
+        });
+    attempt(0);
     return () => {
       alive = false;
     };
   }, []);
 
+  // while the GLB is still downloading show nothing (the scene loads in place); the mannequin only
+  // appears if the model genuinely fails twice.
+  if (!loaded && !failed) return null;
   if (failed || !loaded) {
     return <StylizedCharacter appearance={appearance} tier={tier} scale={scale} animate={animate} detail={detail ?? false} moveState={moveState} />;
   }
