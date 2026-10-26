@@ -1,0 +1,123 @@
+/* Combat HUD. Colours come only from am-* tokens defined in styles.css. */
+.am-combat-feed {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 20;
+}
+.am-combat-float {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  font-weight: 700;
+  font-size: 1rem;
+  color: var(--am-ink);
+  text-shadow: 0 1px 2px var(--am-paper);
+  animation: am-combat-rise 0.9s ease-out forwards;
+  white-space: nowrap;
+}
+.am-combat-float-crit {
+  font-size: 1.35rem;
+  color: var(--am-gold);
+}
+.am-combat-float-hurt {
+  color: var(--am-coral);
+}
+.am-combat-float-parry {
+  color: var(--am-ink-soft);
+  font-style: italic;
+}
+.am-combat-float-block {
+  color: var(--am-ink-soft);
+}
+@keyframes am-combat-rise {
+  from { opacity: 1; transform: translate(-50%, -50%); }
+  to { opacity: 0; transform: translate(-50%, -110%); }
+}
+.am-combat-bars {
+  position: absolute;
+  left: 1rem;
+  bottom: 1rem;
+  width: 14rem;
+  display: grid;
+  gap: 0.35rem;
+  pointer-events: none;
+  z-index: 21;
+}
+.am-combat-bar {
+  height: 0.45rem;
+  border-radius: 999px;
+  background: var(--am-line);
+  overflow: hidden;
+}
+.am-combat-bar-fill {
+  height: 100%;
+  background: var(--am-gold);
+  transition: width 0.12s linear;
+}
+.am-combat-bar-fill-stamina {
+  background: var(--am-ink-soft);
+}
+.am-combat-bar-fill-hp {
+  background: var(--am-coral);
+}
+
+.am-combat-arena {
+  position: relative;
+  min-height: 100dvh;
+  display: grid;
+  gap: 0.75rem;
+  padding: 1rem;
+  background: var(--am-cream);
+  color: var(--am-ink);
+}
+.am-combat-arena-map {
+  position: relative;
+  width: min(92vw, 60vh);
+  aspect-ratio: 1;
+  margin: 0 auto;
+  border: 1px solid var(--am-line);
+  border-radius: 1rem;
+  background: var(--am-paper);
+  overflow: hidden;
+}
+.am-combat-player,
+.am-combat-dummy {
+  position: absolute;
+  width: 2.25rem;
+  height: 2.25rem;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  border: 2px solid var(--am-ink);
+  background: var(--am-ink);
+}
+.am-combat-dummy {
+  background: var(--am-cream);
+}
+.am-combat-dummy-flinch,
+.am-combat-dummy-strike {
+  border-color: var(--am-gold);
+}
+.am-combat-dummy-dead {
+  opacity: 0.25;
+}
+.am-combat-dummy-hp {
+  position: absolute;
+  left: 0;
+  bottom: -0.5rem;
+  height: 0.25rem;
+  background: var(--am-coral);
+}
+.am-combat-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  justify-content: center;
+}
+.am-combat-status,
+.am-combat-note {
+  margin: 0;
+  text-align: center;
+  color: var(--am-ink-soft);
+  font-size: 0.85rem;
+}
