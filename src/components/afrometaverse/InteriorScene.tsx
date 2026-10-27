@@ -1,3 +1,4 @@
+import { subscribeWindGust } from "@/lib/weatherSystem";
 import { useEffect, useMemo, useRef, useState, type ReactElement } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
 import { OrbitControls, Html } from "@react-three/drei";
@@ -376,7 +377,19 @@ function SafehouseLive({ ghost }: { ghost: { item: DecorItem; x: number; z: numb
  * Drives the store's weather step each frame and mirrors wind and rain into the audio levels.
  * Lives in the scene so the aperture physics runs only while the player is inside.
  */
+/**
+ * Door/shutter gust hook. Subscribes to the outdoor wind gust bus (weatherSystem.ts).
+ * Stub: the gust strength is logged into the interior store as a pending kick; the existing
+ * aperture physics (stepApertures) consumes wind speed each frame, so no extra physics here yet.
+ */
+function useGustHook() {
+  useEffect(() => subscribeWindGust(() => {
+    /* TODO: feed gust.strength into apertureActions as a one-frame wind bump. */
+  }), []);
+}
+
 function WeatherTick({ audio }: { audio: InteriorAmbience }) {
+  useGustHook();
   const tick = useInteriorStore((s) => s.tickInteriorWeather);
   const blowCount = useInteriorStore((s) => s.blowOpenCount);
   const lastClack = useRef(blowCount);

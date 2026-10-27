@@ -581,10 +581,23 @@ export const WEATHER_DEBUG_ORDER: VisualWeatherId[] = VISUAL_WEATHER_IDS.slice()
 export { VISUAL_WEATHER_LABELS, WEATHER_TARGETS };
 export type { WeatherParams };
 
+/**
+ * Wind sway pass: advances the shared wind clock and publishes the current wind
+ * to every plant. Vegetation reads windSwayAt() each frame, so trees and plants share one driver
+ * and gusts ripple outward from the village centre.
+ */
+export function WindSwayClock() {
+  useFrame((_, dt) => {
+    advanceWindClock(dt);
+  });
+  return null;
+}
+
 /** Everything weather, mounted once inside the scene Canvas. */
 export function WeatherScene() {
   return (
     <group>
+      <WindSwayClock />
       <WeatherDriver />
       <WeatherClouds />
       <WeatherHazeBank />

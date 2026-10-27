@@ -7,6 +7,7 @@ import { currentRenderTier, type RenderTier } from "@/lib/renderTier";
 import { fogEndMeters } from "@/lib/chunkStreaming";
 import { seasonForDay, type SeasonId } from "@/lib/seasons";
 import { SCENE_PALETTE } from "@/lib/scenePalette";
+import { useVisualWeatherStore } from "@/stores/visualWeatherStore";
 
 /**
  * Day/night sky, sun, moon, stars, fog and light (era-progression-spec.md 10.4, 12.2.2).
@@ -15,6 +16,8 @@ import { SCENE_PALETTE } from "@/lib/scenePalette";
  */
 
 const STAR_COUNT = 400;
+const WEATHER_FOG_WARM = new THREE.Color("#d9b67a");
+const WEATHER_FOG_GREY = new THREE.Color("#5c6670");
 
 interface DayNightSkyProps {
   tier?: RenderTier;
@@ -78,11 +81,16 @@ export function DayNightSky({ tier, dust = 0, clockRunning = true }: DayNightSky
       hemiRef.current.intensity = atm.hemiIntensity;
       hemiRef.current.color.set(atm.hemiSky);
     }
+    // Weather pass: grey darkening, warm haze, sun dimmed and drawDistance cut (fog far).
+    const wb = useVisualWeatherStore.getState().blend;
+    const flash = useVisualWeatherStore.getState().flash;
+    if (sunRef.current) sunRef.current.intensity = atm.sunIntensity * wb.sun * (1 - wb.darkness * 0.3) + flash * 2;
+    if (ambientRef.current) ambientRef.current.intensity = atm.ambientIntensity * wb.exposure * (1 - wb.darkness * 0.25) + flash * 0.4;
     const fog = fogRef.current;
     if (fog) {
-      fog.color.set(atm.fog);
+      fog.color.set(atm.fog).lerp(WEATHER_FOG_WARM, wb.fogWarm * 0.5).lerp(WEATHER_FOG_GREY, wb.darkness * 0.6);
       fog.near = atm.fogNear;
-      fog.far = atm.fogFar;
+      fog.far = Math.max(20, atm.fogFar * wb.drawDistance);
     }
     if (starsRef.current) {
       const mat = starsRef.current.material as THREE.PointsMaterial;

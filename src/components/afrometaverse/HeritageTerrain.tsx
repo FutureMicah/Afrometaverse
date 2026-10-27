@@ -10,6 +10,7 @@
  *   remainder = Sand / Coastal
  */
 
+import { useVisualWeatherStore } from "@/stores/visualWeatherStore";
 import { useMemo, useRef } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
@@ -245,8 +246,10 @@ export function HeritageTerrain({ wetness = 0, dust = 0 }: HeritageTerrainProps)
     if (matRef.current) {
       const u = matRef.current.uniforms;
       if (u["uTime"]) u["uTime"].value = clock.getElapsedTime();
-      if (u["uWetness"]) u["uWetness"].value = wetness;
-      if (u["uDust"]) u["uDust"].value = dust;
+      const wb = useVisualWeatherStore.getState().blend;
+      // Prop wetness/dust still apply; the weather blend adds on top, so rain darkens and dust bleaches.
+      if (u["uWetness"]) u["uWetness"].value = Math.max(wetness, wb.wet);
+      if (u["uDust"]) u["uDust"].value = Math.max(dust, wb.dust);
     }
   });
 

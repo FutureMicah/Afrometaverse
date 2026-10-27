@@ -2417,3 +2417,29 @@
     padding: 8px 10px;
   }
 }
+
+/* Dev-only weather switcher strip (am-* classes, no hardcoded colours). */
+.am-weather-debug {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  align-items: center;
+  margin: 0.5rem 0;
+  font-size: 0.75rem;
+}
+.am-weather-debug-tag {
+  opacity: 0.7;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.am-weather-debug-btn {
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  border: 1px solid currentColor;
+  background: transparent;
+  cursor: pointer;
+}
+.am-weather-debug-btn.is-on {
+  background: #84cc16;
+  border-color: #84cc16;
+}

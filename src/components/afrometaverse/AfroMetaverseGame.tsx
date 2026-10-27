@@ -51,6 +51,8 @@ import {
 import { useSocialStateStore } from "@/stores/socialStateStore";
 import { useWeatherStore } from "@/stores/weatherStore";
 import { useWorldStateStore } from "@/stores/worldStateStore";
+import { useVisualWeatherStore, jumpVisualWeather } from "@/stores/visualWeatherStore";
+import { VISUAL_WEATHER_IDS, VISUAL_WEATHER_LABELS } from "@/lib/weatherSystem";
 import {
   BODY_SHAPE_LABEL,
   CLOTHING_CATALOG,
@@ -1658,6 +1660,8 @@ export function AfroMetaverseGame() {
                 </div>
               </div>
 
+              {import.meta.env.DEV && <WeatherDebugStrip />}
+
               {activeDistrict && (
                 <div className="am-panel">
                   <div className="am-panel-head">
@@ -2200,3 +2204,28 @@ export function AfroMetaverseGame() {
 }
 
 export default AfroMetaverseGame;
+
+
+/** Dev-only weather switcher. Hidden in production builds (import.meta.env.DEV). */
+function WeatherDebugStrip() {
+  const current = useVisualWeatherStore((s) => s.current);
+  const override = useVisualWeatherStore((s) => s.override);
+  return (
+    <div className="am-weather-debug" role="group" aria-label="Weather debug">
+      <span className="am-weather-debug-tag">weather</span>
+      {VISUAL_WEATHER_IDS.map((id) => (
+        <button
+          key={id}
+          type="button"
+          className={`am-weather-debug-btn${current === id || override === id ? " is-on" : ""}`}
+          onClick={() => jumpVisualWeather(id)}
+        >
+          {VISUAL_WEATHER_LABELS[id]}
+        </button>
+      ))}
+      <button type="button" className="am-weather-debug-btn" onClick={() => useVisualWeatherStore.getState().setOverride(null)}>
+        auto
+      </button>
+    </div>
+  );
+}

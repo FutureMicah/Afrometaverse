@@ -19,6 +19,7 @@ import { takeTouchLook, touchInput } from "@/lib/touchInput";
 
 import { useCharacterStore } from "@/stores/characterStore";
 import { DayNightSky } from "@/components/afrometaverse/DayNightSky";
+import { WeatherScene } from "@/components/afrometaverse/WeatherVisuals";
 import { ChunkedWorld } from "@/components/afrometaverse/ChunkedWorld";
 import { ChunkVillageProps, StaticVillageProps } from "@/components/afrometaverse/VillageProps";
 import { groupByChunk, chunksContaining, chunkOrigin } from "@/lib/chunkAssign";
@@ -1326,6 +1327,7 @@ export function AfroMetaverseScene({
       <DayNightSky dust={dust} />
       {/* Multi-biome heritage terrain (Day 2) — single draw call + climate tint */}
       <HeritageTerrain wetness={wetness} dust={dust} />
+      <WeatherScene />
       {/* Keep a soft local dust pad under the village for road contrast */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.001, 0]} receiveShadow>
         <planeGeometry args={[28, 24]} />
