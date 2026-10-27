@@ -8,6 +8,7 @@ import {
   VISUAL_WEATHER_IDS,
   VISUAL_WEATHER_LABELS,
   advanceWindClock,
+  windClockState,
   createGustClock,
   emitWindGust,
   stepGustClock,
@@ -15,6 +16,7 @@ import {
   type WeatherParams,
 } from "@/lib/weatherSystem";
 import { useVisualWeatherStore, seasonalVisualWeather } from "@/stores/visualWeatherStore";
+import { setSwayState } from "@/lib/swayMaterial";
 
 /**
  * Weather visuals. Every layer reads the eased blend from useVisualWeatherStore inside
@@ -587,8 +589,10 @@ export type { WeatherParams };
  * and gusts ripple outward from the village centre.
  */
 export function WindSwayClock() {
-  useFrame((_, dt) => {
-    advanceWindClock(dt);
+  useFrame(() => {
+    // WeatherDriver advances the wind clock; this only publishes the state to the sway shader.
+    const wc = windClockState();
+    setSwayState(wc.time, useVisualWeatherStore.getState().blend.wind, wc.gustStrength, wc.gustAt);
   });
   return null;
 }

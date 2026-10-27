@@ -63,7 +63,7 @@ export const WEATHER_TARGETS: Record<VisualWeatherId, WeatherParams> = {
   },
   harmattan: {
     rain: 0, dust: 0.9, cloud: 0.05, darkness: 0.1, wind: 0.55, storm: 0,
-    sun: 0.45, haze: 0.85, drawDistance: 0.45, wet: 0, shimmer: 0, exposure: 0.95, bleach: 0.2, fogWarm: 1,
+    sun: 0.28, haze: 1, drawDistance: 0.4, wet: 0, shimmer: 0, exposure: 0.95, bleach: 0.2, fogWarm: 1,
   },
   rain: {
     rain: 0.85, dust: 0, cloud: 0.85, darkness: 0.45, wind: 0.35, storm: 0,
@@ -166,7 +166,13 @@ export function subscribeWindGust(listener: GustListener): () => void {
 
 /** Advance the wind clock once per frame so gust timestamps are monotonic. */
 export function advanceWindClock(dt: number): void {
+  ensureGustSubscription();
   worldTime += Math.max(0, dt);
+}
+
+/** Current wind clock + latest gust, for the vertex sway shader uniforms. */
+export function windClockState(): { time: number; gustStrength: number; gustAt: number } {
+  return { time: worldTime, gustStrength: lastGust.strength, gustAt: lastGust.at };
 }
 
 /** Raise a gust. The event object is reused, so listeners must copy values they keep. */

@@ -20,6 +20,8 @@ export interface PropMaterialSpec {
   receiveShadow: boolean;
   /** Procedural surface map for this bucket (see lib/proceduralTextures). Omit for flat vertex colour. */
   surface?: "mud" | "thatch";
+  /** Vegetation: vertex sway in the shader, driven by the shared wind (see lib/swayMaterial.ts). */
+  sway?: boolean;
 }
 
 export interface MergedPropMesh {
@@ -75,7 +77,7 @@ export class PropBatch {
    */
   add(geometry: THREE.BufferGeometry, color: string, matrix: THREE.Matrix4, spec: Partial<PropMaterialSpec> = {}): void {
     const full: PropMaterialSpec = { ...DEFAULT_SPEC, ...spec };
-    const key = `${full.roughness}|${full.metalness}|${full.castShadow ? 1 : 0}|${full.receiveShadow ? 1 : 0}|${full.surface ?? ""}`;
+    const key = `${full.roughness}|${full.metalness}|${full.castShadow ? 1 : 0}|${full.receiveShadow ? 1 : 0}|${full.surface ?? ""}|${full.sway ? 1 : 0}`;
     const geo = normaliseForMerge(geometry, new THREE.Color(color));
     geo.applyMatrix4(matrix);
     applyContactAO(geo);
@@ -132,6 +134,7 @@ export class Placer {
   constructor(
     private readonly batch: PropBatch,
     private readonly base: THREE.Matrix4 = new THREE.Matrix4(),
+    private readonly extra: Partial<PropMaterialSpec> = {},
   ) {}
 
   part(
@@ -147,7 +150,7 @@ export class Placer {
       new THREE.Quaternion().setFromEuler(new THREE.Euler(...rotation)),
       new THREE.Vector3(...scale),
     );
-    this.batch.add(geometry, color, new THREE.Matrix4().multiplyMatrices(this.base, local), spec);
+    this.batch.add(geometry, color, new THREE.Matrix4().multiplyMatrices(this.base, local), { ...this.extra, ...spec });
   }
 }
 

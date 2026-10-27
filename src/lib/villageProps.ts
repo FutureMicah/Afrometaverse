@@ -212,7 +212,7 @@ function roadsideBushes(): Array<[number, number, number]> {
 }
 
 export function addBush(batch: PropBatch, x: number, z: number, sc: number): void {
-  const p = new Placer(batch, groupMatrix([x, 0, z], 0, [sc, sc, sc]));
+  const p = new Placer(batch, groupMatrix([x, 0, z], 0, [sc, sc, sc]), { sway: true });
   const spec = { roughness: 0.95, castShadow: true };
   p.part(new THREE.SphereGeometry(0.32, 7, 7), VILLAGE_PALETTE.leafDeep, [0, 0.28, 0], undefined, undefined, spec);
   p.part(new THREE.SphereGeometry(0.22, 6, 6), VILLAGE_PALETTE.leafMid, [0.18, 0.22, 0.1], undefined, undefined, spec);
@@ -1015,7 +1015,7 @@ function leaningSpear(p: Placer, x: number, z: number, seed: number): void {
 }
 
 export function addTree(batch: PropBatch, x: number, z: number, s: number, kind: TreeKind): void {
-  const p = new Placer(batch, groupMatrix([x, 0, z], 0, [s, s, s]));
+  const p = new Placer(batch, groupMatrix([x, 0, z], 0, [s, s, s]), { sway: true });
   if (kind === "palm") {
     p.part(new THREE.CylinderGeometry(0.07, 0.11, 2.2, 6), VILLAGE_PALETTE.woodDark, [0, 1.1, 0], undefined, undefined, { castShadow: true });
     for (let i = 0; i < 5; i++) {

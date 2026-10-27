@@ -4,6 +4,7 @@ import type { ChunkCoord } from "@/lib/chunkStreaming";
 import type { MergedPropMesh } from "@/lib/propBatch";
 import { buildChunkVillageProps, buildStaticVillageProps } from "@/lib/villageProps";
 import { getProceduralPBR } from "@/lib/proceduralTextures";
+import { applySway } from "@/lib/swayMaterial";
 
 /**
  * Renders merged village props: one mesh per material class (see lib/propBatch.ts). Each mesh
@@ -16,7 +17,7 @@ import { getProceduralPBR } from "@/lib/proceduralTextures";
 const materialCache = new Map<string, THREE.MeshStandardMaterial>();
 
 function sharedMaterial(spec: MergedPropMesh["material"]): THREE.MeshStandardMaterial {
-  const key = `${spec.roughness}|${spec.metalness}|${spec.surface ?? ""}`;
+  const key = `${spec.roughness}|${spec.metalness}|${spec.surface ?? ""}|${spec.sway ? 1 : 0}`;
   let m = materialCache.get(key);
   if (!m) {
     m = new THREE.MeshStandardMaterial({
@@ -36,6 +37,7 @@ function sharedMaterial(spec: MergedPropMesh["material"]): THREE.MeshStandardMat
       }
       if (spec.surface === "thatch") applyFrondRim(m);
     }
+    if (spec.sway) applySway(m);
     materialCache.set(key, m);
   }
   return m;

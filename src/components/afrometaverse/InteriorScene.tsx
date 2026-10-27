@@ -12,11 +12,13 @@ import { DECOR_CATALOG, type DecorItem } from "@/data/decor";
 import { FLOOR_BOUNDS, GRID_STEP, checkPlacement, snap, type Placement, type PlaceRefusal } from "@/lib/hutGrid";
 import {
   windStrength,
+  BLOW_THRESHOLD,
   rattleAmplitude,
   windAudioGain,
   rainAudioGain,
   openFraction,
   type Aperture,
+  type ApertureName,
   type RoomApertures,
 } from "@/lib/interiorWeather";
 import { InteriorAmbience } from "@/lib/interiorAudio";
@@ -257,6 +259,7 @@ function ClothBolt({ p }: { p: [number, number, number] }) {
  * A shut, unlatched leaf rattles when the wind is up (spec 17.3). Latched leaves show a bar.
  */
 function Aperture({
+  name,
   x,
   y,
   z,
@@ -265,6 +268,7 @@ function Aperture({
   axis,
   aperture,
 }: {
+  name: ApertureName;
   x: number;
   y: number;
   z: number;
@@ -277,11 +281,14 @@ function Aperture({
   const shown = useRef(aperture.open);
   useFrame(({ clock }, dt) => {
     shown.current += (aperture.open - shown.current) * Math.min(1, dt * 6);
+    // Gust swing: pushed open in proportion to gust strength, then eases closed.
+    const sw = gustSwing[name];
+    gustSwing[name] = sw * Math.exp(-GUST_SWING_DECAY * dt);
     const strength = windStrength(useWeatherStore.getState().state.windSpeed);
     const rattle = rattleAmplitude(aperture, strength);
     if (leaf.current) {
       const shake = rattle > 0 ? Math.sin(clock.elapsedTime * 38) * 0.06 * rattle : 0;
-      leaf.current.rotation.y = shown.current * (Math.PI / 2.2) + shake;
+      leaf.current.rotation.y = shown.current * (Math.PI / 2.2) + shake + gustSwing[name] * (Math.PI / 3);
     }
   });
   // Hinge sits at the wall edge; the leaf extends w along the wall.
@@ -359,9 +366,9 @@ function SafehouseLive({ ghost }: { ghost: { item: DecorItem; x: number; z: numb
   return (
     <group>
       {/* Door: front wall gap runs x 0 to 2.4. Hinge at x 0, leaf 2.4 wide. */}
-      <Aperture x={0} y={1.1} z={2.5} w={2.4} h={2.2} axis="x" aperture={apertures.door} />
+      <Aperture name="door" x={0} y={1.1} z={2.5} w={2.4} h={2.2} axis="x" aperture={apertures.door} />
       {/* Shutter: left wall at x -3, leaf 1.2 wide along z. */}
-      <Aperture x={-3} y={1.5} z={-0.2} w={1.2} h={0.9} axis="z" aperture={apertures.shutter} />
+      <Aperture name="shutter" x={-3} y={1.5} z={-0.2} w={1.2} h={0.9} axis="z" aperture={apertures.shutter} />
       <WetFloor wetness={wetness} />
       {placements.map((p) => {
         const item = DECOR_CATALOG[p.itemId];
@@ -383,10 +390,17 @@ function SafehouseLive({ ghost }: { ghost: { item: DecorItem; x: number; z: numb
  * aperture physics (stepApertures) consumes wind speed each frame, so no extra physics here yet.
  */
 function useGustHook() {
-  useEffect(() => subscribeWindGust(() => {
-    /* TODO: feed gust.strength into apertureActions as a one-frame wind bump. */
+  useEffect(() => subscribeWindGust((g) => {
+    // Only the door (unlatched) swings on a gust; latched leaves hold. Swing is cosmetic and eases shut.
+    if (g.strength < BLOW_THRESHOLD) return;
+    const latched = useInteriorStore.getState().apertures.door.latched;
+    if (!latched) gustSwing.door = Math.max(gustSwing.door, g.strength);
   }), []);
 }
+
+/** Gust-driven swing per aperture (0..1). Set by gusts, decays each frame, visual only. */
+const gustSwing = { door: 0, shutter: 0 };
+const GUST_SWING_DECAY = 1.8;
 
 function WeatherTick({ audio }: { audio: InteriorAmbience }) {
   useGustHook();

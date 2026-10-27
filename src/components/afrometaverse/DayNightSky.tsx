@@ -18,6 +18,8 @@ import { useVisualWeatherStore } from "@/stores/visualWeatherStore";
 const STAR_COUNT = 400;
 const WEATHER_FOG_WARM = new THREE.Color("#d9b67a");
 const WEATHER_FOG_GREY = new THREE.Color("#5c6670");
+// Harmattan sky: dusty orange-grey, what the sky reads like through Saharan dust.
+const WEATHER_SKY_DUST = new THREE.Color("#c99a68");
 
 interface DayNightSkyProps {
   tier?: RenderTier;
@@ -29,6 +31,7 @@ interface DayNightSkyProps {
 
 export function DayNightSky({ tier, dust = 0, clockRunning = true }: DayNightSkyProps) {
   const resolvedTier = tier ?? currentRenderTier();
+  const bgRef = useRef<THREE.Color>(null);
   const sunRef = useRef<THREE.DirectionalLight>(null);
   const moonRef = useRef<THREE.DirectionalLight>(null);
   const ambientRef = useRef<THREE.AmbientLight>(null);
@@ -92,6 +95,10 @@ export function DayNightSky({ tier, dust = 0, clockRunning = true }: DayNightSky
       fog.near = atm.fogNear;
       fog.far = Math.max(20, atm.fogFar * wb.drawDistance);
     }
+    // Sky tint: the background follows the weather blend (harmattan dust, rain grey).
+    if (bgRef.current) {
+      bgRef.current.set(SCENE_PALETTE.skyHaze).lerp(WEATHER_SKY_DUST, wb.haze * 0.85).lerp(WEATHER_FOG_GREY, wb.darkness * 0.5);
+    }
     if (starsRef.current) {
       const mat = starsRef.current.material as THREE.PointsMaterial;
       mat.opacity = atm.starOpacity;
@@ -100,7 +107,7 @@ export function DayNightSky({ tier, dust = 0, clockRunning = true }: DayNightSky
 
   return (
     <>
-      <color attach="background" args={[SCENE_PALETTE.skyHaze]} />
+      <color ref={bgRef} attach="background" args={[SCENE_PALETTE.skyHaze]} />
       <fog ref={fogRef} attach="fog" args={[SCENE_PALETTE.fogSand, 16, fogEndMeters(resolvedTier)]} />
       <ambientLight ref={ambientRef} intensity={0.62} />
       <hemisphereLight ref={hemiRef} args={[SCENE_PALETTE.skyPale, SCENE_PALETTE.groundBrown, 0.5]} />
