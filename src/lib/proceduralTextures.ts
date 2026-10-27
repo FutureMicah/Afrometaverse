@@ -348,9 +348,18 @@ function dustFields(size: number): Fields {
       const lfy = v * 96 - ly - 0.5;
       const leaf = hash(lx, ly, 7) > 0.8 ? 1 - smooth(0.08, 0.16, Math.hypot(lfx, lfy)) : 0;
 
-      h[i] = pt * 0.5 + sp * 0.22 + peb * 0.55 - trail * 0.3 + (sp > 0.6 ? -0.08 : 0);
-      lum[i] = 0.9 + (pt - 0.5) * 0.14 + (sp - 0.5) * 0.09 + trail * 0.08 + peb * 0.12 - leaf * 0.3;
+      // fine crack net + speckle: high-frequency albedo and normal detail, tileable (fixed lattice)
+      const crx = u * 64;
+      const cry = v * 64;
+      const cfx = crx - Math.floor(crx);
+      const cfy = cry - Math.floor(cry);
+      const crack = (hash(Math.floor(crx), Math.floor(cry), 11) > 0.55) ? 1 - smooth(0.0, 0.03, Math.min(cfx, 1 - cfx, cfy, 1 - cfy)) : 0;
+
+      h[i] = pt * 0.5 + sp * 0.22 + peb * 0.55 - trail * 0.3 + (sp > 0.6 ? -0.08 : 0) - crack * 0.06 + hash(Math.floor(u * 512), Math.floor(v * 512), 13) * 0.05;
+      // trample darkening follows the trails and pebbles stay lighter; cracks dark the albedo
+      lum[i] = 0.9 + (pt - 0.5) * 0.14 + (sp - 0.5) * 0.09 + trail * 0.02 + peb * 0.12 - leaf * 0.3 - crack * 0.1 - trail * 0.14;
       tint[i] = trail * 0.25 - leaf * 0.2;
+
     }
   }
   return { h, lum, tint };
@@ -522,7 +531,7 @@ const FIELDS: Record<SurfaceKind, (size: number) => Fields> = {
 const STRENGTH: Record<SurfaceKind, number> = {
   thatch: 3.6,
   mud: 3.0,
-  dust: 1.6,
+  dust: 3.2,
   mat: 2.2,
   basket: 2.6,
   cloth: 1.2,

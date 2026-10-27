@@ -575,9 +575,9 @@ function wallCrown(c: HutCtx, top: number): void {
     for (let i = 0; i < n; i++) {
       const t = (i + 0.5) / n - 0.5;
       const bw = (w / n) * (0.85 + hash3(seed, i, 40 + sz) * 0.25);
-      const bh = 0.035 + hash3(seed, i, 42 + sz) * 0.07;
+      const bh = 0.07 + hash3(seed, i, 42 + sz) * 0.12;
       const x = t * w * 1.02;
-      p.part(new THREE.BoxGeometry(bw, bh, 0.1), wallTone(wall, seed + i), [x, top + bh / 2 - 0.02, sz * (d / 2 + 0.01)], undefined, undefined, { roughness: 0.95, castShadow: true });
+      p.part(new THREE.BoxGeometry(bw, bh, 0.1), wallTone(wall, seed + i), [x, top + bh / 2 - 0.02, sz * (d / 2 + 0.05 + hash3(seed, i, 44) * 0.03)], undefined, undefined, { roughness: 0.95, castShadow: true });
     }
   }
   for (const sx of [-1, 1]) {
@@ -606,8 +606,8 @@ function rafterTails(c: HutCtx, top: number, d: number): void {
   const n = 6;
   for (let i = 0; i < n; i++) {
     const x = (i - (n - 1) / 2) * (w / (n - 1)) * 1.02;
-    const len = 0.14 + hash3(seed, i, 60) * 0.08;
-    p.part(new THREE.CylinderGeometry(0.018, 0.024, len, 5), T.postWood, [x, top - 0.06, d / 2 + 0.2], [Math.PI / 2, 0, 0], undefined, { roughness: 0.95, castShadow: true });
+    const len = 0.22 + hash3(seed, i, 60) * 0.1;
+    p.part(new THREE.CylinderGeometry(0.04, 0.05, len, 6), T.postWood, [x, top - 0.06, d / 2 + 0.2], [Math.PI / 2, 0, 0], undefined, { roughness: 0.95, castShadow: true });
   }
 }
 
@@ -616,8 +616,8 @@ function archedLintel(c: HutCtx, frontZ: number, baseY: number, doorH: number, d
   const { p, seed } = c;
   const T = VILLAGE_PALETTE;
   const doorW = 0.3 + hash3(seed, 1, 2) * 0.12;
-  const r = doorW / 2 + 0.05;
-  p.part(new THREE.TorusGeometry(r, 0.025, 6, 10, Math.PI), T.timberDark, [dx, baseY + doorH, frontZ + 0.04], [0, 0, Math.PI], undefined, { roughness: 0.9, castShadow: true });
+  const r = doorW / 2 + 0.12;
+  p.part(new THREE.TorusGeometry(r, 0.05, 8, 16, Math.PI), T.timberDark, [dx, baseY + doorH, frontZ + 0.04], [0, 0, Math.PI], undefined, { roughness: 0.9, castShadow: true });
   // worn threshold dip: darker trodden band sunk just under the door
   p.part(new THREE.BoxGeometry(doorW + 0.12, 0.01, 0.2), T.wornDirt, [dx, baseY + 0.006, frontZ + 0.14], undefined, undefined, { roughness: 1, receiveShadow: true });
 }

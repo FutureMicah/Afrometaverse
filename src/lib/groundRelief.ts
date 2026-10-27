@@ -31,7 +31,7 @@ export function undulatedGround(width: number, depth: number, segments: number, 
   for (let i = 0; i < pos.count; i++) {
     const x = pos.getX(i);
     const z = pos.getZ(i);
-    const n = 0.65 * valueNoise(x * 0.09, z * 0.09, seed) + 0.35 * valueNoise(x * 0.31, z * 0.31, seed + 5);
+    const n = 0.65 * valueNoise(x * 0.3, z * 0.3, seed) + 0.35 * valueNoise(x * 0.8, z * 0.8, seed + 5);
     pos.setY(i, amp * n);
   }
   pos.needsUpdate = true;
