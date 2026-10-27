@@ -488,6 +488,61 @@ function warp(geo: THREE.BufferGeometry, fn: (x: number, y: number, z: number, t
 }
 
 /** Rectangular mud wall: bulges mid-height, leans a little, with a hand-troweled wobble. Centred on its origin. */
+/**
+ * Revolved hut shell: a superellipse ring swept up the height (lathe-style), with a slight mid-height bulge,
+ * an inward taper toward the top, per-vertex jitter, and an irregular crown. The door is a cutout of the grid itself,
+ * so the rounded arch is the wall's own edge and the opening runs down to the threshold at the wall base.
+ * Local frame: y from -h/2 (wall base) to +h/2 (crown); the door faces +z.
+ */
+function revolvedHut(a: number, b: number, n: number, h: number, seed: number, damp: number,
+  door: { x: number; w: number; h: number } | null, lean: number, cols: number, rows: number): THREE.BufferGeometry {
+  const pos: number[] = [];
+  const idx = (r: number, c: number) => r * cols + c;
+  const sp = (v: number, e: number) => Math.sign(v) * Math.pow(Math.abs(v), e);
+  for (let r = 0; r <= rows; r++) {
+    const t = r / rows;
+    const k = (1 + 0.05 * Math.sin(Math.PI * t)) * (1 - 0.06 * t);
+    for (let c = 0; c < cols; c++) {
+      const th = (2 * Math.PI * c) / cols;
+      const x0 = a * sp(Math.cos(th), 2 / n) * k + lean * t;
+      const z0 = b * sp(Math.sin(th), 2 / n) * k;
+      const jx = (hash3(c, r, seed) - 0.5) * 0.024;
+      const jz = (hash3(c, r, seed + 3) - 0.5) * 0.024;
+      // crown: the top rows break up into uneven 6 to 10cm steps with occasional notches
+      const crownJ = (hash3(c, seed, 71) - 0.5) * 0.2 - (hash3(c, seed, 72) > 0.7 ? 0.14 : 0);
+      const fade = t > 0.85 ? Math.min(1, (t - 0.85) / 0.15) : 0;
+      const y = -h / 2 + h * t + crownJ * fade * fade;
+      pos.push(x0 + jx, y, z0 + jz);
+    }
+  }
+  const ind: number[] = [];
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      const c1 = (c + 1) % cols;
+      const a0 = idx(r, c), b0 = idx(r, c1), c2 = idx(r + 1, c), d0 = idx(r + 1, c1);
+      if (door) {
+        // quad centre in local space: the door cutout is the arch (springline + half-circle top)
+        const yc = -h / 2 + h * ((r + 0.5) / rows);
+        const th = (2 * Math.PI * (c + 0.5)) / cols;
+        const xc = a * sp(Math.cos(th), 2 / n) + lean * ((r + 0.5) / rows);
+        const zc = b * sp(Math.sin(th), 2 / n);
+        const rad = door.w / 2;
+        const dxr = xc - door.x;
+        const spring = -h / 2 + door.h - rad;
+        const archTop = spring + Math.sqrt(Math.max(0, rad * rad - dxr * dxr));
+        if (zc > b * 0.4 && Math.abs(dxr) < rad && yc < archTop) continue;
+      }
+      // outward winding
+      ind.push(a0, c2, b0, b0, c2, d0);
+    }
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3));
+  g.setIndex(ind);
+  g.computeVertexNormals();
+  return planarUV(shadeByHeight(g, wallShade(damp, seed)));
+}
+
 function mudWall(w: number, h: number, d: number, bulge: number, lean: number, seed: number, damp = 0.82): THREE.BufferGeometry {
   const g = new THREE.BoxGeometry(w, h, d, 3, 5, 2);
   warp(g, (x, y, z, t) => {
@@ -603,11 +658,13 @@ function buttresses(c: HutCtx, top: number): void {
 function rafterTails(c: HutCtx, top: number, d: number): void {
   const { p, seed, w } = c;
   const T = VILLAGE_PALETTE;
-  const n = 6;
+  const n = 8;
   for (let i = 0; i < n; i++) {
-    const x = (i - (n - 1) / 2) * (w / (n - 1)) * 1.02;
-    const len = 0.22 + hash3(seed, i, 60) * 0.1;
-    p.part(new THREE.CylinderGeometry(0.04, 0.05, len, 6), T.postWood, [x, top - 0.06, d / 2 + 0.2], [Math.PI / 2, 0, 0], undefined, { roughness: 0.95, castShadow: true });
+    const x = (i - (n - 1) / 2) * (w / (n - 1)) * 0.92 + (hash3(seed, i, 61) - 0.5) * 0.04;
+    const len = 0.24 + hash3(seed, i, 60) * 0.1;
+    const r0 = 0.035 + hash3(seed, i, 62) * 0.01;
+    // tapered timber (thick at the wall end, thin at the tip), tilted slightly down and out
+    p.part(new THREE.CylinderGeometry(r0 * 0.7, r0, len, 7), T.postWood, [x, top - 0.1, d / 2 + 0.14 + len / 2], [Math.PI / 2 + 0.22, 0, 0], undefined, { roughness: 0.95, castShadow: true });
   }
 }
 
@@ -627,14 +684,21 @@ function doorway(c: HutCtx, frontZ: number, baseY: number, doorH: number, dx: nu
   const { p, seed } = c;
   const T = VILLAGE_PALETTE;
   const doorW = 0.3 + hash3(seed, 1, 2) * 0.12;
-  p.part(new THREE.BoxGeometry(doorW, doorH, 0.03), T.doorWood, [dx, baseY + doorH / 2, frontZ + 0.01]);
+  // door leaf: same rounded-top outline as the cutout in the shell, so the arch reads as one shape
+  const dw = doorW * 0.94, dh = doorH - 0.06, rr = dw / 2;
+  const sh = new THREE.Shape();
+  sh.moveTo(-dw / 2, 0);
+  sh.lineTo(dw / 2, 0);
+  sh.lineTo(dw / 2, dh - rr);
+  sh.absarc(0, dh - rr, rr, 0, Math.PI, false);
+  sh.lineTo(-dw / 2, 0);
+  p.part(new THREE.ShapeGeometry(sh, 10), T.doorWood, [dx, baseY, frontZ + 0.01]);
   for (const f of [0.35, 0.7]) {
     p.part(new THREE.BoxGeometry(doorW * 0.9, 0.04, 0.035), T.timberDark, [dx, baseY + doorH * f, frontZ + 0.025]);
   }
   for (const s of [-1, 1]) {
     p.part(new THREE.BoxGeometry(0.07, doorH + 0.06, 0.08), T.timberDark, [dx + s * (doorW / 2 + 0.03), baseY + (doorH + 0.06) / 2, frontZ + 0.02]);
   }
-  p.part(new THREE.BoxGeometry(doorW + 0.18, 0.09, 0.1), T.timberDark, [dx, baseY + doorH + 0.05, frontZ + 0.03]);
 }
 
 /** Birds-nest ridge cap: irregular clumps of frond ends tied along the ridge, each one leaning a different way. */
@@ -693,7 +757,8 @@ function buildRound(c: HutCtx): void {
   const R = c.w * 0.55;
   const top = 0.22 + h;
   p.part(new THREE.CylinderGeometry(R * 1.08, R * 1.12, 0.22, 12), T.wallStone, [0, 0.11, 0], undefined, undefined, { roughness: 1, receiveShadow: true });
-  p.part(roundWall(R, h, 12, 0.05, seed, dampFor(seed)), wallTone(wall, seed), [0, 0.22 + h / 2, 0], undefined, undefined, SHELL);
+  const doorW0 = 0.3 + hash3(seed, 1, 2) * 0.12;
+  p.part(revolvedHut(R, R, 2, h, seed, dampFor(seed), { x: 0, w: doorW0, h: h * 0.6 }, 0, 96, 22), wallTone(wall, seed), [0, 0.22 + h / 2, 0], undefined, undefined, SHELL);
   p.part(new THREE.TorusGeometry(R * 0.95, 0.05, 4, 14), T.wallLight, [0, top - 0.02, 0], [Math.PI / 2, 0, 0], undefined, { roughness: 0.95 });
   doorway(c, R * 1.05 + 0.01, 0.22, h * 0.6, 0);
 
@@ -718,16 +783,16 @@ function buildFamily(c: HutCtx): void {
   const lean = (hash3(seed, 7, 3) - 0.5) * 0.06;
   // packed-earth skirt: darker than the wall and slightly wider, so the base reads as trodden ground
   p.part(new THREE.BoxGeometry(w * 1.1, 0.24, d * 1.1), T.packedEarth, [0, 0.12, 0], undefined, undefined, { roughness: 1, receiveShadow: true });
-  p.part(mudWall(w, h, d, 0.05, lean, seed, dampFor(seed)), wallTone(wall, seed), [0, 0.22 + h / 2, 0], undefined, undefined, SHELL);
+  const dxDoor = (hash3(seed, 2, 2) - 0.5) * w * 0.2;
+  const doorW1 = 0.3 + hash3(seed, 1, 2) * 0.12;
+  p.part(revolvedHut(w / 2, d / 2, 5, h, seed, dampFor(seed), { x: dxDoor, w: doorW1, h: h * 0.62 }, lean, 160, 24), wallTone(wall, seed), [0, 0.22 + h / 2, 0], undefined, undefined, SHELL);
   const top = 0.22 + h;
   // stick-frame posts show on about half the family houses
   if (hash3(seed, 8, 4) > 0.5) stickFrame(p, w, h, (d / 2) * 1.03, seed);
-  wallCrown(c, top);
   buttresses(c, top);
   rafterTails(c, top, d);
   const frontZ = (d / 2) * 1.03;
   doorway(c, frontZ, 0.22, h * 0.62, (hash3(seed, 2, 2) - 0.5) * w * 0.2);
-  archedLintel(c, frontZ, 0.22, h * 0.62, (hash3(seed, 2, 2) - 0.5) * w * 0.2);
   if (hash3(seed, 3, 3) > 0.5) {
     const wx = (hash3(seed, 6, 6) - 0.5) * w * 0.4;
     p.part(new THREE.BoxGeometry(0.2, 0.18, 0.03), T.windowDark, [wx, 0.22 + h * 0.6, -frontZ - 0.01]);
