@@ -2,6 +2,7 @@ import * as THREE from "three";
 import { VILLAGE_PALETTE } from "@/lib/villagePalette";
 import { PropBatch, Placer, groupMatrix, type MergedPropMesh } from "@/lib/propBatch";
 import { chunkOf, type ChunkCoord } from "@/lib/chunkStreaming";
+import { MARKET_SQUARE } from "@/lib/villageLayout";
 
 /**
  * Village props as merged geometry (see lib/propBatch.ts).
@@ -563,6 +564,64 @@ function dampFor(seed: number): number {
   return 0.7 + hash3(seed, 6, 2) * 0.22;
 }
 
+/**
+ * Broken wall crown: a row of uneven mud blocks instead of one straight cap, so the top edge
+ * is irregular (no perfectly straight line). Deterministic per hut via hash3.
+ */
+function wallCrown(c: HutCtx, top: number): void {
+  const { p, seed, wall, w, d } = c;
+  const n = 7;
+  for (const [sx, sz] of [[0, 1], [0, -1]] as const) {
+    for (let i = 0; i < n; i++) {
+      const t = (i + 0.5) / n - 0.5;
+      const bw = (w / n) * (0.85 + hash3(seed, i, 40 + sz) * 0.25);
+      const bh = 0.035 + hash3(seed, i, 42 + sz) * 0.07;
+      const x = t * w * 1.02;
+      p.part(new THREE.BoxGeometry(bw, bh, 0.1), wallTone(wall, seed + i), [x, top + bh / 2 - 0.02, sz * (d / 2 + 0.01)], undefined, undefined, { roughness: 0.95, castShadow: true });
+    }
+  }
+  for (const sx of [-1, 1]) {
+    for (let i = 0; i < 4; i++) {
+      const t = (i + 0.5) / 4 - 0.5;
+      const bd = (d / 4) * (0.85 + hash3(seed, i, 50 + sx) * 0.25);
+      const bh = 0.03 + hash3(seed, i, 52 + sx) * 0.06;
+      p.part(new THREE.BoxGeometry(0.1, bh, bd), wallTone(wall, seed + i + 9), [sx * (w / 2 + 0.01), top + bh / 2 - 0.02, t * d * 1.02], undefined, undefined, { roughness: 0.95, castShadow: true });
+    }
+  }
+}
+
+/** Four corner buttresses: short mud bumps that wrap the wall corners and break the flat silhouette. */
+function buttresses(c: HutCtx, top: number): void {
+  const { p, seed, wall, w, d, h } = c;
+  for (const [sx, sz] of [[-1, -1], [1, -1], [-1, 1], [1, 1]] as const) {
+    const bh = h * (0.45 + hash3(seed, sx + 2, sz + 2) * 0.2);
+    p.part(new THREE.BoxGeometry(0.2, bh, 0.2), wallTone(wall, seed + sx * 3 + sz), [sx * (w / 2 + 0.02), 0.22 + bh / 2, sz * (d / 2 + 0.02)], [0, sx * sz * 0.2, 0], undefined, { roughness: 1, castShadow: true });
+  }
+}
+
+/** Exposed rafter tails: short timber ends poking out under the eave of the hip roof. */
+function rafterTails(c: HutCtx, top: number, d: number): void {
+  const { p, seed, w } = c;
+  const T = VILLAGE_PALETTE;
+  const n = 6;
+  for (let i = 0; i < n; i++) {
+    const x = (i - (n - 1) / 2) * (w / (n - 1)) * 1.02;
+    const len = 0.14 + hash3(seed, i, 60) * 0.08;
+    p.part(new THREE.CylinderGeometry(0.018, 0.024, len, 5), T.postWood, [x, top - 0.06, d / 2 + 0.2], [Math.PI / 2, 0, 0], undefined, { roughness: 0.95, castShadow: true });
+  }
+}
+
+/** Rounded arch over the door: a half-ring of timber with a worn, slightly dipped threshold. */
+function archedLintel(c: HutCtx, frontZ: number, baseY: number, doorH: number, dx: number): void {
+  const { p, seed } = c;
+  const T = VILLAGE_PALETTE;
+  const doorW = 0.3 + hash3(seed, 1, 2) * 0.12;
+  const r = doorW / 2 + 0.05;
+  p.part(new THREE.TorusGeometry(r, 0.025, 6, 10, Math.PI), T.timberDark, [dx, baseY + doorH, frontZ + 0.04], [0, 0, Math.PI], undefined, { roughness: 0.9, castShadow: true });
+  // worn threshold dip: darker trodden band sunk just under the door
+  p.part(new THREE.BoxGeometry(doorW + 0.12, 0.01, 0.2), T.wornDirt, [dx, baseY + 0.006, frontZ + 0.14], undefined, undefined, { roughness: 1, receiveShadow: true });
+}
+
 /** Door: planked panel, battens, side jambs and a visible lintel. Front face at frontZ. */
 function doorway(c: HutCtx, frontZ: number, baseY: number, doorH: number, dx: number): void {
   const { p, seed } = c;
@@ -663,9 +722,12 @@ function buildFamily(c: HutCtx): void {
   const top = 0.22 + h;
   // stick-frame posts show on about half the family houses
   if (hash3(seed, 8, 4) > 0.5) stickFrame(p, w, h, (d / 2) * 1.03, seed);
-  p.part(new THREE.BoxGeometry(w + 0.06, 0.07, d + 0.06), T.wallLight, [0, top - 0.02, 0], undefined, undefined, { roughness: 0.95, castShadow: true });
+  wallCrown(c, top);
+  buttresses(c, top);
+  rafterTails(c, top, d);
   const frontZ = (d / 2) * 1.03;
   doorway(c, frontZ, 0.22, h * 0.62, (hash3(seed, 2, 2) - 0.5) * w * 0.2);
+  archedLintel(c, frontZ, 0.22, h * 0.62, (hash3(seed, 2, 2) - 0.5) * w * 0.2);
   if (hash3(seed, 3, 3) > 0.5) {
     const wx = (hash3(seed, 6, 6) - 0.5) * w * 0.4;
     p.part(new THREE.BoxGeometry(0.2, 0.18, 0.03), T.windowDark, [wx, 0.22 + h * 0.6, -frontZ - 0.01]);
@@ -861,7 +923,7 @@ function scatterPebbles(p: Placer, w: number, d: number, seed: number): void {
     const r = 0.65 + hash3(seed, i, 23) * 0.9;
     const x = Math.cos(a) * r * (w / 1.25);
     const z = Math.sin(a) * r * (d / 1.1);
-    const s = 0.025 + hash3(seed, i, 24) * 0.035;
+    const s = 0.05 + hash3(seed, i, 24) * 0.06;
     p.part(new THREE.DodecahedronGeometry(s, 0), VILLAGE_PALETTE.rockBase, [x, s * 0.5, z], [hash3(seed, i, 25) * 3, a, 0], [1, 0.6, 1], { roughness: 0.95, receiveShadow: true });
   }
 }
@@ -930,9 +992,34 @@ export function addTree(batch: PropBatch, x: number, z: number, s: number, kind:
   }
 }
 
+/**
+ * Worn ground: darker trampled dirt patches across the market square, a few on the paths between
+ * compounds, and a doorway ring at every hut. Flat discs, one merged batch, no textures or extra passes.
+ */
+function groundWear(batch: PropBatch): void {
+  const T = VILLAGE_PALETTE;
+  const p = new Placer(batch, new THREE.Matrix4());
+  // market square: a ring of trodden patches, denser toward the centre
+  for (let i = 0; i < 14; i++) {
+    const a = hash3(i, 1, 70) * Math.PI * 2;
+    const r = MARKET_SQUARE.r * (0.2 + hash3(i, 2, 71) * 0.7);
+    const x = MARKET_SQUARE.x + Math.cos(a) * r;
+    const z = MARKET_SQUARE.z + Math.sin(a) * r;
+    const s = 0.5 + hash3(i, 3, 72) * 0.7;
+    p.part(new THREE.CircleGeometry(s, 10), T.wornDirt, [x, 0.014, z], [-Math.PI / 2, 0, 0], undefined, { roughness: 1, receiveShadow: true });
+  }
+  // paths between compounds: a few darker, elongated patches along the main road axis
+  for (let i = 0; i < 9; i++) {
+    const x = -10 + i * 2.4 + hash3(i, 4, 73);
+    const z = (hash3(i, 5, 74) - 0.5) * 3;
+    p.part(new THREE.CircleGeometry(0.6 + hash3(i, 6, 75) * 0.5, 10), T.wornDirt, [x, 0.013, z], [-Math.PI / 2, 0, 0], [1, 1, 0.6], { roughness: 1, receiveShadow: true });
+  }
+}
+
 /** Always-loaded dressing for the whole village, merged once. */
 export function buildStaticVillageProps(): MergedPropMesh[] {
   const batch = new PropBatch();
+  groundWear(batch);
   for (const [x, z, sc] of roadsideBushes()) addBush(batch, x, z, sc);
   for (const [x, z] of GRAIN_STACKS) addGrain(batch, x, z);
   for (const [x, z, s] of CLAY_POTS) addPot(batch, x, z, s);

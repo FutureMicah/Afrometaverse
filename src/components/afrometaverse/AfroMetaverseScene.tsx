@@ -181,7 +181,7 @@ function VillageDaySky() {
 
 const GROUND_PBR = getProceduralPBR("dust", 512);
 // built once: 64x64 grid, heights 0..0.18m, so the ground ripples under the light
-const GROUND_RELIEF = undulatedGround(WORLD_W, WORLD_D, 64, 0.18, 3);
+const GROUND_RELIEF = undulatedGround(WORLD_W, WORLD_D, 64, 0.42, 3);
 
 function NeonGround() {
   return (
