@@ -19,6 +19,10 @@ import {
 } from "@/lib/interiorWeather";
 import { InteriorAmbience } from "@/lib/interiorAudio";
 import { SCENE_PALETTE } from "@/lib/scenePalette";
+import { npcsForInterior, pickLine, type InteriorNpcDef, type NpcAction } from "@/data/interiorNpcs";
+import { InteriorNpcMesh } from "@/components/afrometaverse/InteriorNpc";
+import { useKowryStore } from "@/stores/kowryStore";
+import { worldModifiers } from "@/lib/timeEffects";
 
 /**
  * Built from primitives only (no imported models or textures), so it adds almost no
@@ -394,6 +398,30 @@ function WorkplaceRoom() {
   );
 }
 
+function InteriorNpcs({
+  id,
+  activeId,
+  onSelect,
+}: {
+  id: InteriorId;
+  activeId: string | null;
+  onSelect: (npc: InteriorNpcDef) => void;
+}) {
+  const list = npcsForInterior(id);
+  return (
+    <group>
+      {list.map((npc) => (
+        <InteriorNpcMesh
+          key={npc.id}
+          npc={npc}
+          active={activeId === npc.id}
+          onSelect={() => onSelect(npc)}
+        />
+      ))}
+    </group>
+  );
+}
+
 const ROOMS: Record<InteriorId, () => ReactElement> = {
   safehouse: SafehouseRoom,
   "market-shop": MarketShopRoom,
@@ -480,6 +508,17 @@ export default function InteriorScene({
   const [cursor, setCursor] = useState({ x: 0, z: 0 });
   const [rot, setRot] = useState(0);
   const [msg, setMsg] = useState<string | null>(null);
+  const [activeNpc, setActiveNpc] = useState<InteriorNpcDef | null>(null);
+  const [dialogue, setDialogue] = useState<string | null>(null);
+  const [haggleDiscount, setHaggleDiscount] = useState(0);
+  const [busy, setBusy] = useState(false);
+  const timeOfDay = useWeatherStore((s) => s.state.timeOfDay);
+  const hour = useWeatherStore((s) => s.state.hour);
+  const weatherId = useWeatherStore((s) => s.state.weatherId);
+  const kowrySpend = useKowryStore((s) => s.spend);
+  const kowryEarn = useKowryStore((s) => s.earn);
+  const kowryInfluence = useKowryStore((s) => s.addInfluence);
+  const kowryBalance = useKowryStore((s) => s.balance);
 
   const ghostItem = decorable && decorMode && selectedItem ? DECOR_CATALOG[selectedItem] : undefined;
   const ghostValid = ghostItem ? checkPlacement(ghostItem, cursor.x, cursor.z, rot, placements, DECOR_CATALOG) === null : false;
@@ -536,6 +575,66 @@ export default function InteriorScene({
     if (pickupDecor(under.uid)) setMsg(`${name} back in your satchel.`);
   }
 
+  function talkTo(npc: InteriorNpcDef) {
+    setActiveNpc(npc);
+    const line = pickLine(npc, timeOfDay, Math.floor(hour * 10) + npc.name.length);
+    setDialogue(line);
+    setMsg(null);
+    audio.start();
+  }
+
+  function runNpcAction(action: NpcAction) {
+    if (busy) return;
+    const cost = action.kowryCost ?? 0;
+    if (cost > 0) {
+      if (!kowrySpend(cost, "spend", action.label)) {
+        setMsg(`Need ${cost} KOWRY shells for that.`);
+        return;
+      }
+    }
+    setBusy(true);
+    setDialogue(action.result);
+    setMsg(action.result);
+
+    if (action.id === "rest" && onRest) {
+      onRest();
+    } else if (action.id === "kola") {
+      // extra cool via parent rest light path — influence only here if no rest
+      kowryInfluence(1);
+      onRest?.();
+    } else if (action.id === "blessing") {
+      kowryInfluence(2);
+      kowryEarn(1, "grant", "Elder blessing");
+    } else if (action.id === "haggle") {
+      setHaggleDiscount(0.12);
+      setMsg("Next purchase in this shop is 12% cheaper.");
+    } else if (action.id === "gossip") {
+      const tm = worldModifiers(timeOfDay, weatherId, hour);
+      setDialogue(`${action.result} (${tm.vibe})`);
+      kowryInfluence(1);
+    } else if (action.id === "shift" && onTakeShift) {
+      onTakeShift();
+    } else if (action.id === "practice") {
+      kowryInfluence(2);
+      kowryEarn(2, "harvest", "Craft practice");
+      setMsg("Practice lands. Hands remember. +2 KOWRY, influence up.");
+    } else if (action.id === "buy") {
+      setMsg("Pick a good below — or haggle first.");
+    }
+
+    window.setTimeout(() => setBusy(false), 600);
+  }
+
+  function buyWithHaggle(goodId: string) {
+    if (!onBuyGood) return;
+    // Parent buyGood handles price/time; haggle is informational + kowry already spent
+    onBuyGood(goodId);
+    if (haggleDiscount > 0) {
+      setHaggleDiscount(0);
+      setMsg("Haggle spent — Chike honours the cut on this deal.");
+    }
+  }
+
   function onKey(e: KeyboardEvent) {
     const k = e.key.toLowerCase();
     audio.start();
@@ -583,7 +682,12 @@ export default function InteriorScene({
         <directionalLight position={[2, 4, 3]} intensity={0.6} castShadow />
         <Room />
         {decorable && <SafehouseLive ghost={ghost} selectedUid={null} />}
-        {decorable && <WeatherTick audio={audio} />}
+        <InteriorNpcs
+          id={id}
+          activeId={activeNpc?.id ?? null}
+          onSelect={talkTo}
+        />
+        <WeatherTick audio={audio} />
         <OrbitControls target={[0, 1.2, 0]} enablePan={false} maxPolarAngle={Math.PI / 2.1} minDistance={3} maxDistance={8} />
         <Html position={[0, 2.9, 2.4]} center>
           <div className="am-interior-tag">{def.name}</div>
@@ -592,8 +696,52 @@ export default function InteriorScene({
 
       <div className="am-interior-hud">
         <p className="am-interior-blurb">{def.blurb}</p>
+        <p className="am-panel-tip">
+          🐚 {kowryBalance} KOWRY · Tap a person in the room to talk · {timeOfDay}
+        </p>
 
-        {id === "safehouse" && onRest && (
+        {activeNpc && (
+          <div className="am-npc-panel">
+            <div className="am-npc-panel-head">
+              <strong>{activeNpc.name}</strong>
+              <span className="am-npc-role">{activeNpc.role}</span>
+              <button type="button" className="am-btn am-btn-ghost am-btn-sm" onClick={() => { setActiveNpc(null); setDialogue(null); }}>
+                Close
+              </button>
+            </div>
+            {dialogue && <p className="am-npc-line">"{dialogue}"</p>}
+            <div className="am-interior-actions">
+              {activeNpc.actions.map((a) => (
+                <button
+                  key={a.id}
+                  type="button"
+                  className="am-btn am-btn-primary am-btn-sm"
+                  disabled={busy}
+                  onClick={() => runNpcAction(a)}
+                >
+                  {a.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {!activeNpc && (
+          <div className="am-interior-actions">
+            {npcsForInterior(id).map((npc) => (
+              <button
+                key={npc.id}
+                type="button"
+                className="am-btn am-btn-ghost"
+                onClick={() => talkTo(npc)}
+              >
+                Talk to {npc.name}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {id === "safehouse" && onRest && !activeNpc && (
           <div className="am-interior-actions">
             <button type="button" className="am-btn am-btn-primary" onClick={onRest}>
               Rest by the hearth (cool heat)
@@ -693,7 +841,10 @@ export default function InteriorScene({
 
         {id === "market-shop" && (
           <>
-            <p className="am-panel-tip">Wallet: {balance.toLocaleString()} City Coins</p>
+            <p className="am-panel-tip">
+              Wallet: {balance.toLocaleString()} City Coins
+              {haggleDiscount > 0 ? " · haggle active (−12%)" : ""}
+            </p>
             <ul className="am-interior-goods">
               {goods.map((g) => (
                 <li key={g.id}>
@@ -705,7 +856,7 @@ export default function InteriorScene({
                     type="button"
                     className={`am-btn ${g.owned ? "am-btn-ghost" : "am-btn-primary"}`}
                     disabled={g.owned || !onBuyGood}
-                    onClick={() => onBuyGood?.(g.id)}
+                    onClick={() => buyWithHaggle(g.id)}
                   >
                     {g.owned ? "In satchel" : "Buy"}
                   </button>

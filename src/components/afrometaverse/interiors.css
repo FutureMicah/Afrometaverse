@@ -71,3 +71,38 @@
   transform: translateX(-50%);
   z-index: 15;
 }
+
+.am-npc-panel {
+  background: rgba(30, 22, 16, 0.95);
+  border: 1px solid rgba(245, 233, 214, 0.18);
+  border-radius: 12px;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.am-npc-panel-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.am-npc-panel-head strong {
+  font-size: 1rem;
+}
+.am-npc-role {
+  font-size: 0.75rem;
+  opacity: 0.8;
+  flex: 1;
+}
+.am-npc-line {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.4;
+  font-style: italic;
+  color: #f5e9d6;
+}
+.am-btn-sm {
+  font-size: 0.8rem;
+  padding: 6px 10px;
+}
