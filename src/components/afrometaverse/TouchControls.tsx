@@ -12,7 +12,7 @@ import { resetTouchInput, touchInput } from "@/lib/touchInput";
 type HoldKey = "run" | "jump" | "crouch";
 
 /** Joystick travel radius in CSS px before the knob saturates. */
-const JOY_RADIUS = 56;
+const JOY_RADIUS = 44;
 /** Fraction of the stick travel ignored so resting thumbs do not drift the player. */
 const JOY_DEADZONE = 0.14;
 

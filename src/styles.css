@@ -2316,13 +2316,14 @@
 
 .am-touch-joy {
   position: absolute;
-  width: 112px;
-  height: 112px;
-  margin-left: -56px;
-  margin-top: -56px;
+  width: 88px;
+  height: 88px;
+  margin-left: -44px;
+  margin-top: -44px;
   border-radius: 999px;
-  border: 2px solid oklch(0.95 0.03 85 / 0.45);
-  background: oklch(0.2 0.03 160 / 0.35);
+  border: 2px solid oklch(0.95 0.03 85 / 0.4);
+  background: oklch(0.14 0.03 280 / 0.42);
+  backdrop-filter: blur(8px);
   pointer-events: none;
 }
 
@@ -2330,34 +2331,34 @@
   position: absolute;
   left: 50%;
   top: 50%;
-  width: 46px;
-  height: 46px;
-  margin-left: -23px;
-  margin-top: -23px;
+  width: 36px;
+  height: 36px;
+  margin-left: -18px;
+  margin-top: -18px;
   border-radius: 999px;
   background: var(--am-gold);
-  box-shadow: 0 0 0 4px var(--am-gold-soft), 0 6px 14px oklch(0.2 0.03 70 / 0.35);
+  box-shadow: 0 0 0 3px var(--am-gold-soft), 0 4px 12px oklch(0.2 0.03 70 / 0.35);
 }
 
 .am-touch-joy-hint {
   position: absolute;
-  left: 28px;
-  bottom: 28px;
-  width: 64px;
-  height: 64px;
+  left: 22px;
+  bottom: 22px;
+  width: 52px;
+  height: 52px;
   border-radius: 999px;
-  border: 2px dashed oklch(0.95 0.03 85 / 0.35);
+  border: 2px dashed oklch(0.95 0.03 85 / 0.3);
   pointer-events: none;
 }
 
-/* bottom-right action cluster */
+/* bottom-right action cluster — compact circular buttons */
 .am-touch-buttons {
   position: absolute;
-  right: 12px;
-  bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+  right: 10px;
+  bottom: calc(10px + env(safe-area-inset-bottom, 0px));
   display: grid;
   grid-template-columns: repeat(2, auto);
-  gap: 10px;
+  gap: 8px;
   z-index: 9;
   pointer-events: none;
 }
@@ -2366,54 +2367,255 @@
   pointer-events: auto;
   touch-action: none;
   -webkit-tap-highlight-color: transparent;
-  min-width: 72px;
-  min-height: 56px;
-  padding: 10px 14px;
-  border-radius: 16px;
-  border: 1px solid oklch(0.95 0.03 85 / 0.4);
-  background: oklch(0.2 0.03 160 / 0.6);
-  color: var(--am-forest-ink);
-  font-size: 12px;
+  width: 48px;
+  height: 48px;
+  min-width: 48px;
+  min-height: 48px;
+  padding: 0;
+  border-radius: 999px;
+  border: 2px solid oklch(0.95 0.03 85 / 0.35);
+  background: oklch(0.14 0.03 280 / 0.55);
+  backdrop-filter: blur(8px);
+  color: oklch(0.97 0.02 80);
+  font-size: 9px;
   font-weight: 800;
-  letter-spacing: 0.06em;
-  box-shadow: var(--am-shadow);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  box-shadow: 0 6px 16px oklch(0.1 0.02 280 / 0.35);
+  display: grid;
+  place-items: center;
+  line-height: 1.05;
+  text-align: center;
 }
 
 .am-touch-btn:active,
 .am-touch-btn-on {
-  background: var(--am-gold);
-  color: var(--am-ink);
-  transform: scale(0.96);
+  background: oklch(0.55 0.12 145 / 0.8);
+  color: oklch(0.98 0.02 80);
+  transform: scale(0.94);
+  border-color: oklch(0.75 0.12 145 / 0.7);
 }
 
 .am-touch-btn-view {
-  background: oklch(0.34 0.06 158 / 0.7);
+  background: oklch(0.34 0.06 158 / 0.65);
 }
 
 .am-touch-btn-vehicle {
-  background: var(--am-coral);
-  color: var(--am-paper);
-  border-color: var(--am-coral-soft);
+  background: oklch(0.55 0.16 35 / 0.75);
+  color: oklch(0.98 0.02 80);
+  border-color: oklch(0.75 0.12 45 / 0.5);
 }
 
 .am-touch-btn-dim {
-  opacity: 0.5;
+  opacity: 0.45;
 }
 
 .am-touch-btn-jump,
 .am-touch-btn-run {
-  min-width: 88px;
-  min-height: 68px;
+  width: 56px;
+  height: 56px;
+  min-width: 56px;
+  min-height: 56px;
+  font-size: 10px;
 }
 
 @media (max-width: 520px) {
   .am-touch-buttons {
     right: 8px;
-    gap: 8px;
+    gap: 7px;
   }
   .am-touch-btn {
-    min-width: 64px;
-    min-height: 52px;
-    padding: 8px 10px;
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    min-height: 44px;
+    font-size: 8px;
   }
+  .am-touch-btn-jump,
+  .am-touch-btn-run {
+    width: 52px;
+    height: 52px;
+    min-width: 52px;
+    min-height: 52px;
+  }
+}
+
+/* ===== Settings / controls editor ===== */
+.am-controls-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.am-settings-tabs {
+  display: flex;
+  gap: 6px;
+  padding: 4px;
+  border-radius: 999px;
+  background: var(--am-line);
+  width: fit-content;
+  max-width: 100%;
+}
+
+.am-settings-tab {
+  border: none;
+  background: transparent;
+  padding: 8px 14px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--am-ink-soft);
+  cursor: pointer;
+}
+
+.am-settings-tab-active {
+  background: var(--am-paper);
+  color: var(--am-ink);
+  box-shadow: var(--am-shadow);
+}
+
+.am-controls-editor-head h2 {
+  margin: 0 0 6px;
+  font-size: 1.1rem;
+}
+
+.am-controls-section {
+  padding: 14px 16px;
+  border-radius: 16px;
+  border: 1px solid var(--am-line);
+  background: var(--am-paper);
+  box-shadow: var(--am-shadow);
+  margin-bottom: 12px;
+}
+
+.am-controls-section h3 {
+  margin: 0 0 10px;
+  font-size: 0.95rem;
+}
+
+.am-controls-toggle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  margin-bottom: 12px;
+  cursor: pointer;
+}
+
+.am-controls-toggle-inline {
+  margin: 0;
+  font-size: 0.8rem;
+}
+
+.am-controls-row {
+  display: grid;
+  grid-template-columns: 88px 1fr 48px;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin-bottom: 12px;
+}
+
+.am-controls-row input[type="range"],
+.am-controls-scale input[type="range"] {
+  width: 100%;
+  accent-color: var(--am-forest);
+}
+
+.am-controls-row em {
+  font-style: normal;
+  font-size: 0.8rem;
+  color: var(--am-ink-soft);
+  text-align: right;
+}
+
+.am-controls-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.am-controls-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.am-controls-item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  border: 1px solid var(--am-line);
+  background: var(--am-cream);
+}
+
+.am-controls-item-off {
+  opacity: 0.55;
+}
+
+.am-controls-item-main {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 140px;
+}
+
+.am-controls-item-main strong {
+  display: block;
+  font-size: 0.9rem;
+}
+
+.am-controls-item-main small {
+  display: block;
+  color: var(--am-ink-soft);
+  font-size: 0.75rem;
+}
+
+.am-controls-glyph {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--am-forest);
+  color: var(--am-forest-ink);
+  font-weight: 800;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+.am-controls-item-tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.am-controls-scale {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.75rem;
+  font-weight: 650;
+  color: var(--am-ink-soft);
+  min-width: 140px;
+}
+
+.am-controls-scale input {
+  width: 100px;
+}
+
+.am-btn-sm {
+  padding: 6px 10px !important;
+  font-size: 12px !important;
+  border-radius: 999px !important;
 }

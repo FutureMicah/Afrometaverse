@@ -17,6 +17,7 @@ import {
   Minimize2,
   Megaphone,
   Send,
+  Settings,
   ShoppingBag,
   Sparkles,
   Store,
@@ -24,6 +25,7 @@ import {
   X,
 } from "lucide-react";
 import AfroMetaverseScene from "@/components/afrometaverse/AfroMetaverseScene";
+import ControlEditor from "@/components/afrometaverse/ControlEditor";
 import { useInteriorStore, enterBuilding } from "@/stores/interiorStore";
 import { INTERIORS } from "@/data/interiors";
 
@@ -70,7 +72,7 @@ import {
 import { matchOutfit, matchTierColor } from "@/lib/outfitMatching";
 import { HAIR_COLOR_SWATCHES, NAIL_COLOR_SWATCHES, SKIN_TONE_SWATCHES } from "@/lib/swatchPalette";
 
-type ScreenId = "city" | "work" | "market" | "civic" | "social" | "learn";
+type ScreenId = "city" | "work" | "market" | "civic" | "social" | "learn" | "settings";
 type WeatherId = "dry" | "rainy" | "harmattan";
 type TimeOfDay = "morning" | "afternoon" | "evening" | "night";
 
@@ -81,6 +83,7 @@ const NAV: { id: ScreenId; label: string; icon: typeof MapPin }[] = [
   { id: "civic", label: "Civic", icon: Vote },
   { id: "social", label: "Town Square", icon: Megaphone },
   { id: "learn", label: "Learn", icon: BookOpen },
+  { id: "settings", label: "Settings", icon: Settings },
 ];
 
 const TIME_OF_DAY: { key: TimeOfDay; label: string; note: string }[] = [
@@ -1997,6 +2000,19 @@ export function AfroMetaverseGame() {
                 })}
               </div>
               <p className="am-note">Course rewards are play money and unlock nothing outside this simulation.</p>
+            </section>
+          )}
+
+          {screen === "settings" && (
+            <section>
+              <div className="am-screen-head">
+                <h1>Settings</h1>
+                <p>
+                  Camera sensitivity, first-person hands &amp; legs, FOV, and compact circular touch
+                  controls.
+                </p>
+              </div>
+              <ControlEditor />
             </section>
           )}
         </main>

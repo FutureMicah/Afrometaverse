@@ -13,6 +13,8 @@ import {
 import { INTERIOR_LIST, DOOR_RADIUS } from "@/data/interiors";
 import { useInteriorStore, enterBuilding, type InteriorId } from "@/stores/interiorStore";
 import { takeTouchLook, touchInput } from "@/lib/touchInput";
+import { useCameraSettingsStore } from "@/stores/cameraSettingsStore";
+import { FirstPersonLimbs } from "@/components/afrometaverse/FirstPersonLimbs";
 
 import { useCharacterStore } from "@/stores/characterStore";
 import { DayNightSky } from "@/components/afrometaverse/DayNightSky";
@@ -688,13 +690,16 @@ function PlayerController({
     const onMove = (e: MouseEvent) => {
       if (mode === "orbit") return;
       if (document.pointerLockElement !== gl.domElement) return;
-      const sens = firstPerson.current ? 0.0026 : 0.0022;
+      const cam = useCameraSettingsStore.getState();
+      const base = firstPerson.current ? 0.0026 : 0.0022;
+      const sens = base * cam.lookSensitivity;
+      const ySign = cam.invertY ? 1 : -1;
       yawRef.current -= e.movementX * sens;
       // third-person: limited orbit pitch · first-person: look nearly straight up/down
       const pMin = firstPerson.current ? -1.25 : 0.08;
       const pMax = firstPerson.current ? 1.35 : 1.2;
       pitchRef.current = THREE.MathUtils.clamp(
-        pitchRef.current - e.movementY * sens,
+        pitchRef.current + e.movementY * sens * ySign,
         pMin,
         pMax,
       );
@@ -731,12 +736,14 @@ function PlayerController({
 
     // Touch look: same yaw/pitch math as the pointer-lock mousemove handler.
     if (touchLook.dx !== 0 || touchLook.dy !== 0) {
-      const lookSens = firstPerson.current ? 0.0026 : 0.0022;
+      const cam = useCameraSettingsStore.getState();
+      const lookSens = (firstPerson.current ? 0.0026 : 0.0022) * cam.touchSensitivity;
+      const ySign = cam.invertY ? 1 : -1;
       yawRef.current -= touchLook.dx * lookSens;
       const pMin = firstPerson.current ? -1.25 : 0.08;
       const pMax = firstPerson.current ? 1.35 : 1.2;
       pitchRef.current = THREE.MathUtils.clamp(
-        pitchRef.current - touchLook.dy * lookSens,
+        pitchRef.current + touchLook.dy * lookSens * ySign,
         pMin,
         pMax,
       );
@@ -865,24 +872,28 @@ function PlayerController({
     const sprinting = !!((keys.current["shift"] || touchInput.sprint) && isFoot && moving && !crouch);
     const fp = firstPerson.current && !mountedVehicleId;
 
-    // Hide body mesh in first-person so you don't see your own head
+    // Hide full body mesh in first-person (head would fill the lens).
+    // Hands / legs are drawn by FirstPersonLimbs in camera space.
     if (group.current) {
       group.current.visible = !fp;
     }
 
+    const camSettings = useCameraSettingsStore.getState();
     const desired = cameraScratchDesired;
     const look = cameraScratchLook;
 
     if (fp) {
-      // Eyes height (crouch lower)
+      // Eyes height (crouch lower) + slight forward offset so the hidden head stays behind the near plane
       const eyeY = target.y + (crouch ? 1.05 : 1.62);
-      desired.set(target.x, eyeY, target.z);
+      const fwdX = -Math.sin(cy);
+      const fwdZ = -Math.cos(cy);
+      desired.set(target.x + fwdX * 0.12, eyeY, target.z + fwdZ * 0.12);
       // Look direction from yaw/pitch (FPS style)
       const lookDist = 12;
       look.set(
-        target.x - Math.sin(cy) * Math.cos(cp) * lookDist,
+        desired.x - Math.sin(cy) * Math.cos(cp) * lookDist,
         eyeY + Math.sin(cp) * lookDist,
-        target.z - Math.cos(cy) * Math.cos(cp) * lookDist,
+        desired.z - Math.cos(cy) * Math.cos(cp) * lookDist,
       );
       // Snap to eye height every frame so the view never trails the body (no lag in FPS)
       camera.position.copy(desired);
@@ -910,8 +921,8 @@ function PlayerController({
 
     camera.lookAt(look.x, look.y, look.z);
 
-    // FOV: sprint widen, FPS slightly tighter, ADS-ready base
-    const baseFov = fp ? 68 : 48;
+    // FOV: from camera settings, sprint widen, vehicle slightly wider
+    const baseFov = fp ? camSettings.fpsFov : camSettings.tpsFov;
     const targetFov = baseFov + (sprinting && !fp ? 8 : 0) + (mountedVehicleId ? 4 : 0);
     fovRef.current = THREE.MathUtils.lerp(fovRef.current, targetFov, 1 - Math.pow(0.002, dt));
     if ("fov" in camera) {
@@ -946,17 +957,20 @@ function PlayerController({
                 : SCENE_PALETTE.white;
 
   return (
-    <group ref={group} position={position}>
-      {mountedVehicleId && transport !== "foot" ? (
-        <SimpleVehicle
-          position={[0, 0, 0]}
-          color={color}
-          kind={transport as "bicycle" | "scooter" | "keke" | "okada" | "taxi" | "ferry"}
-        />
-      ) : (
-        <PlayerAvatar transport={transport} />
-      )}
-    </group>
+    <>
+      <group ref={group} position={position}>
+        {mountedVehicleId && transport !== "foot" ? (
+          <SimpleVehicle
+            position={[0, 0, 0]}
+            color={color}
+            kind={transport as "bicycle" | "scooter" | "keke" | "okada" | "taxi" | "ferry"}
+          />
+        ) : (
+          <PlayerAvatar transport={transport} />
+        )}
+      </group>
+      <FirstPersonLimbs activeRef={firstPerson} pitchRef={pitchRef} />
+    </>
   );
 }
 
