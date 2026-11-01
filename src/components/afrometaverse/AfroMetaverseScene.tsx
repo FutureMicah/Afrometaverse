@@ -15,6 +15,7 @@ import { useInteriorStore, enterBuilding, type InteriorId } from "@/stores/inter
 import { takeTouchLook, touchInput } from "@/lib/touchInput";
 import { useCameraSettingsStore } from "@/stores/cameraSettingsStore";
 import { FirstPersonLimbs } from "@/components/afrometaverse/FirstPersonLimbs";
+import { MissionWorldMarker } from "@/components/afrometaverse/MissionWorldMarker";
 
 import { useCharacterStore } from "@/stores/characterStore";
 import { DayNightSky } from "@/components/afrometaverse/DayNightSky";
@@ -1441,6 +1442,7 @@ export function AfroMetaverseScene({
       ))}
 
       <ParkedVehicles />
+      <MissionWorldMarker />
       <NpcCrowd />
       <WantedPatrols />
       {onInteract && <CityHotspots onInteract={onInteract} />}

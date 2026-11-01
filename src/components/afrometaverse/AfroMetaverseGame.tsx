@@ -33,6 +33,7 @@ import { INTERIORS } from "@/data/interiors";
 const InteriorScene = lazy(() => import("@/components/afrometaverse/InteriorScene"));
 import { TouchControls, useIsTouchDevice } from "@/components/afrometaverse/TouchControls";
 import { PlaySessionHud } from "@/components/afrometaverse/PlaySessionHud";
+import { MissionObjectiveHud } from "@/components/afrometaverse/MissionObjectiveHud";
 import { CharacterPreview } from "@/components/afrometaverse/characters/CharacterPreview";
 import { CharacterCreator } from "@/components/afrometaverse/characters/CharacterCreator";
 import { editsUnlockedAtLevel } from "@/lib/photoToCharacter";
@@ -737,7 +738,9 @@ export function AfroMetaverseGame() {
     setSelectedDistrict(def.districtId);
     setScreen("city");
     setRoamMode("walk");
-    announce(`Mission: ${def.title}. Nested objectives unlock on site.`);
+    setCityFullscreen(true);
+    if (!useRoamStore.getState().showMinimap) useRoamStore.getState().toggleMinimap();
+    announce(`Mission: ${def.title}. Follow the beam — compass points the way.`);
   }
 
   function advanceMissionObjective() {
@@ -1508,6 +1511,21 @@ export function AfroMetaverseGame() {
                 {cityFullscreen && roamMode !== "orbit" && (
                   <PlaySessionHud isTouch={isTouchDevice} fullscreen={cityFullscreen} />
                 )}
+                {cityFullscreen && roamMode !== "orbit" && activeMission && (
+                  <div className="am-obj-hud-fs">
+                    <MissionObjectiveHud
+                      compact
+                      nearDistrictId={nearDistrictId}
+                      onAdvance={advanceMissionObjective}
+                      onCancel={() => {
+                        const m = useRoamStore.getState().activeMission;
+                        if (m && m.heatOnFail > 0) addHeat(Math.floor(m.heatOnFail / 2));
+                        clearMission();
+                        announce("Mission cancelled.");
+                      }}
+                    />
+                  </div>
+                )}
                 <AfroMetaverseScene
                   weather={{
                     id: weatherStore.state.weatherId,
@@ -1537,6 +1555,15 @@ export function AfroMetaverseGame() {
                   }}
                 />
                 {roamMode !== "orbit" && (isTouchDevice || cityFullscreen) && isTouchDevice && <TouchControls />}
+                {!cityFullscreen && roamMode !== "orbit" && activeMission && (
+                  <div className="am-obj-hud-overlay">
+                    <MissionObjectiveHud
+                      compact
+                      nearDistrictId={nearDistrictId}
+                      onAdvance={advanceMissionObjective}
+                    />
+                  </div>
+                )}
                 {insideId && (
                   <Suspense fallback={<div className="am-interior-loading">Entering...</div>}>
                     <InteriorScene
@@ -1610,6 +1637,21 @@ export function AfroMetaverseGame() {
                         top: `${((useRoamStore.getState().position[2] + 8) / 17) * 100}%`,
                       }}
                     />
+                    {activeMission && (() => {
+                      const step = activeMission.steps.find((s) => !s.done);
+                      const w = step ? DISTRICT_WORLD[step.districtId] : null;
+                      if (!w) return null;
+                      return (
+                        <span
+                          className="am-minimap-objective"
+                          title={step?.label}
+                          style={{
+                            left: `${((w.x + 11) / 22) * 100}%`,
+                            top: `${((w.z + 8) / 17) * 100}%`,
+                          }}
+                        />
+                      );
+                    })()}
                   </div>
                 )}
               </div>
