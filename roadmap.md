@@ -15,9 +15,9 @@
 ## Open
 - [ ] Run 0002_living_city.sql in Lovable Cloud / Supabase (see instructions below)
 - [x] Cloud citizen fields for heat/gear (0003_citizen_roam.sql + client sync)
-- [ ] Building interiors
+- [x] Building interiors (code; gameplay hooks ongoing)
 - [ ] GLTF photoreal assets
-- [ ] Mobile touch controls
+- [x] Mobile touch + first-person play loop (coach, context prompts, door/ride interact)
 
 ## How to activate Living City (Batch 3)
 

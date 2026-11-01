@@ -6,6 +6,8 @@ import {
   type PointerEvent as ReactPointerEvent,
 } from "react";
 import { useRoamStore } from "@/stores/roamStore";
+import { useInteriorStore, enterBuilding } from "@/stores/interiorStore";
+import { INTERIORS } from "@/data/interiors";
 import { resetTouchInput, touchInput } from "@/lib/touchInput";
 
 /** Hold-to-press touch buttons. */
@@ -42,9 +44,11 @@ type JoyState = { active: boolean; ox: number; oy: number; kx: number; ky: numbe
  * use pointer capture, so a finger that starts on a button never moves the camera and a
  * finger that starts on the look area never presses a button.
  */
-export function TouchControls() {
+export function TouchControls({ forceShow = false }: { forceShow?: boolean } = {}) {
   const mountedVehicleId = useRoamStore((s) => s.mountedVehicleId);
   const nearVehicleId = useRoamStore((s) => s.nearVehicleId);
+  const nearDoorId = useInteriorStore((s) => s.nearDoorId);
+  const insideId = useInteriorStore((s) => s.insideId);
   const [joy, setJoy] = useState<JoyState>({ active: false, ox: 0, oy: 0, kx: 0, ky: 0 });
   const [pressed, setPressed] = useState<Partial<Record<HoldKey, boolean>>>({});
   const joyId = useRef<number | null>(null);
@@ -157,8 +161,15 @@ export function TouchControls() {
     };
   };
 
-  const tapVehicle = () => {
+  const tapInteract = () => {
+    const ist = useInteriorStore.getState();
     const st = useRoamStore.getState();
+    // Priority: exit interior is handled by InteriorScene UI; outside: door > vehicle
+    if (ist.insideId) return;
+    if (ist.nearDoorId) {
+      enterBuilding(ist.nearDoorId);
+      return;
+    }
     if (st.mountedVehicleId) st.exitVehicle();
     else st.enterNearestVehicle();
   };
@@ -166,8 +177,23 @@ export function TouchControls() {
     touchInput.viewToggles += 1;
   };
 
-  const vehicleLabel = mountedVehicleId ? "EXIT" : "ENTER";
-  const vehicleDim = !mountedVehicleId && !nearVehicleId;
+  let interactLabel = "ENTER";
+  let interactDim = true;
+  let interactAria = "Interact";
+  if (mountedVehicleId) {
+    interactLabel = "EXIT";
+    interactDim = false;
+    interactAria = "Exit vehicle";
+  } else if (nearDoorId && !insideId) {
+    const name = INTERIORS[nearDoorId]?.name ?? "building";
+    interactLabel = "DOOR";
+    interactDim = false;
+    interactAria = `Enter ${name}`;
+  } else if (nearVehicleId) {
+    interactLabel = "RIDE";
+    interactDim = false;
+    interactAria = "Enter nearest vehicle";
+  }
 
   return (
     <div className="am-touch-layer" aria-label="Touch controls">
@@ -198,22 +224,22 @@ export function TouchControls() {
         onLostPointerCapture={onLookEnd}
         onContextMenu={(e) => e.preventDefault()}
       >
-        <span className="am-touch-look-hint">drag to look</span>
+        <span className="am-touch-look-hint">look</span>
       </div>
 
       <div className="am-touch-buttons">
         <button
           type="button"
-          className={`am-touch-btn am-touch-btn-vehicle ${vehicleDim ? "am-touch-btn-dim" : ""}`}
-          aria-label={mountedVehicleId ? "Exit vehicle" : "Enter nearest vehicle"}
+          className={`am-touch-btn am-touch-btn-vehicle ${interactDim ? "am-touch-btn-dim" : "am-touch-btn-hot"}`}
+          aria-label={interactAria}
           onPointerDown={(e) => {
             e.preventDefault();
             e.stopPropagation();
-            tapVehicle();
+            tapInteract();
           }}
           onContextMenu={(e) => e.preventDefault()}
         >
-          {vehicleLabel}
+          {interactLabel}
         </button>
         <button
           type="button"

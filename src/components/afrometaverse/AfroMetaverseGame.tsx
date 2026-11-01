@@ -32,6 +32,7 @@ import { INTERIORS } from "@/data/interiors";
 // Interior rooms load on demand, only when the player walks into a building.
 const InteriorScene = lazy(() => import("@/components/afrometaverse/InteriorScene"));
 import { TouchControls, useIsTouchDevice } from "@/components/afrometaverse/TouchControls";
+import { PlaySessionHud } from "@/components/afrometaverse/PlaySessionHud";
 import { CharacterPreview } from "@/components/afrometaverse/characters/CharacterPreview";
 import { CharacterCreator } from "@/components/afrometaverse/characters/CharacterCreator";
 import { editsUnlockedAtLevel } from "@/lib/photoToCharacter";
@@ -1028,7 +1029,7 @@ export function AfroMetaverseGame() {
                   onClick={() => {
                     setCityFullscreen(true);
                     setRoamMode("walk");
-                    announce("Full map — click canvas for mouse look · Esc to exit");
+                    announce(isTouchDevice ? "Full screen — touch pads on · VIEW for first-person" : "Full map — click canvas for mouse look · Esc to exit");
                   }}
                 >
                   Play full screen
@@ -1460,7 +1461,7 @@ export function AfroMetaverseGame() {
                       onClick={() => {
                         setCityFullscreen(true);
                         setRoamMode("walk");
-                        announce("Full screen play — WASD · mouse look · Esc to shrink");
+                        announce(isTouchDevice ? "Full screen — left walk · right look · VIEW for eyes" : "Full screen — WASD · mouse look · Esc to shrink");
                       }}
                     >
                       <Maximize2 size={18} />
@@ -1487,7 +1488,9 @@ export function AfroMetaverseGame() {
                 {cityFullscreen && (
                   <div className="am-fs-hud">
                     <span className="am-fs-hint">
-                      WASD · Mouse look · V first/third person · Shift sprint · C crouch · Space jump · F vehicle · Esc shrink
+                      {isTouchDevice
+                        ? "Left walk · Right look · RUN / JUMP · RIDE·DOOR·EXIT · VIEW eyes"
+                        : "WASD · Mouse · V eyes · Shift run · C crouch · Space jump · F interact · Esc"}
                     </span>
                     <button
                       type="button"
@@ -1498,9 +1501,12 @@ export function AfroMetaverseGame() {
                         if (document.pointerLockElement) document.exitPointerLock();
                       }}
                     >
-                      <Minimize2 size={14} /> Shrink view
+                      <Minimize2 size={14} /> Shrink
                     </button>
                   </div>
+                )}
+                {cityFullscreen && roamMode !== "orbit" && (
+                  <PlaySessionHud isTouch={isTouchDevice} fullscreen={cityFullscreen} />
                 )}
                 <AfroMetaverseScene
                   weather={{
@@ -1530,7 +1536,7 @@ export function AfroMetaverseGame() {
                     }
                   }}
                 />
-                {roamMode !== "orbit" && isTouchDevice && <TouchControls />}
+                {roamMode !== "orbit" && (isTouchDevice || cityFullscreen) && isTouchDevice && <TouchControls />}
                 {insideId && (
                   <Suspense fallback={<div className="am-interior-loading">Entering...</div>}>
                     <InteriorScene
@@ -1573,7 +1579,11 @@ export function AfroMetaverseGame() {
                   </button>
                 )}
                 {roamMode !== "orbit" && (
-                  <div className="am-roam-hint">WASD drive · F enter/exit · click hubs · parked vehicles glow when near</div>
+                  <div className="am-roam-hint">
+                    {isTouchDevice
+                      ? "Touch pads · RIDE/DOOR when close · VIEW = first-person eyes · vehicles glow when near"
+                      : "WASD · F door/vehicle · V eyes · click hubs · parked vehicles glow when near"}
+                  </div>
                 )}
                 {showMinimap && (
                   <div className="am-minimap" aria-label="City minimap">

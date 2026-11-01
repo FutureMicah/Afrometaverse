@@ -2619,3 +2619,93 @@
   font-size: 12px !important;
   border-radius: 999px !important;
 }
+
+
+/* ===== Full-screen play session HUD ===== */
+.am-play-hud {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  top: 0;
+  z-index: 11;
+  pointer-events: none;
+}
+
+.am-play-coach {
+  pointer-events: auto;
+  position: absolute;
+  left: 50%;
+  top: 18%;
+  transform: translateX(-50%);
+  width: min(360px, calc(100vw - 32px));
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: oklch(0.16 0.03 280 / 0.92);
+  border: 1px solid oklch(1 0 0 / 0.18);
+  color: oklch(0.96 0.02 80);
+  box-shadow: 0 16px 40px oklch(0.1 0.02 280 / 0.5);
+  backdrop-filter: blur(12px);
+}
+
+.am-play-coach strong {
+  display: block;
+  font-size: 1rem;
+  margin-bottom: 6px;
+}
+
+.am-play-coach p {
+  margin: 0 0 12px;
+  font-size: 0.88rem;
+  line-height: 1.45;
+  color: oklch(0.9 0.02 80 / 0.92);
+}
+
+.am-play-prompt {
+  position: absolute;
+  left: 50%;
+  bottom: calc(22% + env(safe-area-inset-bottom, 0px));
+  transform: translateX(-50%);
+  padding: 10px 16px;
+  border-radius: 999px;
+  background: oklch(0.18 0.03 280 / 0.82);
+  border: 1px solid oklch(1 0 0 / 0.2);
+  color: oklch(0.97 0.02 80);
+  font-size: 13px;
+  font-weight: 750;
+  letter-spacing: 0.02em;
+  text-align: center;
+  max-width: min(420px, calc(100vw - 24px));
+  backdrop-filter: blur(10px);
+  box-shadow: 0 8px 24px oklch(0.1 0.02 280 / 0.4);
+}
+
+.am-play-prompt-hot {
+  background: oklch(0.42 0.12 145 / 0.88);
+  border-color: oklch(0.75 0.12 145 / 0.55);
+  animation: am-play-pulse 1.6s ease-in-out infinite;
+}
+
+@keyframes am-play-pulse {
+  0%, 100% { transform: translateX(-50%) scale(1); }
+  50% { transform: translateX(-50%) scale(1.03); }
+}
+
+.am-play-mini-hint {
+  position: absolute;
+  left: 12px;
+  bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: oklch(0.14 0.03 280 / 0.55);
+  color: oklch(0.92 0.02 80 / 0.85);
+  font-size: 11px;
+  font-weight: 650;
+  pointer-events: none;
+}
+
+.am-touch-btn-hot {
+  background: oklch(0.55 0.14 145 / 0.85) !important;
+  border-color: oklch(0.8 0.12 145 / 0.7) !important;
+  box-shadow: 0 0 0 3px oklch(0.7 0.12 145 / 0.25), 0 6px 16px oklch(0.1 0.02 280 / 0.35);
+}
