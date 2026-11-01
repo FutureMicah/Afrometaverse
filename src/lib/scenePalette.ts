@@ -87,6 +87,7 @@ export const SCENE_PALETTE = {
   slateGrey: "#64748b",
   stoneBlue: "#2f5a7a",
   stoneGrey: "#9a9a9a",
+  stone: "#8a8070",
   sunBlue: "#9eb6c8",
   sunWarm: "#ffe8c8",
   teal: "#14b8a6",
