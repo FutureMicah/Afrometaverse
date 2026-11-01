@@ -55,29 +55,163 @@ function Cyl({ p, rt, rb, h, c }: { p: [number, number, number]; rt: number; rb:
   );
 }
 
-/** Room shell: mud walls, floor, conical thatch roof, doorway opening at the front (+z). */
-function Shell({ w, d, h }: { w: number; d: number; h: number }) {
+/**
+ * Circular bhunga / rondavel interior: thick mud ring, radial rafters,
+ * thatch underside, doorway on +Z (matches exterior door convention).
+ */
+function Shell({ radius = 3.2, h = 2.6 }: { radius?: number; h?: number; w?: number; d?: number }) {
+  // w/d accepted for backward calls; ignored in favor of circular plan
+  const r = radius;
+  const segs = 24;
   return (
     <group>
-      <mesh position={[0, -0.02, 0]} receiveShadow>
-        <boxGeometry args={[w, 0.05, d]} />
+      {/* packed earth floor */}
+      <mesh position={[0, -0.01, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+        <circleGeometry args={[r * 0.98, segs]} />
         <meshStandardMaterial color={FLOOR} roughness={1} />
       </mesh>
-      {/* back and side walls */}
-      <Box p={[0, h / 2, -d / 2]} s={[w, h, 0.2]} c={MUD} />
-      <Box p={[-w / 2, h / 2, 0]} s={[0.2, h, d]} c={MUD_DARK} />
-      <Box p={[w / 2, h / 2, 0]} s={[0.2, h, d]} c={MUD_DARK} />
-      {/* front wall split for the doorway */}
-      <Box p={[-w / 2 + 0.6, h / 2, d / 2]} s={[w - 1.2, h, 0.2]} c={MUD} />
-      <Box p={[w / 2 - 0.3, h / 2, d / 2]} s={[0.6, h, 0.2]} c={MUD} />
-      {/* thatch roof */}
-      <mesh position={[0, h + 0.5, 0]} rotation={[0, Math.PI / 4, 0]} castShadow>
-        <coneGeometry args={[Math.max(w, d) * 0.75, 1.4, 4]} />
-        <meshStandardMaterial color={THATCH} roughness={1} />
+      {/* outer mud wall ring (slightly open at door) — full cylinder + door cut as dark recess */}
+      <mesh position={[0, h / 2, 0]} receiveShadow castShadow>
+        <cylinderGeometry args={[r, r * 1.01, h, segs, 1, true]} />
+        <meshStandardMaterial color={MUD} roughness={0.98} side={THREE.DoubleSide} />
+      </mesh>
+      {/* white lime band inside */}
+      <mesh position={[0, h * 0.4, 0]}>
+        <cylinderGeometry args={[r * 0.995, r * 0.995, 0.22, segs, 1, true]} />
+        <meshStandardMaterial color={SCENE_PALETTE.wallPale} roughness={0.95} side={THREE.DoubleSide} />
+      </mesh>
+      {/* doorway opening visual on +Z */}
+      <mesh position={[0, 1.05, r * 0.92]} castShadow>
+        <boxGeometry args={[1.1, 2.1, 0.25]} />
+        <meshStandardMaterial color={SCENE_PALETTE.doorWood} roughness={1} transparent opacity={0.15} />
+      </mesh>
+      {/* radial rafters under conical thatch */}
+      {Array.from({ length: 16 }, (_, i) => {
+        const a = (i / 16) * Math.PI * 2;
+        return (
+          <mesh
+            key={i}
+            position={[Math.cos(a) * r * 0.42, h * 0.55, Math.sin(a) * r * 0.42]}
+            rotation={[0.55, -a, 0]}
+            castShadow
+          >
+            <cylinderGeometry args={[0.04, 0.03, r * 0.95, 5]} />
+            <meshStandardMaterial color={WOOD} roughness={1} />
+          </mesh>
+        );
+      })}
+      {/* apex ring */}
+      <mesh position={[0, h * 0.95, 0]}>
+        <cylinderGeometry args={[0.25, 0.35, 0.2, 8]} />
+        <meshStandardMaterial color={WOOD} roughness={1} />
+      </mesh>
+      {/* thatch cone (outer) */}
+      <mesh position={[0, h + 0.35, 0]} castShadow>
+        <coneGeometry args={[r * 1.15, 1.5, 18]} />
+        <meshStandardMaterial color={THATCH} roughness={1} flatShading />
+      </mesh>
+      {/* warm fill light from roof */}
+      <pointLight position={[0, h * 0.7, 0]} intensity={0.35} distance={7} color="#ffd9a8" />
+    </group>
+  );
+}
+
+/** Curved mud banquette with cloth cushions (interior reference). */
+function CurvedBench({
+  yaw = 0,
+  radius = 2.2,
+  arc = 1.1,
+}: {
+  yaw?: number;
+  radius?: number;
+  arc?: number;
+}) {
+  return (
+    <group rotation={[0, yaw, 0]}>
+      <mesh position={[0, 0.28, radius]} castShadow receiveShadow>
+        <boxGeometry args={[arc, 0.55, 0.55]} />
+        <meshStandardMaterial color={MUD} roughness={1} />
+      </mesh>
+      <mesh position={[0, 0.58, radius]} castShadow>
+        <boxGeometry args={[arc * 0.92, 0.1, 0.48]} />
+        <meshStandardMaterial color={SCENE_PALETTE.emberDeep} roughness={0.9} />
+      </mesh>
+      {/* cushions */}
+      {[-0.28, 0.28].map((ox, i) => (
+        <mesh key={i} position={[ox, 0.66, radius]} castShadow>
+          <boxGeometry args={[0.32, 0.08, 0.28]} />
+          <meshStandardMaterial color={i === 0 ? "#8b3a2a" : "#c4a574"} roughness={0.85} />
+        </mesh>
+      ))}
+    </group>
+  );
+}
+
+/** Central stone fire ring with live flame glow. */
+function CentralHearth() {
+  const flame = useRef<THREE.Mesh>(null);
+  useFrame(({ clock }) => {
+    if (!flame.current) return;
+    const t = clock.elapsedTime;
+    flame.current.scale.setScalar(0.9 + Math.sin(t * 7) * 0.12);
+    const m = flame.current.material as THREE.MeshStandardMaterial;
+    if (m) m.emissiveIntensity = 1.2 + Math.sin(t * 9) * 0.35;
+  });
+  return (
+    <group position={[0, 0, 0]}>
+      <mesh position={[0, 0.12, 0]} castShadow receiveShadow>
+        <cylinderGeometry args={[0.85, 0.95, 0.28, 14]} />
+        <meshStandardMaterial color={SCENE_PALETTE.stone} roughness={1} flatShading />
+      </mesh>
+      <mesh position={[0, 0.22, 0]}>
+        <cylinderGeometry args={[0.55, 0.6, 0.12, 12]} />
+        <meshStandardMaterial color={SCENE_PALETTE.earth} roughness={1} />
+      </mesh>
+      {/* logs */}
+      <Box p={[-0.12, 0.28, 0.05]} s={[0.5, 0.1, 0.12]} c={WOOD} r={0.4} />
+      <Box p={[0.1, 0.3, -0.05]} s={[0.45, 0.09, 0.11]} c={WOOD} r={-0.5} />
+      <mesh ref={flame} position={[0, 0.48, 0]}>
+        <coneGeometry args={[0.16, 0.4, 6]} />
+        <meshStandardMaterial
+          color={SCENE_PALETTE.ember}
+          emissive={SCENE_PALETTE.emberDeep}
+          emissiveIntensity={1.4}
+          transparent
+          opacity={0.9}
+        />
+      </mesh>
+      <pointLight position={[0, 0.7, 0]} color={SCENE_PALETTE.emberLight} intensity={1.4} distance={5} />
+    </group>
+  );
+}
+
+function WallNiche({ yaw, pot = true }: { yaw: number; pot?: boolean }) {
+  return (
+    <group rotation={[0, yaw, 0]}>
+      <mesh position={[0, 1.1, 2.95]} castShadow>
+        <boxGeometry args={[0.7, 0.7, 0.25]} />
+        <meshStandardMaterial color={MUD_DARK} roughness={1} />
+      </mesh>
+      {pot && <Cyl p={[0, 0.85, 2.85]} rt={0.16} rb={0.12} h={0.35} c={CLAY} />}
+    </group>
+  );
+}
+
+function WallMask({ yaw }: { yaw: number }) {
+  return (
+    <group rotation={[0, yaw, 0]}>
+      <mesh position={[0, 1.55, 3.05]} castShadow>
+        <boxGeometry args={[0.28, 0.45, 0.08]} />
+        <meshStandardMaterial color={WOOD} roughness={0.85} />
+      </mesh>
+      <mesh position={[0, 1.7, 3.08]}>
+        <sphereGeometry args={[0.1, 8, 8]} />
+        <meshStandardMaterial color={WOOD} roughness={0.8} />
       </mesh>
     </group>
   );
 }
+
 
 function Hearth({ p }: { p: [number, number, number] }) {
   return (
@@ -345,16 +479,19 @@ function WeatherTick({ audio }: { audio: InteriorAmbience }) {
 function SafehouseRoom() {
   return (
     <group>
-      <Shell w={6} d={5} h={2.8} />
-      <FirewoodHearth p={[-1.6, 0, -1.2]} />
-      <Mat p={[1, 0, -1]} />
-      <Stool p={[-1.2, 0, 0.6]} />
-      <Stool p={[-0.4, 0, 0.9]} />
-      <WaterPot p={[1.9, 0, -1.8]} />
-      <WaterPot p={[2.4, 0, -1.6]} />
-      <WoodBowl p={[0.5, 0.45, 0.2]} />
-      {/* rest spot by the hearth */}
-      <Mat p={[0, 0, -2.2]} />
+      <Shell radius={3.2} h={2.65} />
+      <CentralHearth />
+      <CurvedBench yaw={0.4} />
+      <CurvedBench yaw={2.2} />
+      <CurvedBench yaw={-1.6} />
+      <WallNiche yaw={1.0} />
+      <WallNiche yaw={-2.0} />
+      <WallMask yaw={2.6} />
+      <WallMask yaw={-0.8} />
+      <WaterPot p={[2.2, 0, 1.0]} />
+      <WaterPot p={[-2.3, 0, 0.6]} />
+      <Mat p={[1.4, 0, -1.6]} />
+      <Stool p={[-1.5, 0, 1.4]} />
     </group>
   );
 }
@@ -362,21 +499,20 @@ function SafehouseRoom() {
 function MarketShopRoom() {
   return (
     <group>
-      <Shell w={6} d={5} h={2.8} />
-      {/* trader's mat with goods on it, at the back */}
-      <Mat p={[0, 0, -1.6]} />
-      <Goods p={[-0.4, 0.04, -1.6]} />
-      <WoodBowl p={[0.9, 0.06, -1.7]} />
-      <WoodBowl p={[1.3, 0.06, -1.5]} />
-      <ClothBolt p={[-1.7, 0, -1.7]} />
-      {/* pottery stacked by the wall */}
-      <WaterPot p={[1.8, 0, -0.2]} />
-      <WaterPot p={[2.3, 0, -0.2]} />
-      {/* woven mat for displays by the door */}
-      <Mat p={[1.6, 0, 1.2]} />
-      <Goods p={[1.6, 0.04, 1.2]} />
-      <Stool p={[-0.6, 0, -0.2]} />
-      <FirewoodHearth p={[-2, 0, 1.4]} />
+      <Shell radius={3.2} h={2.65} />
+      <CentralHearth />
+      <CurvedBench yaw={0.2} />
+      <CurvedBench yaw={2.4} />
+      <Mat p={[0, 0, -1.8]} />
+      <Goods p={[-0.4, 0.04, -1.8]} />
+      <Goods p={[0.5, 0.04, -1.6]} />
+      <WoodBowl p={[1.1, 0.06, -1.5]} />
+      <ClothBolt p={[-1.6, 0, -1.5]} />
+      <WaterPot p={[2.2, 0, 0.2]} />
+      <WaterPot p={[2.4, 0, -0.5]} />
+      <WallNiche yaw={-1.2} />
+      <WallMask yaw={1.8} />
+      <Stool p={[-0.8, 0, 0.3]} />
     </group>
   );
 }
@@ -384,16 +520,18 @@ function MarketShopRoom() {
 function WorkplaceRoom() {
   return (
     <group>
-      <Shell w={6} d={5} h={2.8} />
-      {/* carver's bench and tools (wooden) */}
-      <Table p={[0, 0, -1.6]} />
-      <Box p={[0.3, 0.6, -1.6]} s={[0.5, 0.04, 0.06]} c={MUD_DARK} r={0.2} />
-      <WaterPot p={[1.6, 0, -1.8]} />
-      <WaterPot p={[-1.8, 0, -1.8]} />
-      <Stool p={[0, 0, -0.2]} />
-      <Stool p={[1.6, 0, 0.6]} />
-      <Mat p={[-1.4, 0, 1]} />
-      <FirewoodHearth p={[2, 0, 1.4]} />
+      <Shell radius={3.2} h={2.65} />
+      <CentralHearth />
+      <Table p={[0, 0, -1.7]} />
+      <Box p={[0.3, 0.6, -1.7]} s={[0.5, 0.04, 0.06]} c={MUD_DARK} r={0.2} />
+      <Stool p={[0, 0, -0.5]} />
+      <Stool p={[1.5, 0, 0.4]} />
+      <CurvedBench yaw={2.0} />
+      <WaterPot p={[2.1, 0, -1.2]} />
+      <WaterPot p={[-2.1, 0, -1.0]} />
+      <Mat p={[-1.5, 0, 1.2]} />
+      <WallNiche yaw={-2.2} pot={false} />
+      <WallMask yaw={1.2} />
     </group>
   );
 }

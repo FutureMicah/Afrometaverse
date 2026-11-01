@@ -50,7 +50,7 @@ export const INTERIOR_NPCS: InteriorNpcDef[] = [
     role: "Compound elder",
     skin: "#8d5524",
     cloth: "#5c2e1f",
-    position: [-0.8, 0, -0.4],
+    position: [-1.4, 0, 1.3],
     facing: 0.4,
     lines: {
       morning: [
@@ -92,7 +92,7 @@ export const INTERIOR_NPCS: InteriorNpcDef[] = [
     role: "Mat merchant",
     skin: "#c68642",
     cloth: "#1e6b4f",
-    position: [0.2, 0, -1.1],
+    position: [1.2, 0, -1.4],
     facing: Math.PI,
     lines: {
       morning: [
@@ -134,7 +134,7 @@ export const INTERIOR_NPCS: InteriorNpcDef[] = [
     role: "Carver & forge lead",
     skin: "#6b3f24",
     cloth: "#3d3d3d",
-    position: [0.6, 0, -0.9],
+    position: [-1.0, 0, -1.5],
     facing: Math.PI * 0.9,
     lines: {
       morning: [

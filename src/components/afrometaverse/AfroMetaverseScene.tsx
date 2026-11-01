@@ -36,6 +36,7 @@ import {
   YorubaCompound,
   IgboCompound,
   VillageHearth,
+  BhungaHut,
 } from "@/components/afrometaverse/HeritageArchitecture";
 import {
   DustMotes,
@@ -1425,6 +1426,16 @@ export function AfroMetaverseScene({
       />
       <VillageHearth position={[-3.6, 0, 3.0]} />
       <VillageHearth position={[0.3, 0, -2.6]} />
+
+      {/* Bhunga / rondavel village cluster — thick mud, plinth, deep thatch eaves */}
+      <BhungaHut position={[-7.2, 0, 1.2]} rotation={0.4} scale={1.15} climateIntensity={wetness} windIntensity={0.35 + dust * 0.4} />
+      <BhungaHut position={[-8.4, 0, -0.8]} rotation={-0.6} scale={0.95} wallColor={SCENE_PALETTE.clayWall} climateIntensity={wetness} windIntensity={0.35} />
+      <BhungaHut position={[-6.5, 0, -2.2]} rotation={1.1} scale={1.05} wallColor={SCENE_PALETTE.wallTan} climateIntensity={wetness} windIntensity={0.4} band={false} />
+      <BhungaHut position={[7.5, 0, 3.2]} rotation={-0.3} scale={1.1} climateIntensity={wetness} windIntensity={0.35} />
+      <BhungaHut position={[8.8, 0, 1.5]} rotation={0.9} scale={0.88} wallColor={SCENE_PALETTE.wallSand} climateIntensity={wetness} windIntensity={0.3} />
+      <BhungaHut position={[6.8, 0, -5.5]} rotation={2.2} scale={1.2} climateIntensity={wetness} windIntensity={0.4} />
+      <BhungaHut position={[-1.5, 0, 6.5]} rotation={0.2} scale={1.0} wallColor={SCENE_PALETTE.clayWall} climateIntensity={wetness} windIntensity={0.35} />
+      <BhungaHut position={[2.2, 0, 7.0]} rotation={-1.0} scale={0.92} climateIntensity={wetness} windIntensity={0.35} />
 
       {/* Day 1 atmospheric life */}
       <DustMotes count={90} active={dust > 0.25 || wetness < 0.3} />

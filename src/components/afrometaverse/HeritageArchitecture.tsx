@@ -97,6 +97,127 @@ export function ThatchedRoof({
 }
 
 /** Single modular mud hut (Day 6 building block) */
+
+/**
+ * Bhunga / rondavel-style circular mud house (reference: thick mud walls,
+ * raised stone plinth, white lime band, heavy conical thatch).
+ */
+export function BhungaHut({
+  position = [0, 0, 0],
+  rotation = 0,
+  scale = 1,
+  wallColor = SCENE_PALETTE.wallOchre,
+  climateIntensity = 0,
+  windIntensity = 0.3,
+  showSteps = true,
+  band = true,
+}: {
+  position?: [number, number, number];
+  rotation?: number;
+  scale?: number;
+  wallColor?: string;
+  climateIntensity?: number;
+  windIntensity?: number;
+  showSteps?: boolean;
+  band?: boolean;
+}) {
+  const r = 0.95 * scale;
+  const wallH = 1.15 * scale;
+  const plinthH = 0.22 * scale;
+  const doorW = 0.38 * scale;
+  const doorH = 0.72 * scale;
+
+  return (
+    <group position={position} rotation={[0, rotation, 0]}>
+      {/* packed earth apron */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.005, 0]} receiveShadow>
+        <circleGeometry args={[r * 1.35, 20]} />
+        <meshStandardMaterial color={SCENE_PALETTE.dirtLight} roughness={1} />
+      </mesh>
+
+      {/* stone / rubble plinth */}
+      <mesh castShadow receiveShadow position={[0, plinthH / 2, 0]}>
+        <cylinderGeometry args={[r * 1.06, r * 1.1, plinthH, 16]} />
+        <meshStandardMaterial color={SCENE_PALETTE.stone} roughness={1} flatShading />
+      </mesh>
+      {/* whitewashed plinth lip */}
+      <mesh position={[0, plinthH + 0.04 * scale, 0]}>
+        <cylinderGeometry args={[r * 1.02, r * 1.04, 0.08 * scale, 16]} />
+        <meshStandardMaterial color={SCENE_PALETTE.wallPale} roughness={1} />
+      </mesh>
+
+      {/* thick mud wall cylinder */}
+      <mesh castShadow receiveShadow position={[0, plinthH + wallH / 2, 0]}>
+        <cylinderGeometry args={[r, r * 1.02, wallH, 18]} />
+        <MudWallMaterial climateIntensity={climateIntensity} baseColor={wallColor} />
+      </mesh>
+
+      {/* lime band (reference white stripe) */}
+      {band && (
+        <mesh position={[0, plinthH + wallH * 0.42, 0]}>
+          <cylinderGeometry args={[r * 1.015, r * 1.015, 0.16 * scale, 18]} />
+          <meshStandardMaterial color={SCENE_PALETTE.wallPale} roughness={0.95} />
+        </mesh>
+      )}
+
+      {/* doorway recess on +Z */}
+      <mesh position={[0, plinthH + doorH / 2 + 0.02, r * 0.92]} castShadow>
+        <boxGeometry args={[doorW, doorH, 0.2 * scale]} />
+        <meshStandardMaterial color={SCENE_PALETTE.doorWood} roughness={1} />
+      </mesh>
+      {/* timber lintel */}
+      <mesh position={[0, plinthH + doorH + 0.06 * scale, r * 0.9]} castShadow>
+        <boxGeometry args={[doorW * 1.25, 0.08 * scale, 0.14 * scale]} />
+        <meshStandardMaterial color={SCENE_PALETTE.woodDark} roughness={1} />
+      </mesh>
+
+      {/* steps */}
+      {showSteps && (
+        <group position={[0, 0, r * 1.05]}>
+          {[0, 1, 2].map((i) => (
+            <mesh
+              key={i}
+              position={[0, 0.05 * scale + i * 0.07 * scale, 0.12 * scale + i * 0.1 * scale]}
+              castShadow
+              receiveShadow
+            >
+              <boxGeometry args={[0.55 * scale - i * 0.06, 0.07 * scale, 0.18 * scale]} />
+              <meshStandardMaterial color={SCENE_PALETTE.stone} roughness={1} flatShading />
+            </mesh>
+          ))}
+        </group>
+      )}
+
+      {/* conical thatch — oversized for deep eaves */}
+      <group position={[0, plinthH + wallH + 0.02, 0]}>
+        <ThatchedRoof
+          type="conical"
+          radius={r * 1.45}
+          height={1.15 * scale}
+          windIntensity={windIntensity}
+          isRainy={climateIntensity > 0.5}
+        />
+        {/* rafter tips under eave */}
+        {Array.from({ length: 10 }, (_, i) => {
+          const a = (i / 10) * Math.PI * 2;
+          return (
+            <mesh
+              key={i}
+              position={[Math.cos(a) * r * 1.05, 0.15 * scale, Math.sin(a) * r * 1.05]}
+              rotation={[0.55, -a, 0]}
+              castShadow
+            >
+              <cylinderGeometry args={[0.025 * scale, 0.02 * scale, 0.55 * scale, 4]} />
+              <meshStandardMaterial color={SCENE_PALETTE.woodDark} roughness={1} />
+            </mesh>
+          );
+        })}
+      </group>
+    </group>
+  );
+}
+
+
 export function MudHut({
   position = [0, 0, 0],
   rotation = 0,
