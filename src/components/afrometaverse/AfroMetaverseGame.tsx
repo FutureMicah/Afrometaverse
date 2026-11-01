@@ -144,8 +144,8 @@ const DISTRICTS = [
   {
     id: "town-market",
     name: "Town Market",
-    x: 24,
-    y: 58,
+    x: 48,
+    y: 50,
     tag: "Trade",
     blurb: "Miles One market road: pepper stalls, ankara bolts, okra by the basin.",
     tip: "Most jobs and goods flow through here. Start your day where the crowd is.",
@@ -153,8 +153,8 @@ const DISTRICTS = [
   {
     id: "civic-centre",
     name: "Civic Centre",
-    x: 52,
-    y: 34,
+    x: 50,
+    y: 47,
     tag: "Civic",
     blurb: "The old assembly hall where the community council posts weekly votes.",
     tip: "One vote per citizen. Your say shapes next season's city projects.",
@@ -162,8 +162,8 @@ const DISTRICTS = [
   {
     id: "creekside",
     name: "Creekside",
-    x: 30,
-    y: 26,
+    x: 46,
+    y: 45,
     tag: "Waterfront",
     blurb: "Stilt houses and canoe ferries crossing the mangrove channels.",
     tip: "Ferry work pays well but the tide decides your shift.",
@@ -171,11 +171,65 @@ const DISTRICTS = [
   {
     id: "port",
     name: "The Port",
-    x: 74,
-    y: 62,
+    x: 54,
+    y: 50,
     tag: "Industry",
     blurb: "Container cranes over the Bonny channel, ledgers stacked three deep.",
     tip: "Steady, higher-paying shifts for citizens with a good reputation.",
+  },
+  {
+    id: "upland-compound",
+    name: "Upland Compound",
+    x: 27,
+    y: 62,
+    tag: "Community",
+    blurb: "Hillside bhungas around a shared hearth, above the morning mist.",
+    tip: "A quieter place to rest heat before descending to market.",
+  },
+  {
+    id: "ridge-settlement",
+    name: "Ridge Settlement",
+    x: 71,
+    y: 26,
+    tag: "Community",
+    blurb: "Stone-path kraals facing the northern ridges.",
+    tip: "Trade charcoal and goat skins when the harmattan clears.",
+  },
+  {
+    id: "forest-edge",
+    name: "Forest Edge",
+    x: 84,
+    y: 70,
+    tag: "Rainforest",
+    blurb: "Last clearings before the deep canopy — smoke from cook fires under the trees.",
+    tip: "Herbalists and hunters gather here at dusk.",
+  },
+  {
+    id: "river-gate",
+    name: "River Gate",
+    x: 30,
+    y: 22,
+    tag: "River",
+    blurb: "Where the long river bends past the old ford and laundry rocks.",
+    tip: "Ferry and fish jobs follow the current south.",
+  },
+  {
+    id: "canopy-camp",
+    name: "Canopy Camp",
+    x: 63,
+    y: 82,
+    tag: "Rainforest",
+    blurb: "Deep-forest camp under giant trunks — dark, wet, alive with insects.",
+    tip: "Bring light and low heat; patrols rarely walk this far.",
+  },
+  {
+    id: "hill-kraal",
+    name: "Hill Kraal",
+    x: 18,
+    y: 52,
+    tag: "Highlands",
+    blurb: "Wind-cut compound on the western rise, looking over the valley.",
+    tip: "Good vantage — and a long walk back if night falls.",
   },
 ];
 
@@ -1690,8 +1744,8 @@ export function AfroMetaverseGame() {
                     <span className="am-minimap-title">Map</span>
                     {DISTRICTS.map((d) => {
                       const world = DISTRICT_WORLD[d.id];
-                      const left = world ? ((world.x + 11) / 22) * 100 : d.x;
-                      const top = world ? ((world.z + 8) / 17) * 100 : d.y;
+                      const left = world ? ((world.x + 70) / 140) * 100 : d.x;
+                      const top = world ? ((world.z + 60) / 125) * 100 : d.y;
                       return (
                         <button
                           key={d.id}
@@ -1706,8 +1760,8 @@ export function AfroMetaverseGame() {
                     <span
                       className="am-minimap-player"
                       style={{
-                        left: `${((useRoamStore.getState().position[0] + 11) / 22) * 100}%`,
-                        top: `${((useRoamStore.getState().position[2] + 8) / 17) * 100}%`,
+                        left: `${((useRoamStore.getState().position[0] + 70) / 140) * 100}%`,
+                        top: `${((useRoamStore.getState().position[2] + 60) / 125) * 100}%`,
                       }}
                     />
                     {activeMission && (() => {
@@ -1719,8 +1773,8 @@ export function AfroMetaverseGame() {
                           className="am-minimap-objective"
                           title={step?.label}
                           style={{
-                            left: `${((w.x + 11) / 22) * 100}%`,
-                            top: `${((w.z + 8) / 17) * 100}%`,
+                            left: `${((w.x + 70) / 140) * 100}%`,
+                            top: `${((w.z + 60) / 125) * 100}%`,
                           }}
                         />
                       );
@@ -1735,8 +1789,8 @@ export function AfroMetaverseGame() {
                           className="am-minimap-presence"
                           title={peer.displayName}
                           style={{
-                            left: `${((w.x + 11) / 22) * 100 + 2}%`,
-                            top: `${((w.z + 8) / 17) * 100 - 2}%`,
+                            left: `${((w.x + 70) / 140) * 100 + 2}%`,
+                            top: `${((w.z + 60) / 125) * 100 - 2}%`,
                           }}
                         />
                       );

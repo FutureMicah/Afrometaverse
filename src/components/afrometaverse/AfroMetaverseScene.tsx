@@ -23,6 +23,7 @@ import { useCharacterStore } from "@/stores/characterStore";
 import { DayNightSky } from "@/components/afrometaverse/DayNightSky";
 import { ChunkedWorld } from "@/components/afrometaverse/ChunkedWorld";
 import { ChunkVillageProps, StaticVillageProps } from "@/components/afrometaverse/VillageProps";
+import { ExpandedWorld } from "@/components/afrometaverse/ExpandedWorld";
 import { groupByChunk, chunksContaining, chunkOrigin } from "@/lib/chunkAssign";
 import { chunkOf } from "@/lib/chunkStreaming";
 import { currentRenderTier } from "@/lib/renderTier";
@@ -52,9 +53,15 @@ const DISTRICT_LAYOUT = {
   "civic-centre": { x: 0, z: -1.5, color: SCENE_PALETTE.teal, label: "Civic Centre", neon: SCENE_PALETTE.tealNeon },
   creekside: { x: -5.5, z: -3.5, color: SCENE_PALETTE.blue, label: "Creekside", neon: SCENE_PALETTE.blueNeon },
   port: { x: 5.5, z: 2.5, color: SCENE_PALETTE.orange, label: "The Port", neon: SCENE_PALETTE.orangeNeon },
+  "upland-compound": { x: -32, z: 18, color: SCENE_PALETTE.wallOchre, label: "Upland Compound", neon: SCENE_PALETTE.amberNeon },
+  "ridge-settlement": { x: 30, z: -28, color: SCENE_PALETTE.stoneGrey, label: "Ridge Settlement", neon: SCENE_PALETTE.tealNeon },
+  "forest-edge": { x: 48, z: 28, color: SCENE_PALETTE.grassEdge, label: "Forest Edge", neon: SCENE_PALETTE.limeNeon },
+  "river-gate": { x: -28, z: -32, color: SCENE_PALETTE.waterDeep, label: "River Gate", neon: SCENE_PALETTE.blueNeon },
+  "canopy-camp": { x: 18, z: 42, color: SCENE_PALETTE.earthDeep, label: "Canopy Camp", neon: SCENE_PALETTE.limeNeon },
+  "hill-kraal": { x: -45, z: 5, color: SCENE_PALETTE.clayWall, label: "Hill Kraal", neon: SCENE_PALETTE.orangeNeon },
 } as const;
 
-const BOUNDS = { minX: -14, maxX: 14, minZ: -11, maxZ: 12 };
+const BOUNDS = { minX: -70, maxX: 70, minZ: -60, maxZ: 65 };
 
 /** Ground + road palette tuned to PH laterite / village dirt refs */
 const N = {
@@ -603,7 +610,7 @@ function PlayerAvatar({ transport }: { transport: TransportId }) {
 
 function nearestDistrict(x: number, z: number): string | null {
   let best: string | null = null;
-  let bestDist = 3.2;
+  let bestDist = 5.5;
   for (const [id, pos] of Object.entries(DISTRICT_WORLD)) {
     const d = Math.hypot(x - pos.x, z - pos.z);
     if (d < bestDist) {
@@ -1395,6 +1402,7 @@ export function AfroMetaverseScene({
       <DayNightSky dust={dust} />
       {/* Multi-biome heritage terrain (Day 2) — single draw call + climate tint */}
       <HeritageTerrain wetness={wetness} dust={dust} />
+      <ExpandedWorld wetness={wetness} />
       {/* Keep a soft local dust pad under the village for road contrast */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.001, 0]} receiveShadow>
         <planeGeometry args={[28, 24]} />

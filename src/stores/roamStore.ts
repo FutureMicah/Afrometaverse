@@ -119,6 +119,12 @@ export const DISTRICT_WORLD: Record<string, { x: number; z: number; name: string
   "civic-centre": { x: 0, z: -1.5, name: "Civic Centre" },
   creekside: { x: -5.5, z: -3.5, name: "Creekside" },
   port: { x: 5.5, z: 2.5, name: "The Port" },
+  "upland-compound": { x: -32, z: 18, name: "Upland Compound" },
+  "ridge-settlement": { x: 30, z: -28, name: "Ridge Settlement" },
+  "forest-edge": { x: 48, z: 28, name: "Forest Edge" },
+  "river-gate": { x: -28, z: -32, name: "River Gate" },
+  "canopy-camp": { x: 18, z: 42, name: "Canopy Camp" },
+  "hill-kraal": { x: -45, z: 5, name: "Hill Kraal" },
 };
 
 export const SAFEHOUSES: Safehouse[] = [

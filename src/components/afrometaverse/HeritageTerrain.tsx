@@ -17,8 +17,8 @@ import { SCENE_PALETTE } from "@/lib/scenePalette";
 
 export type BiomeId = "SAVANNAH" | "PLATEAU" | "MOUNTAIN" | "COASTAL";
 
-const TERRAIN_SIZE = 120;
-const SEGMENTS = 96;
+const TERRAIN_SIZE = 200;
+const SEGMENTS = 128;
 
 /** World extents used for UV ↔ world mapping (centred on village) */
 const HALF = TERRAIN_SIZE / 2;
@@ -82,6 +82,35 @@ function createSplatMap(size = 256): THREE.CanvasTexture {
     g2.addColorStop(1, "rgba(0,0,0,0)");
     ctx.fillStyle = g2;
     ctx.fillRect(0, 0, size * 0.4, size * 0.45);
+  }
+
+  // Deep rainforest canopy zone — SE (dark green via strong G, suppressed R/B)
+  {
+    const g = ctx.createRadialGradient(size * 0.78, size * 0.78, 8, size * 0.78, size * 0.78, size * 0.38);
+    g.addColorStop(0, "rgba(20, 160, 40, 0.95)");
+    g.addColorStop(0.5, "rgba(15, 120, 35, 0.7)");
+    g.addColorStop(1, "rgba(0,0,0,0)");
+    ctx.fillStyle = g;
+    ctx.fillRect(size * 0.5, size * 0.5, size * 0.5, size * 0.5);
+
+    // darker understory core
+    const g2 = ctx.createRadialGradient(size * 0.82, size * 0.82, 4, size * 0.82, size * 0.82, size * 0.2);
+    g2.addColorStop(0, "rgba(10, 90, 30, 0.85)");
+    g2.addColorStop(1, "rgba(0,0,0,0)");
+    ctx.fillStyle = g2;
+    ctx.fillRect(size * 0.55, size * 0.55, size * 0.45, size * 0.45);
+  }
+
+  // River valley cut — multiply darker band NW→SE
+  {
+    ctx.globalCompositeOperation = "multiply";
+    ctx.strokeStyle = "rgba(40, 55, 50, 0.55)";
+    ctx.lineWidth = size * 0.06;
+    ctx.beginPath();
+    ctx.moveTo(size * 0.15, size * 0.2);
+    ctx.quadraticCurveTo(size * 0.4, size * 0.55, size * 0.85, size * 0.75);
+    ctx.stroke();
+    ctx.globalCompositeOperation = "source-over";
   }
 
   // Soften village core so roads/huts stay readable (boost green, reduce extremes)
