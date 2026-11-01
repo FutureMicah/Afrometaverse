@@ -2832,3 +2832,117 @@
   0%, 100% { transform: scale(1); opacity: 1; }
   50% { transform: scale(1.25); opacity: 0.75; }
 }
+
+
+/* ===== Immersion bar + presence ===== */
+.am-immersion-bar {
+  margin-bottom: 12px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  border: 1px solid var(--am-line);
+  background: linear-gradient(135deg, oklch(0.97 0.02 85), oklch(0.94 0.03 160 / 0.5));
+  box-shadow: var(--am-shadow);
+}
+
+.am-immersion-fs {
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  top: 48px;
+  z-index: 11;
+  pointer-events: none;
+}
+.am-immersion-fs .am-immersion-bar {
+  margin: 0;
+  background: oklch(0.14 0.03 280 / 0.82);
+  border-color: oklch(1 0 0 / 0.14);
+  color: oklch(0.96 0.02 80);
+  backdrop-filter: blur(10px);
+}
+.am-immersion-fs .am-immersion-vibe {
+  color: oklch(0.9 0.02 80 / 0.85);
+}
+
+.am-immersion-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  align-items: center;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.am-immersion-clock small,
+.am-immersion-kowry small {
+  margin-left: 4px;
+  font-weight: 600;
+  opacity: 0.75;
+  text-transform: capitalize;
+}
+
+.am-immersion-vibe {
+  margin-top: 6px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--am-ink-soft);
+}
+
+.am-immersion-flavor {
+  opacity: 0.85;
+  font-style: italic;
+  font-weight: 500;
+}
+
+.am-kowry-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: 8px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: oklch(0.92 0.05 85);
+  font-size: 0.8rem;
+  font-weight: 750;
+}
+
+.am-minimap-presence {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  margin-left: -4px;
+  margin-top: -4px;
+  border-radius: 50%;
+  background: oklch(0.65 0.14 250);
+  box-shadow: 0 0 0 2px oklch(0.7 0.1 250 / 0.45);
+  pointer-events: none;
+  animation: am-presence-pulse 2s ease-in-out infinite;
+}
+
+@keyframes am-presence-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.55; }
+}
+
+.am-city-rain-veil {
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  background: repeating-linear-gradient(
+    180deg,
+    transparent 0px,
+    transparent 3px,
+    oklch(0.7 0.02 240 / 0.04) 4px,
+    transparent 6px
+  );
+  animation: am-rain-fall 0.7s linear infinite;
+  opacity: 0.7;
+}
+
+@keyframes am-rain-fall {
+  from { background-position: 0 0; }
+  to { background-position: 0 12px; }
+}

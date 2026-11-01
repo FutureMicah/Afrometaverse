@@ -14,6 +14,8 @@ import { INTERIOR_LIST, DOOR_RADIUS } from "@/data/interiors";
 import { useInteriorStore, enterBuilding, type InteriorId } from "@/stores/interiorStore";
 import { takeTouchLook, touchInput } from "@/lib/touchInput";
 import { useCameraSettingsStore } from "@/stores/cameraSettingsStore";
+import { useWeatherStore } from "@/stores/weatherStore";
+import { worldModifiers } from "@/lib/timeEffects";
 import { FirstPersonLimbs } from "@/components/afrometaverse/FirstPersonLimbs";
 import { MissionWorldMarker } from "@/components/afrometaverse/MissionWorldMarker";
 
@@ -834,7 +836,9 @@ function PlayerController({
       const rightZ = -Math.sin(yaw);
       const wishX = (forwardX * -nz + rightX * nx) * (inputMag > 1 ? 1 : inputMag);
       const wishZ = (forwardZ * -nz + rightZ * nx) * (inputMag > 1 ? 1 : inputMag);
-      const maxSpeed = speedBase * speedMul;
+      const wx = useWeatherStore.getState();
+      const timeMods = worldModifiers(wx.state.timeOfDay, wx.state.weatherId, wx.state.hour);
+      const maxSpeed = speedBase * speedMul * (isFoot ? timeMods.moveMul : 1);
       // Acceleration / friction — snappier on ground, softer in air
       const accel = grounded.current ? (fpMode ? 14 : 18) : 6;
       const friction = grounded.current ? (fpMode ? 10 : 12) : 1.5;
@@ -946,7 +950,11 @@ function PlayerController({
     if (sh && heatTick.current > 1) {
       heatTick.current = 0;
       const house = SAFEHOUSES.find((x) => x.id === sh);
-      if (house) coolHeat(house.coolRate * 0.15);
+      if (house) {
+        const wx = useWeatherStore.getState();
+        const tm = worldModifiers(wx.state.timeOfDay, wx.state.weatherId, wx.state.hour);
+        coolHeat(house.coolRate * 0.15 * tm.coolMul);
+      }
     }
 
     // Camera: third-person over-shoulder OR first-person eyes
@@ -1268,16 +1276,23 @@ function WantedPatrols() {
       const g = refs.current[i];
       const s = seeds[i];
       if (!g || !s) continue;
-      const spd = 0.35 + wantedLevel * 0.08;
+      const wx = useWeatherStore.getState();
+      const tm = worldModifiers(wx.state.timeOfDay, wx.state.weatherId, wx.state.hour);
+      const spd = (0.35 + wantedLevel * 0.08) * tm.patrolSpeedMul;
       const ox = Math.sin(t * spd + s.phase) * (3.5 + wantedLevel * 0.4);
       const oz = Math.cos(t * spd * 0.85 + s.phase) * (2.8 + wantedLevel * 0.3);
       g.position.x = s.x + ox;
       g.position.z = s.z + oz;
       if (wantedLevel >= 2 && alertCd.current <= 0) {
         const d = Math.hypot(playerPos[0] - g.position.x, playerPos[2] - g.position.z);
-        if (d < 2.2) {
-          addHeat(3 + wantedLevel);
-          pushLog("Patrol spotted you — heat up");
+        const radius = 2.2 * tm.patrolRadiusMul;
+        if (d < radius) {
+          addHeat(Math.round((3 + wantedLevel) * tm.heatMul));
+          pushLog(
+            tm.heatMul > 1.2
+              ? "Night patrol clocks you — heat spikes"
+              : "Patrol spotted you — heat up",
+          );
           alertCd.current = 4.5;
         }
       }

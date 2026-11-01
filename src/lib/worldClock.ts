@@ -3,7 +3,7 @@
  * Pure functions only, so the stores and the renderer share the same rules.
  */
 
-export const DEFAULT_DAY_MINUTES = 24;
+export const DEFAULT_DAY_MINUTES = 16;
 export const DEFAULT_START_HOUR = 7;
 
 export type TimeOfDayKey = "morning" | "afternoon" | "evening" | "night";

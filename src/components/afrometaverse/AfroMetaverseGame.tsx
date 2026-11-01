@@ -34,6 +34,9 @@ const InteriorScene = lazy(() => import("@/components/afrometaverse/InteriorScen
 import { TouchControls, useIsTouchDevice } from "@/components/afrometaverse/TouchControls";
 import { PlaySessionHud } from "@/components/afrometaverse/PlaySessionHud";
 import { MissionObjectiveHud } from "@/components/afrometaverse/MissionObjectiveHud";
+import { ImmersionBar } from "@/components/afrometaverse/ImmersionBar";
+import { useKowryStore } from "@/stores/kowryStore";
+import { worldModifiers } from "@/lib/timeEffects";
 import { CharacterPreview } from "@/components/afrometaverse/characters/CharacterPreview";
 import { CharacterCreator } from "@/components/afrometaverse/characters/CharacterCreator";
 import { editsUnlockedAtLevel } from "@/lib/photoToCharacter";
@@ -485,6 +488,11 @@ export function AfroMetaverseGame() {
 
   const setRoamMode = useRoamStore((s) => s.setMode);
   const isTouchDevice = useIsTouchDevice();
+  const kowryBalance = useKowryStore((s) => s.balance);
+  const kowryEarn = useKowryStore((s) => s.earn);
+  const kowrySpend = useKowryStore((s) => s.spend);
+  const kowryInfluence = useKowryStore((s) => s.addInfluence);
+
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
       if (e.key === "Escape" && cityFullscreen) {
@@ -514,6 +522,7 @@ export function AfroMetaverseGame() {
     events: cityEvents,
     proposals: liveProposals,
     onlineCount,
+    online,
     liveReady,
     publishPost,
     likeRemotePost,
@@ -657,18 +666,38 @@ export function AfroMetaverseGame() {
 
   /** Safehouse: rest by the hearth. Uses the existing heat store. */
   function restInSafehouse() {
-    coolHeat(20);
-    announce("You rest by the hearth. Heat cools.");
+    const wx = useWeatherStore.getState();
+    const tm = worldModifiers(wx.state.timeOfDay, wx.state.weatherId, wx.state.hour);
+    const cooled = Math.round(20 * tm.coolMul);
+    coolHeat(cooled);
+    kowryEarn(2, "grant", "Hearth rest — elders share two shells");
+    kowryInfluence(1);
+    announce(
+      tm.coolMul >= 1.1
+        ? `You rest by the hearth. Heat falls by ${cooled}. Morning cool helps.`
+        : `You rest by the hearth. Heat falls by ${cooled}. A relative leaves two KOWRY shells.`,
+    );
   }
 
   /** Workplace: start a shift. Same payout path as the Work board's quick complete. */
   function startShiftInside() {
     const next = JOBS.find((j) => !completedJobs.includes(j.id));
     if (!next) {
-      announce("No shifts left to work today. Come back tomorrow.");
+      // Still pay a small craft stipend in KOWRY for showing up
+      const wx = useWeatherStore.getState();
+      const tm = worldModifiers(wx.state.timeOfDay, wx.state.weatherId, wx.state.hour);
+      const shells = Math.max(3, Math.round(5 * tm.jobMul));
+      kowryEarn(shells, "harvest", "Craft hut stipend");
+      announce(`No big shifts left — the master still tips you ${shells} KOWRY for showing up.`);
       return;
     }
+    const wx = useWeatherStore.getState();
+    const tm = worldModifiers(wx.state.timeOfDay, wx.state.weatherId, wx.state.hour);
+    const shells = Math.max(4, Math.round(8 * tm.jobMul));
+    kowryEarn(shells, "harvest", "Craft shift");
+    kowryInfluence(1);
     workJob(next.id);
+    announce(`Shift starts — ${shells} KOWRY for the craft.`);
   }
 
   function buyClothes(itemId: string) {
@@ -689,26 +718,37 @@ export function AfroMetaverseGame() {
       return;
     }
     if (balance < item.price) {
-      announce("Not enough City Coins for that piece.");
-      return;
+      const deficit = item.price - balance;
+      const shellTax = Math.ceil(deficit / 10);
+      if (kowryBalance >= shellTax + 5 && deficit <= item.price * 0.35) {
+        if (!kowrySpend(shellTax, "spend", `Tailor tax for ${item.name}`)) {
+          announce("Not enough City Coins for that piece.");
+          return;
+        }
+        announce(`Tailor takes ${shellTax} KOWRY to cover the gap on ${item.name}.`);
+      } else {
+        announce("Not enough City Coins for that piece.");
+        return;
+      }
     }
     if (!canWear(item)) {
       announce("That piece is for a different gender presentation.");
       return;
     }
-    const nextBalance = balance - item.price;
+    const nextBalance = Math.max(0, balance - item.price);
     setBalance(nextBalance);
     ownItem(itemId);
     equipItem(itemId);
     const fit = matchOutfit(useCharacterStore.getState().equipped);
     announce(
-      `Bought ${item.name} for ${item.price} City Coins` +
+      `Bought ${item.name}` +
+        (nextBalance < balance ? ` for ${balance - nextBalance} City Coins` : " with KOWRY cover") +
         (fit.score >= 70 ? ` · look is ${fit.label}` : ""),
     );
     persist({ balance: nextBalance });
   }
 
-    function go(next: ScreenId) {
+  function go(next: ScreenId) {
     setScreen(next);
     setMobileNavOpen(false);
   }
@@ -756,10 +796,16 @@ export function AfroMetaverseGame() {
       useWeatherStore.getState().advanceDay();
       useWorldStateStore.getState().updateWorldState(nextDay);
       const nextJobs = [...completedJobs, def.id];
+      const wx = useWeatherStore.getState();
+      const tm = worldModifiers(wx.state.timeOfDay, wx.state.weatherId, wx.state.hour);
       const coins = Math.round(
         def.coins *
-          (economyStore[def.district.toLowerCase().replace(/ /g, "-") as keyof typeof economyStore]?.jobMultiplier ?? 1),
+          (economyStore[def.district.toLowerCase().replace(/ /g, "-") as keyof typeof economyStore]?.jobMultiplier ?? 1) *
+          tm.jobMul,
       );
+      const shells = Math.max(3, Math.round(coins / 25));
+      kowryEarn(shells, "mission", def.title);
+      kowryInfluence(def.kind === "legal" ? 2 : 1);
       const nextBalance = balance + coins;
       const nextRep = Math.max(0, Math.min(99, reputation + def.rep));
       setCompletedJobs(nextJobs);
@@ -859,15 +905,28 @@ export function AfroMetaverseGame() {
   function buyGood(goodId: string) {
     const good = GOODS.find((g) => g.id === goodId);
     if (!good || purchasedGoods.includes(goodId)) return;
-    if (balance < good.price) {
-      announce("Not enough City Coins — take a shift at the Work desk first.");
+    const wx = useWeatherStore.getState();
+    const tm = worldModifiers(wx.state.timeOfDay, wx.state.weatherId, wx.state.hour);
+    const price = Math.max(1, Math.round(good.price * tm.priceMul));
+    if (balance < price) {
+      announce(
+        tm.priceMul > 1.1
+          ? `Night prices are up — need ${price} City Coins for ${good.name}.`
+          : "Not enough City Coins — take a shift at the Work desk first.",
+      );
       return;
     }
     const nextGoods = [...purchasedGoods, goodId];
-    const nextBalance = balance - good.price;
+    const nextBalance = balance - price;
     setPurchasedGoods(nextGoods);
     setBalance(nextBalance);
-    announce(`Purchased ${good.name} for ${good.price} City Coins.`);
+    // Small KOWRY gift when trading at market (barter culture)
+    kowryEarn(1, "barter", good.name);
+    announce(
+      price !== good.price
+        ? `Purchased ${good.name} for ${price} City Coins (${tm.vibe.split("—")[0].trim()}).`
+        : `Purchased ${good.name} for ${price} City Coins.`,
+    );
     persist({ purchasedGoods: nextGoods, balance: nextBalance });
   }
 
@@ -1009,6 +1068,11 @@ export function AfroMetaverseGame() {
         <main className="am-main">
           {screen === "city" && (
             <section>
+              <ImmersionBar
+                onlineCount={onlineCount}
+                districtName={nearDistrictId ? DISTRICT_WORLD[nearDistrictId]?.name : null}
+              />
+
               <div className="am-screen-head">
                 <h1>Port Harcourt, Day {cityDay}</h1>
                 <p>
@@ -1453,6 +1517,7 @@ export function AfroMetaverseGame() {
                     pointerEvents: "none",
                   }}
                 />
+                {weatherStore.state.weatherId === "rainy" && <div className="am-city-rain-veil" aria-hidden />}
                 {/* COD-style expand / shrink controls on the city view */}
                 <div className="am-city-view-controls">
                   {!cityFullscreen ? (
@@ -1510,6 +1575,14 @@ export function AfroMetaverseGame() {
                 )}
                 {cityFullscreen && roamMode !== "orbit" && (
                   <PlaySessionHud isTouch={isTouchDevice} fullscreen={cityFullscreen} />
+                )}
+                {cityFullscreen && (
+                  <div className="am-immersion-fs">
+                    <ImmersionBar
+                      onlineCount={onlineCount}
+                      districtName={nearDistrictId ? DISTRICT_WORLD[nearDistrictId]?.name : null}
+                    />
+                  </div>
                 )}
                 {cityFullscreen && roamMode !== "orbit" && activeMission && (
                   <div className="am-obj-hud-fs">
@@ -1652,6 +1725,22 @@ export function AfroMetaverseGame() {
                         />
                       );
                     })()}
+                    {(online ?? []).map((peer) => {
+                      if (!peer.districtId) return null;
+                      const w = DISTRICT_WORLD[peer.districtId];
+                      if (!w) return null;
+                      return (
+                        <span
+                          key={peer.userId}
+                          className="am-minimap-presence"
+                          title={peer.displayName}
+                          style={{
+                            left: `${((w.x + 11) / 22) * 100 + 2}%`,
+                            top: `${((w.z + 8) / 17) * 100 - 2}%`,
+                          }}
+                        />
+                      );
+                    })}
                   </div>
                 )}
               </div>
@@ -2146,6 +2235,7 @@ export function AfroMetaverseGame() {
             <span className="am-wallet-label">Wallet</span>
             <span className="am-wallet-amount">
               <Coins size={16} /> {balance.toLocaleString()}
+              <span className="am-kowry-chip" title="KOWRY shells">🐚 {kowryBalance}</span>
             </span>
             <span className="am-wallet-sub">City Coins</span>
           </div>

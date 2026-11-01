@@ -5,6 +5,33 @@
 
 import { create } from "zustand";
 
+const STORAGE_KEY = "am-kowry-v1";
+
+function loadKowry(): { balance: number; metaNairaMined: number; influenceScore: number } {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return { balance: 40, metaNairaMined: 0, influenceScore: 0 };
+    const p = JSON.parse(raw);
+    return {
+      balance: typeof p.balance === "number" ? p.balance : 40,
+      metaNairaMined: typeof p.metaNairaMined === "number" ? p.metaNairaMined : 0,
+      influenceScore: typeof p.influenceScore === "number" ? p.influenceScore : 0,
+    };
+  } catch {
+    return { balance: 40, metaNairaMined: 0, influenceScore: 0 };
+  }
+}
+
+function persistKowry(s: { balance: number; metaNairaMined: number; influenceScore: number }) {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({
+      balance: s.balance,
+      metaNairaMined: s.metaNairaMined,
+      influenceScore: s.influenceScore,
+    }));
+  } catch { /* ignore */ }
+}
+
 export type KowryLedgerReason =
   | "mission"
   | "trade"
@@ -37,10 +64,12 @@ interface KowryState {
 
 const MAX_LEDGER = 40;
 
+const initial = typeof window !== "undefined" ? loadKowry() : { balance: 40, metaNairaMined: 0, influenceScore: 0 };
+
 export const useKowryStore = create<KowryState>((set, get) => ({
-  balance: 25, // starter shells
-  metaNairaMined: 0,
-  influenceScore: 0,
+  balance: initial.balance,
+  metaNairaMined: initial.metaNairaMined,
+  influenceScore: initial.influenceScore,
   ledger: [],
 
   earn: (amount, reason, note) => {
@@ -52,10 +81,14 @@ export const useKowryStore = create<KowryState>((set, get) => ({
       ...(note !== undefined ? { note } : {}),
       at: Date.now(),
     };
-    set((s) => ({
-      balance: s.balance + amount,
-      ledger: [entry, ...s.ledger].slice(0, MAX_LEDGER),
-    }));
+    set((s) => {
+      const next = {
+        balance: s.balance + amount,
+        ledger: [entry, ...s.ledger].slice(0, MAX_LEDGER),
+      };
+      persistKowry({ balance: next.balance, metaNairaMined: s.metaNairaMined, influenceScore: s.influenceScore });
+      return next;
+    });
   },
 
   spend: (amount, reason, note) => {
@@ -68,10 +101,14 @@ export const useKowryStore = create<KowryState>((set, get) => ({
       ...(note !== undefined ? { note } : {}),
       at: Date.now(),
     };
-    set((s) => ({
-      balance: s.balance - amount,
-      ledger: [entry, ...s.ledger].slice(0, MAX_LEDGER),
-    }));
+    set((s) => {
+      const next = {
+        balance: s.balance - amount,
+        ledger: [entry, ...s.ledger].slice(0, MAX_LEDGER),
+      };
+      persistKowry({ balance: next.balance, metaNairaMined: s.metaNairaMined, influenceScore: s.influenceScore });
+      return next;
+    });
     return true;
   },
 
@@ -81,8 +118,11 @@ export const useKowryStore = create<KowryState>((set, get) => ({
   mineMetaNaira: (amount) =>
     set((s) => ({ metaNairaMined: s.metaNairaMined + Math.max(0, amount) })),
 
-  resetWallet: () =>
-    set({ balance: 25, metaNairaMined: 0, influenceScore: 0, ledger: [] }),
+  resetWallet: () => {
+    const next = { balance: 40, metaNairaMined: 0, influenceScore: 0, ledger: [] as LedgerEntry[] };
+    persistKowry(next);
+    set(next);
+  },
 }));
 
 /** Simple XP → KOWRY payout helper from Economy & Tribal Trades doc */
