@@ -651,6 +651,16 @@ function PlayerController({
   /** third = over-shoulder COD cam · first = through the eyes */
   const firstPerson = useRef(false);
   const fovRef = useRef(50);
+  /** Realistic FP motion state */
+  const velXZ = useRef({ x: 0, z: 0 });
+  const bobPhase = useRef(0);
+  const landPunch = useRef(0);
+  const eyeHeight = useRef(1.62);
+  const camRoll = useRef(0);
+  const targetYaw = useRef(0);
+  const targetPitch = useRef(0.35);
+  const wasGrounded = useRef(true);
+  const fpActiveForLimbs = firstPerson; // shared ref
 
   useEffect(() => {
     const down = (e: KeyboardEvent) => {
@@ -676,8 +686,14 @@ function PlayerController({
       if (e.key.toLowerCase() === "v" && mode !== "orbit") {
         firstPerson.current = !firstPerson.current;
         // reset pitch comfort when switching
-        if (firstPerson.current) pitchRef.current = 0;
-        else pitchRef.current = 0.28;
+        if (firstPerson.current) {
+          pitchRef.current = 0;
+          targetPitch.current = 0;
+        } else {
+          pitchRef.current = 0.28;
+          targetPitch.current = 0.28;
+        }
+        targetYaw.current = yawRef.current;
       }
     };
     const up = (e: KeyboardEvent) => {
@@ -691,18 +707,22 @@ function PlayerController({
       if (mode === "orbit") return;
       if (document.pointerLockElement !== gl.domElement) return;
       const cam = useCameraSettingsStore.getState();
-      const base = firstPerson.current ? 0.0026 : 0.0022;
+      const base = firstPerson.current ? 0.0028 : 0.0022;
       const sens = base * cam.lookSensitivity;
       const ySign = cam.invertY ? 1 : -1;
-      yawRef.current -= e.movementX * sens;
-      // third-person: limited orbit pitch · first-person: look nearly straight up/down
-      const pMin = firstPerson.current ? -1.25 : 0.08;
-      const pMax = firstPerson.current ? 1.35 : 1.2;
-      pitchRef.current = THREE.MathUtils.clamp(
-        pitchRef.current + e.movementY * sens * ySign,
+      const pMin = firstPerson.current ? -1.35 : 0.08;
+      const pMax = firstPerson.current ? 1.4 : 1.2;
+      // Accumulate into targets; FP applies smoothing in the frame loop
+      targetYaw.current -= e.movementX * sens;
+      targetPitch.current = THREE.MathUtils.clamp(
+        targetPitch.current + e.movementY * sens * ySign,
         pMin,
         pMax,
       );
+      if (!firstPerson.current || cam.lookSmoothing < 0.02) {
+        yawRef.current = targetYaw.current;
+        pitchRef.current = targetPitch.current;
+      }
     };
     const onClick = () => {
       if (mode !== "orbit") gl.domElement.requestPointerLock?.();
@@ -730,69 +750,112 @@ function PlayerController({
       if (mode !== "orbit") {
         firstPerson.current = !firstPerson.current;
         pitchRef.current = firstPerson.current ? 0 : 0.28;
+        targetPitch.current = pitchRef.current;
+        targetYaw.current = yawRef.current;
       }
     }
     if (mode === "orbit" || !group.current) return;
 
-    // Touch look: same yaw/pitch math as the pointer-lock mousemove handler.
+    // Touch look → targets (smoothed below for FP)
     if (touchLook.dx !== 0 || touchLook.dy !== 0) {
       const cam = useCameraSettingsStore.getState();
-      const lookSens = (firstPerson.current ? 0.0026 : 0.0022) * cam.touchSensitivity;
+      const lookSens = (firstPerson.current ? 0.0028 : 0.0022) * cam.touchSensitivity;
       const ySign = cam.invertY ? 1 : -1;
-      yawRef.current -= touchLook.dx * lookSens;
-      const pMin = firstPerson.current ? -1.25 : 0.08;
-      const pMax = firstPerson.current ? 1.35 : 1.2;
-      pitchRef.current = THREE.MathUtils.clamp(
-        pitchRef.current + touchLook.dy * lookSens * ySign,
+      const pMin = firstPerson.current ? -1.35 : 0.08;
+      const pMax = firstPerson.current ? 1.4 : 1.2;
+      targetYaw.current -= touchLook.dx * lookSens;
+      targetPitch.current = THREE.MathUtils.clamp(
+        targetPitch.current + touchLook.dy * lookSens * ySign,
         pMin,
         pMax,
       );
+      if (!firstPerson.current || cam.lookSmoothing < 0.02) {
+        yawRef.current = targetYaw.current;
+        pitchRef.current = targetPitch.current;
+      }
+    }
+
+    // Look smoothing (first-person feels less twitchy; TPS stays snappy)
+    {
+      const cam = useCameraSettingsStore.getState();
+      const smooth = firstPerson.current ? cam.lookSmoothing : 0;
+      if (smooth > 0.01) {
+        const k = 1 - Math.pow(1 - (1 - smooth * 0.92), Math.min(dt * 60, 4));
+        yawRef.current += (targetYaw.current - yawRef.current) * k;
+        pitchRef.current += (targetPitch.current - pitchRef.current) * k;
+      } else {
+        yawRef.current = targetYaw.current;
+        pitchRef.current = targetPitch.current;
+      }
     }
 
     const speedBase = TRANSPORT_SPEED[transport] ?? 4;
     const isFoot = transport === "foot";
     const sprint = !!(keys.current["shift"] || touchInput.sprint);
     const crouch = !!(keys.current["c"] || keys.current["control"] || touchInput.crouch);
+    const fpMode = firstPerson.current && !mountedVehicleId;
 
-    // COD-style: move relative to look yaw
+    // Wish direction relative to look yaw
     let inputX = 0;
     let inputZ = 0;
     if (keys.current["w"] || keys.current["arrowup"]) inputZ -= 1;
     if (keys.current["s"] || keys.current["arrowdown"]) inputZ += 1;
     if (keys.current["a"] || keys.current["arrowleft"]) inputX -= 1;
     if (keys.current["d"] || keys.current["arrowright"]) inputX += 1;
-    // Virtual joystick (analog, already inside [-1, 1] after the deadzone)
     inputX += touchInput.move.x;
     inputZ += touchInput.move.y;
     inputX = THREE.MathUtils.clamp(inputX, -1, 1);
     inputZ = THREE.MathUtils.clamp(inputZ, -1, 1);
 
-    const moving = inputX !== 0 || inputZ !== 0;
+    const inputMag = Math.hypot(inputX, inputZ);
+    const moving = inputMag > 0.04;
     let speedMul = 1;
-    if (isFoot && sprint && moving && !crouch) speedMul = 1.85;
-    if (isFoot && crouch) speedMul = 0.45;
+    if (isFoot && sprint && moving && !crouch) speedMul = fpMode ? 1.72 : 1.85;
+    if (isFoot && crouch) speedMul = fpMode ? 0.42 : 0.45;
+    // Reduced air control while airborne
+    if (!grounded.current && isFoot) speedMul *= 0.55;
 
     if (mountedVehicleId) setMoveState("ride");
     else if (!isFoot && moving) setMoveState("walk");
     else if (isFoot && moving) setMoveState(sprint && !crouch ? "run" : "walk");
     else setMoveState("idle");
 
-    if (moving) {
-      // Keys give a unit vector; the joystick keeps its analog magnitude (partial push = slower walk).
-      const len = Math.hypot(inputX, inputZ);
-      if (len > 1) {
-        inputX /= len;
-        inputZ /= len;
-      }
+    {
+      const len = Math.max(inputMag, 0.0001);
+      const nx = inputX / (inputMag > 1 ? len : 1);
+      const nz = inputZ / (inputMag > 1 ? len : 1);
       const yaw = yawRef.current;
-      // Forward is -Z in look space
       const forwardX = -Math.sin(yaw);
       const forwardZ = -Math.cos(yaw);
       const rightX = Math.cos(yaw);
       const rightZ = -Math.sin(yaw);
-      const step = speedBase * speedMul * dt;
-      let nextX = group.current.position.x + (forwardX * -inputZ + rightX * inputX) * step;
-      let nextZ = group.current.position.z + (forwardZ * -inputZ + rightZ * inputX) * step;
+      const wishX = (forwardX * -nz + rightX * nx) * (inputMag > 1 ? 1 : inputMag);
+      const wishZ = (forwardZ * -nz + rightZ * nx) * (inputMag > 1 ? 1 : inputMag);
+      const maxSpeed = speedBase * speedMul;
+      // Acceleration / friction — snappier on ground, softer in air
+      const accel = grounded.current ? (fpMode ? 14 : 18) : 6;
+      const friction = grounded.current ? (fpMode ? 10 : 12) : 1.5;
+      if (moving) {
+        velXZ.current.x += (wishX * maxSpeed - velXZ.current.x) * Math.min(1, accel * dt);
+        velXZ.current.z += (wishZ * maxSpeed - velXZ.current.z) * Math.min(1, accel * dt);
+      } else {
+        const damp = Math.exp(-friction * dt);
+        velXZ.current.x *= damp;
+        velXZ.current.z *= damp;
+        if (Math.hypot(velXZ.current.x, velXZ.current.z) < 0.02) {
+          velXZ.current.x = 0;
+          velXZ.current.z = 0;
+        }
+      }
+      // Clamp to max speed
+      const vLen = Math.hypot(velXZ.current.x, velXZ.current.z);
+      if (vLen > maxSpeed && maxSpeed > 0) {
+        velXZ.current.x = (velXZ.current.x / vLen) * maxSpeed;
+        velXZ.current.z = (velXZ.current.z / vLen) * maxSpeed;
+      }
+
+      let nextX = group.current.position.x + velXZ.current.x * dt;
+      let nextZ = group.current.position.z + velXZ.current.z * dt;
       nextX = THREE.MathUtils.clamp(nextX, BOUNDS.minX, BOUNDS.maxX);
       nextZ = THREE.MathUtils.clamp(nextZ, BOUNDS.minZ, BOUNDS.maxZ);
       if (transport === "ferry") {
@@ -801,41 +864,59 @@ function PlayerController({
       }
       group.current.position.x = nextX;
       group.current.position.z = nextZ;
-      // Body faces move direction when strafing mixed, else look yaw
-      const faceYaw = Math.atan2(
-        forwardX * -inputZ + rightX * inputX,
-        forwardZ * -inputZ + rightZ * inputX,
-      );
-      group.current.rotation.y = faceYaw;
+
+      if (vLen > 0.08) {
+        const faceYaw = Math.atan2(velXZ.current.x, velXZ.current.z);
+        // In FP the body follows look more than velocity (true first-person)
+        const bodyYaw = fpMode ? yawRef.current : faceYaw;
+        group.current.rotation.y = bodyYaw;
+        setFacing(bodyYaw);
+      } else {
+        group.current.rotation.y = yawRef.current;
+        setFacing(yawRef.current);
+      }
       setPosition([nextX, group.current.position.y, nextZ]);
-      setFacing(faceYaw);
-      if (mountedVehicleId) updateMountedVehiclePose([nextX, 0, nextZ], faceYaw);
+      if (mountedVehicleId) updateMountedVehiclePose([nextX, 0, nextZ], yawRef.current);
       const near = nearestDistrict(nextX, nextZ);
       setNearDistrict(near);
       useInteriorStore.getState().setNearDoor(nearestDoor(nextX, nextZ));
       onDistrictChange?.(near);
-    } else {
-      group.current.rotation.y = yawRef.current;
-      setFacing(yawRef.current);
+
+      // Head-bob phase from horizontal speed
+      const spd = Math.hypot(velXZ.current.x, velXZ.current.z);
+      if (grounded.current && spd > 0.4 && isFoot) {
+        const cadence = (sprint && !crouch ? 11.5 : 7.2) * (spd / Math.max(maxSpeed, 0.1));
+        bobPhase.current += dt * cadence;
+      }
     }
 
-    // Jump (foot only)
+    // Jump + landing punch (foot only)
     if (isFoot && !mountedVehicleId) {
       if ((keys.current["space"] || touchInput.jump) && grounded.current) {
-        jumpVel.current = 4.2;
+        jumpVel.current = fpMode ? 4.0 : 4.2;
         grounded.current = false;
       }
-      jumpVel.current -= 14 * dt;
+      jumpVel.current -= (fpMode ? 16 : 14) * dt;
+      const floorY = crouch ? 0.35 : 0.55;
       let y = group.current.position.y + jumpVel.current * dt;
-      if (y <= (crouch ? 0.35 : 0.55)) {
-        y = crouch ? 0.35 : 0.55;
+      if (y <= floorY) {
+        if (!wasGrounded.current && jumpVel.current < -1.2) {
+          // Landing impact scales with fall speed
+          landPunch.current = Math.min(0.22, Math.abs(jumpVel.current) * 0.035);
+        }
+        y = floorY;
         jumpVel.current = 0;
         grounded.current = true;
       }
+      wasGrounded.current = grounded.current;
       group.current.position.y = y;
     } else {
       group.current.position.y = 0.55;
+      grounded.current = true;
+      wasGrounded.current = true;
     }
+    // Decay landing punch
+    landPunch.current = Math.max(0, landPunch.current - dt * 1.8);
 
     const px = group.current.position.x;
     const pz = group.current.position.z;
@@ -869,7 +950,8 @@ function PlayerController({
     const target = group.current.position;
     const cy = yawRef.current;
     const cp = pitchRef.current;
-    const sprinting = !!((keys.current["shift"] || touchInput.sprint) && isFoot && moving && !crouch);
+    const spdNow = Math.hypot(velXZ.current.x, velXZ.current.z);
+    const sprinting = !!((keys.current["shift"] || touchInput.sprint) && isFoot && moving && !crouch && grounded.current);
     const fp = firstPerson.current && !mountedVehicleId;
 
     // Hide full body mesh in first-person (head would fill the lens).
@@ -883,29 +965,52 @@ function PlayerController({
     const look = cameraScratchLook;
 
     if (fp) {
-      // Eyes height (crouch lower) + slight forward offset so the hidden head stays behind the near plane
-      const eyeY = target.y + (crouch ? 1.05 : 1.62);
+      // Smooth crouch eye height
+      const eyeTarget = crouch ? 1.08 : 1.64;
+      eyeHeight.current = THREE.MathUtils.lerp(eyeHeight.current, eyeTarget, 1 - Math.pow(0.0015, dt));
+
+      // Head bob: vertical + slight lateral, scaled by speed and settings
+      const bobAmp = camSettings.headBob * (sprinting ? 1.0 : 0.55) * THREE.MathUtils.clamp(spdNow / 5.5, 0, 1);
+      const bobY = grounded.current ? Math.sin(bobPhase.current * 2) * 0.028 * bobAmp : 0;
+      const bobX = grounded.current ? Math.cos(bobPhase.current) * 0.014 * bobAmp : 0;
+      // Landing punch dips the camera
+      const punch = landPunch.current;
+
+      // Strafe lean (camera roll)
+      const rightDot = Math.cos(cy) * velXZ.current.x + (-Math.sin(cy)) * velXZ.current.z;
+      const leanTarget = THREE.MathUtils.clamp(-rightDot * 0.012, -0.04, 0.04);
+      camRoll.current = THREE.MathUtils.lerp(camRoll.current, leanTarget, 1 - Math.pow(0.02, dt));
+
       const fwdX = -Math.sin(cy);
       const fwdZ = -Math.cos(cy);
-      desired.set(target.x + fwdX * 0.12, eyeY, target.z + fwdZ * 0.12);
-      // Look direction from yaw/pitch (FPS style)
-      const lookDist = 12;
+      const rightX = Math.cos(cy);
+      const rightZ = -Math.sin(cy);
+      const eyeY = target.y + eyeHeight.current + bobY - punch;
+      desired.set(
+        target.x + fwdX * 0.14 + rightX * bobX,
+        eyeY,
+        target.z + fwdZ * 0.14 + rightZ * bobX,
+      );
+      const lookDist = 14;
       look.set(
         desired.x - Math.sin(cy) * Math.cos(cp) * lookDist,
         eyeY + Math.sin(cp) * lookDist,
         desired.z - Math.cos(cy) * Math.cos(cp) * lookDist,
       );
-      // Snap to eye height every frame so the view never trails the body (no lag in FPS)
       camera.position.copy(desired);
+      camera.lookAt(look.x, look.y, look.z);
+      // Apply subtle roll after lookAt
+      if (Math.abs(camRoll.current) > 0.0005) {
+        camera.rotateZ(camRoll.current);
+      }
     } else {
+      camRoll.current = THREE.MathUtils.lerp(camRoll.current, 0, 1 - Math.pow(0.01, dt));
       // Third-person COD-style: distance + height + right-shoulder offset
       const dist = mountedVehicleId ? 9.5 : crouch ? 5.2 : sprinting ? 7.4 : 6.6;
       const height = mountedVehicleId ? 4.2 : crouch ? 2.6 : 3.35;
-      const shoulder = mountedVehicleId ? 0.35 : 0.55; // offset to the right
-      // Back vector from yaw/pitch
+      const shoulder = mountedVehicleId ? 0.35 : 0.55;
       const backX = Math.sin(cy) * Math.cos(cp);
       const backZ = Math.cos(cy) * Math.cos(cp);
-      // Right vector (perpendicular on XZ)
       const rightX = Math.cos(cy);
       const rightZ = -Math.sin(cy);
       desired.set(
@@ -914,17 +1019,16 @@ function PlayerController({
         target.z + backZ * dist + rightZ * shoulder,
       );
       look.set(target.x + rightX * shoulder * 0.35, target.y + (crouch ? 1.05 : 1.4), target.z + rightZ * shoulder * 0.35);
-      // Stronger follow lag = weightier COD feel
       const lag = sprinting ? 0.0025 : 0.0012;
       camera.position.lerp(desired, 1 - Math.pow(lag, dt));
+      camera.lookAt(look.x, look.y, look.z);
     }
 
-    camera.lookAt(look.x, look.y, look.z);
-
-    // FOV: from camera settings, sprint widen, vehicle slightly wider
+    // FOV: settings + sprint punch in FP + vehicle
     const baseFov = fp ? camSettings.fpsFov : camSettings.tpsFov;
-    const targetFov = baseFov + (sprinting && !fp ? 8 : 0) + (mountedVehicleId ? 4 : 0);
-    fovRef.current = THREE.MathUtils.lerp(fovRef.current, targetFov, 1 - Math.pow(0.002, dt));
+    const sprintFov = fp ? (sprinting ? 7 : 0) : (sprinting ? 8 : 0);
+    const targetFov = baseFov + sprintFov + (mountedVehicleId ? 4 : 0);
+    fovRef.current = THREE.MathUtils.lerp(fovRef.current, targetFov, 1 - Math.pow(0.0018, dt));
     if ("fov" in camera) {
       (camera as THREE.PerspectiveCamera).fov = fovRef.current;
       (camera as THREE.PerspectiveCamera).updateProjectionMatrix();
@@ -936,6 +1040,10 @@ function PlayerController({
       const position = useRoamStore.getState().position;
       group.current.position.set(position[0], position[1], position[2]);
       yawRef.current = useRoamStore.getState().facing;
+      targetYaw.current = yawRef.current;
+      targetPitch.current = pitchRef.current;
+      velXZ.current = { x: 0, z: 0 };
+      landPunch.current = 0;
     }
   }, [mode]); // eslint-disable-line react-hooks/exhaustive-deps
 

@@ -21,6 +21,10 @@ export type CameraSettings = {
   showFpsBody: boolean;
   /** How much of the lower body appears when looking down (0–1) */
   fpsLegVisibility: number;
+  /** Head bob intensity while walking/running (0–1.5) */
+  headBob: number;
+  /** Mouse look smoothing (0 = raw, 1 = heavy) */
+  lookSmoothing: number;
 };
 
 const defaults: CameraSettings = {
@@ -31,6 +35,8 @@ const defaults: CameraSettings = {
   fpsFov: 68,
   showFpsBody: true,
   fpsLegVisibility: 1,
+  headBob: 1,
+  lookSmoothing: 0.18,
 };
 
 function load(): CameraSettings {
@@ -51,6 +57,8 @@ interface CameraSettingsState extends CameraSettings {
   setFpsFov: (v: number) => void;
   setShowFpsBody: (v: boolean) => void;
   setFpsLegVisibility: (v: number) => void;
+  setHeadBob: (v: number) => void;
+  setLookSmoothing: (v: number) => void;
   resetCamera: () => void;
   persist: () => void;
 }
@@ -70,6 +78,8 @@ export const useCameraSettingsStore = create<CameraSettingsState>((set, get) => 
     setFpsFov: (v) => set({ fpsFov: clamp(v, 50, 100) }),
     setShowFpsBody: (v) => set({ showFpsBody: v }),
     setFpsLegVisibility: (v) => set({ fpsLegVisibility: clamp(v, 0, 1) }),
+    setHeadBob: (v) => set({ headBob: clamp(v, 0, 1.5) }),
+    setLookSmoothing: (v) => set({ lookSmoothing: clamp(v, 0, 0.85) }),
     resetCamera: () => {
       set({ ...defaults });
       try {
@@ -88,6 +98,8 @@ export const useCameraSettingsStore = create<CameraSettingsState>((set, get) => 
         fpsFov: s.fpsFov,
         showFpsBody: s.showFpsBody,
         fpsLegVisibility: s.fpsLegVisibility,
+        headBob: s.headBob,
+        lookSmoothing: s.lookSmoothing,
       };
       try {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));

@@ -50,6 +50,8 @@ function CameraSettingsPanel() {
   const fpsFov = useCameraSettingsStore((s) => s.fpsFov);
   const showFpsBody = useCameraSettingsStore((s) => s.showFpsBody);
   const fpsLegVisibility = useCameraSettingsStore((s) => s.fpsLegVisibility);
+  const headBob = useCameraSettingsStore((s) => s.headBob);
+  const lookSmoothing = useCameraSettingsStore((s) => s.lookSmoothing);
   const setLookSensitivity = useCameraSettingsStore((s) => s.setLookSensitivity);
   const setTouchSensitivity = useCameraSettingsStore((s) => s.setTouchSensitivity);
   const setInvertY = useCameraSettingsStore((s) => s.setInvertY);
@@ -57,6 +59,8 @@ function CameraSettingsPanel() {
   const setFpsFov = useCameraSettingsStore((s) => s.setFpsFov);
   const setShowFpsBody = useCameraSettingsStore((s) => s.setShowFpsBody);
   const setFpsLegVisibility = useCameraSettingsStore((s) => s.setFpsLegVisibility);
+  const setHeadBob = useCameraSettingsStore((s) => s.setHeadBob);
+  const setLookSmoothing = useCameraSettingsStore((s) => s.setLookSmoothing);
   const resetCamera = useCameraSettingsStore((s) => s.resetCamera);
   const persist = useCameraSettingsStore((s) => s.persist);
 
@@ -113,6 +117,41 @@ function CameraSettingsPanel() {
           />
           <span>Invert look Y</span>
         </label>
+      </section>
+
+      <section className="am-controls-section">
+        <h3>Feel</h3>
+        <label className="am-controls-row">
+          <span>Head bob</span>
+          <input
+            type="range"
+            min={0}
+            max={150}
+            value={Math.round(headBob * 100)}
+            onChange={(e) => {
+              setHeadBob(Number(e.target.value) / 100);
+              save();
+            }}
+          />
+          <em>{Math.round(headBob * 100)}%</em>
+        </label>
+        <label className="am-controls-row">
+          <span>Look smooth</span>
+          <input
+            type="range"
+            min={0}
+            max={85}
+            value={Math.round(lookSmoothing * 100)}
+            onChange={(e) => {
+              setLookSmoothing(Number(e.target.value) / 100);
+              save();
+            }}
+          />
+          <em>{Math.round(lookSmoothing * 100)}%</em>
+        </label>
+        <p className="am-note">
+          First-person adds acceleration, air control, landing dip, strafe lean, and sprint FOV punch.
+        </p>
       </section>
 
       <section className="am-controls-section">

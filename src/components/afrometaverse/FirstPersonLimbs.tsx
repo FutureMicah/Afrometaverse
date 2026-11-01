@@ -54,22 +54,25 @@ export function FirstPersonLimbs({
     const moveState = useRoamStore.getState().moveState;
     const moving = moveState === "walk" || moveState === "run";
     const run = moveState === "run";
-    const speed = run ? 11 : moving ? 7.2 : 0;
-    if (moving) phase.current += dt * speed;
-    else phase.current = THREE.MathUtils.lerp(phase.current, 0, 1 - Math.pow(0.002, dt));
+    const speed = run ? 12.5 : moving ? 7.6 : 1.2;
+    // Always advance a little so idle has a soft breath motion
+    phase.current += dt * speed;
 
-    const swing = Math.sin(phase.current) * (run ? 0.55 : 0.38);
-    const bob = Math.abs(Math.sin(phase.current * 2)) * (run ? 0.03 : 0.015);
+    const swing = Math.sin(phase.current) * (run ? 0.62 : moving ? 0.4 : 0.06);
+    const bob = Math.abs(Math.sin(phase.current * 2)) * (run ? 0.036 : moving ? 0.018 : 0.006);
+    const breath = Math.sin(phase.current * 0.55) * 0.008;
 
     if (leftArm.current) {
-      leftArm.current.rotation.x = swing * 0.85 + bob;
-      leftArm.current.rotation.z = 0.18;
-      leftArm.current.position.y = -0.22 - bob;
+      leftArm.current.rotation.x = swing * 0.9 + bob;
+      leftArm.current.rotation.z = 0.16 + breath;
+      leftArm.current.position.y = -0.24 - bob + breath;
+      leftArm.current.position.z = -0.4 - Math.abs(swing) * 0.02;
     }
     if (rightArm.current) {
-      rightArm.current.rotation.x = -swing * 0.85 + bob;
-      rightArm.current.rotation.z = -0.18;
-      rightArm.current.position.y = -0.22 - bob;
+      rightArm.current.rotation.x = -swing * 0.9 + bob;
+      rightArm.current.rotation.z = -0.16 - breath;
+      rightArm.current.position.y = -0.24 - bob + breath;
+      rightArm.current.position.z = -0.4 - Math.abs(swing) * 0.02;
     }
 
     // Legs: visible when looking down (negative pitch)
