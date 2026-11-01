@@ -707,7 +707,7 @@ function PlayerController({
       if (mode === "orbit") return;
       if (document.pointerLockElement !== gl.domElement) return;
       const cam = useCameraSettingsStore.getState();
-      const base = firstPerson.current ? 0.0028 : 0.0022;
+      const base = firstPerson.current ? 0.0035 : 0.0027;
       const sens = base * cam.lookSensitivity;
       const ySign = cam.invertY ? 1 : -1;
       const pMin = firstPerson.current ? -1.35 : 0.08;
@@ -759,7 +759,7 @@ function PlayerController({
     // Touch look → targets (smoothed below for FP)
     if (touchLook.dx !== 0 || touchLook.dy !== 0) {
       const cam = useCameraSettingsStore.getState();
-      const lookSens = (firstPerson.current ? 0.0028 : 0.0022) * cam.touchSensitivity;
+      const lookSens = (firstPerson.current ? 0.0035 : 0.0027) * cam.touchSensitivity;
       const ySign = cam.invertY ? 1 : -1;
       const pMin = firstPerson.current ? -1.35 : 0.08;
       const pMax = firstPerson.current ? 1.4 : 1.2;
@@ -775,12 +775,14 @@ function PlayerController({
       }
     }
 
-    // Look smoothing (first-person feels less twitchy; TPS stays snappy)
+    // Look smoothing — light ease, still responsive (higher smooth = more lag)
     {
       const cam = useCameraSettingsStore.getState();
       const smooth = firstPerson.current ? cam.lookSmoothing : 0;
       if (smooth > 0.01) {
-        const k = 1 - Math.pow(1 - (1 - smooth * 0.92), Math.min(dt * 60, 4));
+        // Map 0..0.85 → blend rate that stays snappy at low values
+        const rate = 28 / (1 + smooth * 10); // ~28 at 0, ~7 at 0.3, ~3 at 0.85
+        const k = 1 - Math.exp(-rate * dt);
         yawRef.current += (targetYaw.current - yawRef.current) * k;
         pitchRef.current += (targetPitch.current - pitchRef.current) * k;
       } else {
@@ -967,7 +969,7 @@ function PlayerController({
     if (fp) {
       // Smooth crouch eye height
       const eyeTarget = crouch ? 1.08 : 1.64;
-      eyeHeight.current = THREE.MathUtils.lerp(eyeHeight.current, eyeTarget, 1 - Math.pow(0.0015, dt));
+      eyeHeight.current = THREE.MathUtils.lerp(eyeHeight.current, eyeTarget, 1 - Math.exp(-12 * dt));
 
       // Head bob: vertical + slight lateral, scaled by speed and settings
       const bobAmp = camSettings.headBob * (sprinting ? 1.0 : 0.55) * THREE.MathUtils.clamp(spdNow / 5.5, 0, 1);
@@ -1019,7 +1021,7 @@ function PlayerController({
         target.z + backZ * dist + rightZ * shoulder,
       );
       look.set(target.x + rightX * shoulder * 0.35, target.y + (crouch ? 1.05 : 1.4), target.z + rightZ * shoulder * 0.35);
-      const lag = sprinting ? 0.0025 : 0.0012;
+      const lag = sprinting ? 0.00035 : 0.00018;
       camera.position.lerp(desired, 1 - Math.pow(lag, dt));
       camera.lookAt(look.x, look.y, look.z);
     }
@@ -1028,7 +1030,7 @@ function PlayerController({
     const baseFov = fp ? camSettings.fpsFov : camSettings.tpsFov;
     const sprintFov = fp ? (sprinting ? 7 : 0) : (sprinting ? 8 : 0);
     const targetFov = baseFov + sprintFov + (mountedVehicleId ? 4 : 0);
-    fovRef.current = THREE.MathUtils.lerp(fovRef.current, targetFov, 1 - Math.pow(0.0018, dt));
+    fovRef.current = THREE.MathUtils.lerp(fovRef.current, targetFov, 1 - Math.exp(-10 * dt));
     if ("fov" in camera) {
       (camera as THREE.PerspectiveCamera).fov = fovRef.current;
       (camera as THREE.PerspectiveCamera).updateProjectionMatrix();

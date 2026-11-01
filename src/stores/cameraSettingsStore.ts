@@ -5,7 +5,7 @@
 
 import { create } from "zustand";
 
-const STORAGE_KEY = "am-camera-settings-v1";
+const STORAGE_KEY = "am-camera-settings-v2";
 
 export type CameraSettings = {
   /** Mouse / look drag multiplier (0.4 – 2.5). 1 = default. */
@@ -28,15 +28,15 @@ export type CameraSettings = {
 };
 
 const defaults: CameraSettings = {
-  lookSensitivity: 1,
-  touchSensitivity: 1,
+  lookSensitivity: 1.2,
+  touchSensitivity: 1.15,
   invertY: false,
   tpsFov: 48,
   fpsFov: 68,
   showFpsBody: true,
   fpsLegVisibility: 1,
   headBob: 1,
-  lookSmoothing: 0.18,
+  lookSmoothing: 0.06,
 };
 
 function load(): CameraSettings {
