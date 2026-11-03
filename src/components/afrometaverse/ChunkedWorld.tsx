@@ -50,7 +50,7 @@ export function ChunkedWorld({
         tier: resolvedTier,
         chunkSize: WORLD_CHUNK_SIZE,
         bounds: { ...WORLD_BOUNDS },
-        pinned,
+        ...(pinned ? { pinned } : {}),
         maxLoadsPerUpdate: maxLoadsPerUpdate ?? 2,
       });
     }
