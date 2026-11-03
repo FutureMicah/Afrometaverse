@@ -220,17 +220,19 @@ function OuterCommunity({
   );
 }
 
-/** Savannah tree scatter for mid-distance fill */
+/** Savannah tree scatter — mixed acacia / fig / baobab / bush silhouettes */
 function SavannahTrees({ cx, cz, count = 40, radius = 30 }: { cx: number; cz: number; count?: number; radius?: number }) {
   const trees = useMemo(() => {
     return Array.from({ length: count }, (_, i) => {
       const a = seeded(i, 30) * Math.PI * 2;
       const d = 4 + Math.sqrt(seeded(i, 31)) * radius;
+      const kind = Math.floor(seeded(i, 34) * 4); // 0 acacia, 1 fig, 2 baobab, 3 bush
       return {
         x: cx + Math.cos(a) * d,
         z: cz + Math.sin(a) * d,
-        h: 2.2 + seeded(i, 32) * 2.5,
-        s: 0.8 + seeded(i, 33) * 0.8,
+        h: 2.0 + seeded(i, 32) * 2.8,
+        s: 0.7 + seeded(i, 33) * 0.9,
+        kind,
       };
     });
   }, [cx, cz, count, radius]);
@@ -239,14 +241,55 @@ function SavannahTrees({ cx, cz, count = 40, radius = 30 }: { cx: number; cz: nu
     <group>
       {trees.map((t, i) => (
         <group key={i} position={[t.x, 0, t.z]}>
-          <mesh position={[0, t.h * 0.35, 0]} castShadow>
-            <cylinderGeometry args={[0.08, 0.14, t.h * 0.7, 5]} />
-            <meshStandardMaterial color={SCENE_PALETTE.woodDark} roughness={1} />
-          </mesh>
-          <mesh position={[0, t.h * 0.7, 0]} castShadow>
-            <sphereGeometry args={[t.s, 5, 4]} />
-            <meshStandardMaterial color={SCENE_PALETTE.grassDry} roughness={1} flatShading />
-          </mesh>
+          {t.kind === 2 ? (
+            <>
+              <mesh position={[0, t.h * 0.35, 0]} castShadow>
+                <cylinderGeometry args={[0.28, 0.38, t.h * 0.7, 7]} />
+                <meshStandardMaterial color={SCENE_PALETTE.woodWarm} roughness={1} />
+              </mesh>
+              <mesh position={[0, t.h * 0.75, 0]} castShadow>
+                <sphereGeometry args={[t.s * 0.85, 6, 5]} />
+                <meshStandardMaterial color={SCENE_PALETTE.grassDry} roughness={1} flatShading />
+              </mesh>
+            </>
+          ) : t.kind === 3 ? (
+            <>
+              <mesh position={[0, 0.4, 0]} castShadow>
+                <sphereGeometry args={[t.s * 0.55, 5, 4]} />
+                <meshStandardMaterial color={SCENE_PALETTE.grassEdge} roughness={1} flatShading />
+              </mesh>
+              <mesh position={[t.s * 0.2, 0.45, 0.1]} castShadow>
+                <sphereGeometry args={[t.s * 0.35, 5, 4]} />
+                <meshStandardMaterial color={SCENE_PALETTE.grassDry} roughness={1} flatShading />
+              </mesh>
+            </>
+          ) : t.kind === 0 ? (
+            <>
+              <mesh position={[0, t.h * 0.4, 0]} castShadow>
+                <cylinderGeometry args={[0.06, 0.1, t.h * 0.8, 5]} />
+                <meshStandardMaterial color={SCENE_PALETTE.woodDark} roughness={1} />
+              </mesh>
+              <mesh position={[0, t.h * 0.85, 0]} scale={[1.7, 0.35, 1.7]} castShadow>
+                <sphereGeometry args={[t.s * 0.7, 6, 4]} />
+                <meshStandardMaterial color={SCENE_PALETTE.grassDry} roughness={1} flatShading />
+              </mesh>
+            </>
+          ) : (
+            <>
+              <mesh position={[0, t.h * 0.35, 0]} castShadow>
+                <cylinderGeometry args={[0.1, 0.16, t.h * 0.7, 5]} />
+                <meshStandardMaterial color={SCENE_PALETTE.woodDark} roughness={1} />
+              </mesh>
+              <mesh position={[0, t.h * 0.75, 0]} castShadow>
+                <sphereGeometry args={[t.s, 6, 5]} />
+                <meshStandardMaterial color={SCENE_PALETTE.grassEdge} roughness={1} flatShading />
+              </mesh>
+              <mesh position={[t.s * 0.3, t.h * 0.7, t.s * 0.15]} castShadow>
+                <sphereGeometry args={[t.s * 0.55, 5, 4]} />
+                <meshStandardMaterial color={"#246b38"} roughness={1} flatShading />
+              </mesh>
+            </>
+          )}
         </group>
       ))}
     </group>
@@ -292,10 +335,18 @@ export function ExpandedWorld({ wetness = 0 }: { wetness?: number }) {
       {/* River spine */}
       <River points={riverPts} width={3.6} />
 
-      {/* Savannah fill around village ring */}
-      <SavannahTrees cx={0} cz={0} count={55} radius={38} />
-      <SavannahTrees cx={25} cz={-25} count={30} radius={20} />
-      <SavannahTrees cx={-30} cz={25} count={28} radius={18} />
+      {/* Savannah fill around village ring — denser canopy */}
+      <SavannahTrees cx={0} cz={0} count={95} radius={42} />
+      <SavannahTrees cx={25} cz={-25} count={55} radius={24} />
+      <SavannahTrees cx={-30} cz={25} count={50} radius={22} />
+      <SavannahTrees cx={18} cz={20} count={40} radius={16} />
+      <SavannahTrees cx={-8} cz={-6} count={35} radius={14} />
+      <SavannahTrees cx={12} cz={8} count={30} radius={12} />
+      <SavannahTrees cx={-20} cz={10} count={32} radius={15} />
+      <SavannahTrees cx={5} cz={-18} count={28} radius={14} />
+      <SavannahTrees cx={8} cz={-12} count={45} radius={12} />
+      <SavannahTrees cx={3} cz={-14} count={30} radius={10} />
+      <SavannahTrees cx={20} cz={-16} count={25} radius={10} />
 
       {/* Outer communities */}
       <OuterCommunity position={[-32, 0, 18]} name="Upland Compound" seed={1} wetness={wetness} />

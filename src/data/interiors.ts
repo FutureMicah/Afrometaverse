@@ -30,10 +30,11 @@ export const INTERIORS: Record<InteriorId, InteriorDef> = {
   "market-shop": {
     id: "market-shop",
     name: "Market trade hut",
-    door: { x: -3.0, z: 4.2 },
-    street: { x: -3.0, z: 5.1, rotY: Math.PI },
+    /** Separated from residential compounds — northeast market quarter */
+    door: { x: 18.0, z: 19.2 },
+    street: { x: 18.0, z: 20.3, rotY: Math.PI },
     action: { x: 0, z: -2.0, label: "Trader's mat" },
-    blurb: "Market trade hut. Barter-era goods on woven mats: buy for City Coins."
+    blurb: "Market trade hut. Goods on woven mats — trade with cowries and kowry shells."
   },
   workplace: {
     id: "workplace",
@@ -41,7 +42,7 @@ export const INTERIORS: Record<InteriorId, InteriorDef> = {
     door: { x: 5.5, z: 4.4 },
     street: { x: 5.5, z: 5.2, rotY: Math.PI },
     action: { x: 0, z: -2.0, label: "Carver's bench" },
-    blurb: "Craft work hut. Carve and forge a shift to earn City Coins."
+    blurb: "Craft work hut. Carve and shape timber — earn cowries for steady hands."
   },
 };
 

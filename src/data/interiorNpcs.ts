@@ -97,15 +97,15 @@ export const INTERIOR_NPCS: InteriorNpcDef[] = [
     lines: {
       morning: [
         "Fresh basins just arrived. Prices are honest before the sun climbs.",
-        "You look like someone who pays in City Coins *and* stories.",
+        "You look like someone who pays in cowries *and* stories.",
       ],
       afternoon: [
         "Afternoon tax is real — everyone wants shade and pepper.",
         "If you haggle, make it clever. I respect clever.",
       ],
       evening: [
-        "Lamps cost oil. Evening goods cost more. That's the law of zinc roofs.",
-        "Heard patrols are thick near Civic after dark.",
+        "Torch oil is dear. Evening goods cost more — that is the way of the market.",
+        "The night watch walks thick near the grove after dark.",
       ],
       night: [
         "Night trade is for the brave and the broke. Choose carefully.",
@@ -124,6 +124,126 @@ export const INTERIOR_NPCS: InteriorNpcDef[] = [
         id: "gossip",
         label: "Ask for street news",
         result: "He leans in with a tip about heat, patrols, or a fat job.",
+      },
+    ],
+  },
+  {
+    id: "trader-amina",
+    interiorId: "market-shop",
+    name: "Amina",
+    role: "Cloth & beads",
+    skin: "#5c3317",
+    cloth: "#7c2d12",
+    position: [-1.6, 0, -0.5],
+    facing: 0.8,
+    lines: {
+      morning: [
+        "Indigo is still damp from the dye pot. Touch gently.",
+        "Beads from Onitsha this week — real glass, not plastic shine.",
+      ],
+      afternoon: [
+        "Everyone wants red today. Red sells before the sun softens.",
+        "If your coin is short, I trade stories for a discount. Good stories.",
+      ],
+      evening: [
+        "Lamp light loves gold thread. Come see before I fold the bolts.",
+        "Night market starts when the torches are lit. Stay sharp.",
+      ],
+      night: [
+        "I keep one wrapper for wedding season. Not for window-shoppers.",
+        "Lock the beads. Night fingers are faster than day ones.",
+      ],
+    },
+    actions: [
+      { id: "buy", label: "Look at cloth", result: "Amina unrolls a strip of patterned cloth across her arm." },
+      {
+        id: "haggle",
+        label: "Haggle beads (2 🐚)",
+        kowryCost: 2,
+        result: "She counts beads into your palm and names a fair price.",
+      },
+      {
+        id: "gossip",
+        label: "Market talk",
+        result: "She whispers which stalls still have yam and which raised prices.",
+      },
+    ],
+  },
+  {
+    id: "buyer-tunde",
+    interiorId: "market-shop",
+    name: "Tunde",
+    role: "Regular customer",
+    skin: "#a67c52",
+    cloth: "#2563eb",
+    position: [0.3, 0, 1.2],
+    facing: -0.6,
+    lines: {
+      morning: [
+        "I come early so Chike doesn't sell the good pepper to someone else.",
+        "You new here? Watch the scales — some traders are poets with numbers.",
+      ],
+      afternoon: [
+        "Heat makes people buy water and argue. Same every day.",
+        "I'm waiting on a bag of grain. Might be a while.",
+      ],
+      evening: [
+        "Evening crowd is worse. Elbows and dust.",
+        "If you need a job tip, ask the cloth woman — she hears everything.",
+      ],
+      night: [
+        "I should go home. The street is changing temper.",
+        "One more look at the mats, then I'm done. Maybe.",
+      ],
+    },
+    actions: [
+      { id: "gossip", label: "Chat about prices", result: "Tunde compares last week's rates with today's." },
+      {
+        id: "exit_talk",
+        label: "Wish him luck",
+        result: "He nods. 'May your coin stretch.'",
+      },
+    ],
+  },
+  {
+    id: "hawker-blessing",
+    interiorId: "market-shop",
+    name: "Blessing",
+    role: "Produce hawker",
+    skin: "#8d5524",
+    cloth: "#ca8a04",
+    position: [-0.8, 0, -1.6],
+    facing: Math.PI * 0.15,
+    lines: {
+      morning: [
+        "Fresh okra! Tomato still cool from the basket!",
+        "Buy two, I throw a pepper. Morning special.",
+      ],
+      afternoon: [
+        "Tomato softens in this sun — price drops if you take the lot.",
+        "Don't squeeze the yam like it owes you money.",
+      ],
+      evening: [
+        "Last baskets. I don't carry them home heavier than I came.",
+        "Oil is finished. Tomorrow, God willing.",
+      ],
+      night: [
+        "I'm packing. Unless you want this last gourd cheap.",
+        "Night is for counting coin, not selling tomato.",
+      ],
+    },
+    actions: [
+      { id: "buy", label: "Buy produce", result: "Blessing weighs a handful into a nylon with a smile." },
+      {
+        id: "haggle",
+        label: "Haggle produce (1 🐚)",
+        kowryCost: 1,
+        result: "She sighs, then adds one more pepper 'for your kitchen.'",
+      },
+      {
+        id: "gossip",
+        label: "Ask about the harvest",
+        result: "Rain was kind upriver. Prices should ease next week — maybe.",
       },
     ],
   },

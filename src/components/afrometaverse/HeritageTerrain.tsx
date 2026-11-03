@@ -14,6 +14,7 @@ import { useMemo, useRef } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import { SCENE_PALETTE } from "@/lib/scenePalette";
+import { sampleHeight, sampleBiome as worldSampleBiome } from "@/lib/worldGen";
 
 export type BiomeId = "SAVANNAH" | "PLATEAU" | "MOUNTAIN" | "COASTAL";
 
@@ -157,25 +158,12 @@ const vertexShader = /* glsl */ `
   varying vec3 vWorldPos;
   varying float vHeight;
 
-  // Cheap height field from UV so edges rise into hills / plateaus
-  float heightAt(vec2 uv) {
-    vec2 p = uv * 2.0 - 1.0;
-    float r = length(p);
-    // Keep centre flat for village
-    float edge = smoothstep(0.22, 0.95, r);
-    float hills = sin(p.x * 6.0) * cos(p.y * 5.0) * 0.55
-                + sin(p.x * 11.0 + 1.3) * sin(p.y * 9.0) * 0.25;
-    // Extra ridge on NE (mountains)
-    float ridge = exp(-pow((p.x - 0.7) * 2.2, 2.0) - pow((p.y + 0.55) * 2.0, 2.0)) * 2.2;
-    return edge * (hills * 1.4 + ridge);
-  }
-
+  // Height is pre-baked into the geometry via sampleHeight() so the
+  // outer ring of this 200 m plane matches the streamed 12 km world.
   void main() {
     vUv = uv;
-    float h = heightAt(uv);
-    vHeight = h;
+    vHeight = position.z; // already displaced in JS
     vec3 pos = position;
-    pos.z += h; // plane is XY before rotation; after rot -PI/2, Z becomes world Y
     vec4 world = modelMatrix * vec4(pos, 1.0);
     vWorldPos = world.xyz;
     gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
@@ -228,19 +216,9 @@ const fragmentShader = /* glsl */ `
   }
 `;
 
+/** Biome at a world position — delegates to the shared large-world sampler. */
 export function sampleBiome(worldX: number, worldZ: number): BiomeId {
-  // Approximate the same zones as the splat painter (no GPU readback)
-  const nx = worldX / HALF;
-  const nz = worldZ / HALF;
-  const r = Math.hypot(nx, nz);
-
-  // Mountains at far NE / NW edges
-  if (r > 0.55 && (nx > 0.45 || (nx < -0.5 && nz < -0.2))) return "MOUNTAIN";
-  // Coastal near creek (SW of village)
-  if (nx < -0.15 && nz > 0.25 && r < 0.75) return "COASTAL";
-  // Northern savannah
-  if (nz < -0.35) return "SAVANNAH";
-  return "PLATEAU";
+  return worldSampleBiome(worldX, worldZ);
 }
 
 type HeritageTerrainProps = {
@@ -258,6 +236,23 @@ export function HeritageTerrain({ wetness = 0, dust = 0 }: HeritageTerrainProps)
     }),
     [],
   );
+
+  // Bake the shared world height field so the outer ring of this 200 m
+  // plane joins seamlessly with streamed WorldChunks.
+  const geometry = useMemo(() => {
+    const geo = new THREE.PlaneGeometry(TERRAIN_SIZE, TERRAIN_SIZE, SEGMENTS, SEGMENTS);
+    const pos = geo.attributes.position;
+    if (!pos) return geo;
+    for (let i = 0; i < pos.count; i++) {
+      const lx = pos.getX(i); // local −100 … +100
+      const ly = pos.getY(i);
+      const h = sampleHeight(lx, ly);
+      pos.setZ(i, h);
+    }
+    pos.needsUpdate = true;
+    geo.computeVertexNormals();
+    return geo;
+  }, []);
 
   const uniforms = useMemo(
     () => ({
@@ -281,11 +276,11 @@ export function HeritageTerrain({ wetness = 0, dust = 0 }: HeritageTerrainProps)
 
   return (
     <mesh
+      geometry={geometry}
       rotation={[-Math.PI / 2, 0, 0]}
       position={[0, -0.05, 0]}
       receiveShadow
     >
-      <planeGeometry args={[TERRAIN_SIZE, TERRAIN_SIZE, SEGMENTS, SEGMENTS]} />
       <shaderMaterial
         ref={matRef}
         vertexShader={vertexShader}
@@ -309,8 +304,8 @@ export function BiomeFlora({ count = 180 }: { count?: number }) {
       attempts++;
       const x = (Math.random() - 0.5) * TERRAIN_SIZE * 0.92;
       const z = (Math.random() - 0.5) * TERRAIN_SIZE * 0.92;
-      // Keep clear of dense village core
-      if (Math.hypot(x, z) < 12) continue;
+      // Keep clear of immediate door/plaza centres only
+      if (Math.hypot(x, z) < 7) continue;
       const biome = sampleBiome(x, z);
       out.push({
         x,
@@ -327,15 +322,7 @@ export function BiomeFlora({ count = 180 }: { count?: number }) {
     const mesh = meshRef.current;
     if (!mesh) return;
     placements.forEach((p, i) => {
-      // Approximate height from same formula (simplified)
-      const nx = p.x / HALF;
-      const nz = p.z / HALF;
-      const r = Math.hypot(nx, nz);
-      const edge = Math.max(0, Math.min(1, (r - 0.22) / 0.73));
-      const hills =
-        Math.sin(nx * 6) * Math.cos(nz * 5) * 0.55 +
-        Math.sin(nx * 11 + 1.3) * Math.sin(nz * 9) * 0.25;
-      const y = edge * (hills * 1.4) - 0.02;
+      const y = sampleHeight(p.x, p.z) - 0.02;
       dummy.position.set(p.x, y, p.z);
       dummy.scale.set(p.s * 0.35, p.s, p.s * 0.35);
       dummy.rotation.set(0, (i * 1.7) % (Math.PI * 2), 0);

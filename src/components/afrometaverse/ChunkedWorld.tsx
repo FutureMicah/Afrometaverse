@@ -3,17 +3,17 @@ import { useFrame, useThree } from "@react-three/fiber";
 import * as THREE from "three";
 import { ChunkStreamer, chunkKey, type ChunkCoord } from "@/lib/chunkStreaming";
 import { currentRenderTier, type RenderTier } from "@/lib/renderTier";
+import { WORLD_CHUNK_SIZE, WORLD_BOUNDS } from "@/lib/worldConfig";
 
 /**
- * Chunked world streaming (era-progression-spec.md 10.3).
+ * Chunked world streaming (high-polish large-map version).
  *
- * The world is divided into 64 m chunks. ChunkStreamer decides which chunks are loaded (render
- * radius + 1), which are drawn (render radius, also the fog end), and which unload after the
- * 10 s grace period. Each chunk is one grouped mesh: ground tile plus its instanced flora, so the
- * draw cost of a chunk is a fixed small number of calls no matter how much detail it holds.
+ * Two modes:
+ *  - village (default): 64 m chunks, original radii — used around the core settlement
+ *  - world: 128 m chunks, larger radii, full 12 km bounds — used for the expanded map
  *
- * This component owns streaming only. The village core (HeritageTerrain, roads, huts) stays in the
- * scene, so the existing look is unchanged while the streamer proves the architecture.
+ * Each visible chunk is built once via `buildChunk` and stays mounted until the
+ * streamer unloads it after the grace period.
  */
 
 interface ChunkedWorldProps {
@@ -24,12 +24,43 @@ interface ChunkedWorldProps {
   buildChunk?: (chunk: ChunkCoord) => React.ReactNode;
   /** Chunks that never unload (doors, interior anchors). */
   pinned?: ChunkCoord[];
+  /**
+   * "village" = 64 m legacy chunks around the settlement.
+   * "world"   = 128 m chunks across the full 12 km map (high polish).
+   */
+  mode?: "village" | "world";
+  /** Override max new chunks loaded per frame (default 2). */
+  maxLoadsPerUpdate?: number;
 }
 
-export function ChunkedWorld({ tier, focusRef, buildChunk, pinned }: ChunkedWorldProps) {
+export function ChunkedWorld({
+  tier,
+  focusRef,
+  buildChunk,
+  pinned,
+  mode = "village",
+  maxLoadsPerUpdate,
+}: ChunkedWorldProps) {
   const resolvedTier = tier ?? currentRenderTier();
   const camera = useThree((s) => s.camera);
-  const streamer = useMemo(() => new ChunkStreamer({ tier: resolvedTier, ...(pinned ? { pinned } : {}) }), [resolvedTier]);
+
+  const streamer = useMemo(() => {
+    if (mode === "world") {
+      return new ChunkStreamer({
+        tier: resolvedTier,
+        chunkSize: WORLD_CHUNK_SIZE,
+        bounds: { ...WORLD_BOUNDS },
+        pinned,
+        maxLoadsPerUpdate: maxLoadsPerUpdate ?? 2,
+      });
+    }
+    return new ChunkStreamer({
+      tier: resolvedTier,
+      ...(pinned ? { pinned } : {}),
+      maxLoadsPerUpdate: maxLoadsPerUpdate ?? 1,
+    });
+  }, [resolvedTier, mode, pinned, maxLoadsPerUpdate]);
+
   const [visible, setVisible] = useState<ChunkCoord[]>([]);
   const lastKey = useRef("");
   const clock = useRef(0);
@@ -54,8 +85,9 @@ export function ChunkedWorld({ tier, focusRef, buildChunk, pinned }: ChunkedWorl
   return (
     <group>
       {visible.map((c) => (
-        // buildChunk emits world-space content, so the chunk group is not offset.
-        <group key={chunkKey(c.cx, c.cz)}>{buildChunk ? buildChunk(c) : null}</group>
+        <group key={chunkKey(c.cx, c.cz)}>
+          {buildChunk ? buildChunk(c) : null}
+        </group>
       ))}
     </group>
   );

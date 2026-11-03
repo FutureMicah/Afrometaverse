@@ -15,6 +15,15 @@ type Props = {
   detail?: boolean;
   /** idle | walk | run | ride — drives limb cycles */
   moveState?: "idle" | "walk" | "run" | "ride";
+  /**
+   * Social / secondary motion layer on top of locomotion.
+   * talk / discuss drive head nods + arm gestures; wave is a one-sided hello.
+   */
+  activity?: "none" | "idle" | "talk" | "discuss" | "wave";
+  /** World-space point to glance toward (player, speaker). Head yaw/pitch only. */
+  lookAt?: [number, number, number] | null;
+  /** Unique phase so crowds don't sync their micro-motions */
+  motionPhase?: number;
 };
 
 function itemColor(id: string | null | undefined, fallback: string) {
@@ -77,6 +86,9 @@ export function StylizedCharacter({
   animate = true,
   detail = true,
   moveState = "idle",
+  activity = "none",
+  lookAt = null,
+  motionPhase = 0,
 }: Props) {
   const root = useRef<THREE.Group>(null);
   const leftLeg = useRef<THREE.Group>(null);
@@ -84,8 +96,11 @@ export function StylizedCharacter({
   const leftArm = useRef<THREE.Group>(null);
   const rightArm = useRef<THREE.Group>(null);
   const torso = useRef<THREE.Group>(null);
+  const head = useRef<THREE.Group>(null);
   const isFemale = appearance.gender === "female";
   const [faceMap, setFaceMap] = useState<THREE.Texture | null>(null);
+  const lookSmooth = useRef({ yaw: 0, pitch: 0 });
+  const phase = useRef(motionPhase || Math.random() * Math.PI * 2);
 
   useEffect(() => {
     if (!appearance.facePhoto) {
@@ -144,16 +159,25 @@ export function StylizedCharacter({
 
   useFrame(({ clock }) => {
     if (!animate || !root.current) return;
-    const t = clock.getElapsedTime();
+    const t = clock.getElapsedTime() + phase.current;
+    const social =
+      activity === "talk" || activity === "discuss" || activity === "wave"
+        ? activity
+        : activity === "idle"
+          ? "idle"
+          : "none";
 
     if (moveState === "ride") {
-      // Seated-ish: legs tucked, slight vehicle bob
       root.current.position.y = Math.sin(t * 8) * 0.02;
       if (leftLeg.current) leftLeg.current.rotation.x = -0.85;
       if (rightLeg.current) rightLeg.current.rotation.x = -0.85;
       if (leftArm.current) leftArm.current.rotation.x = -0.4;
       if (rightArm.current) rightArm.current.rotation.x = -0.4;
       if (torso.current) torso.current.rotation.x = 0.12;
+      if (head.current) {
+        head.current.rotation.y = Math.sin(t * 0.55) * 0.06;
+        head.current.rotation.x = Math.sin(t * 0.9) * 0.03;
+      }
       return;
     }
 
@@ -162,22 +186,131 @@ export function StylizedCharacter({
     const swing = moveState === "run" ? 0.85 : moveState === "walk" ? 0.55 : 0.08;
     const bob = moveState === "run" ? 0.045 : moveState === "walk" ? 0.025 : 0.012;
 
-    root.current.position.y = Math.sin(t * pace) * bob;
-    root.current.rotation.y = (moving ? 0 : Math.sin(t * 0.38) * 0.03) + postureLean;
-    root.current.rotation.z = postureLean * 0.28 + (moving ? Math.sin(t * pace) * 0.03 : 0);
+    // Weight shift + breath when standing still
+    const weight = !moving ? Math.sin(t * 0.55) * 0.018 : 0;
+    root.current.position.y = Math.sin(t * pace) * bob + (!moving ? Math.sin(t * 1.55) * 0.008 : 0);
+    root.current.rotation.y =
+      (moving ? 0 : Math.sin(t * 0.38) * 0.03) + postureLean + weight * 0.4;
+    root.current.rotation.z =
+      postureLean * 0.28 + (moving ? Math.sin(t * pace) * 0.03 : Math.sin(t * 0.55) * 0.012);
 
-    const legA = Math.sin(t * pace) * swing;
-    const legB = Math.sin(t * pace + Math.PI) * swing;
-    const armA = Math.sin(t * pace + Math.PI) * swing * 0.75;
-    const armB = Math.sin(t * pace) * swing * 0.75;
+    let legA = Math.sin(t * pace) * swing;
+    let legB = Math.sin(t * pace + Math.PI) * swing;
+    let armA = Math.sin(t * pace + Math.PI) * swing * 0.75;
+    let armB = Math.sin(t * pace) * swing * 0.75;
+    let armAz = 0;
+    let armBz = 0;
+    let armAy = 0;
+    let armBy = 0;
+
+    if (!moving) {
+      // Soft idle arm hang with micro motion
+      armA = Math.sin(t * 0.7) * 0.06 - 0.08;
+      armB = Math.sin(t * 0.65 + 1.2) * 0.06 - 0.08;
+      legA = Math.sin(t * 0.45) * 0.04;
+      legB = Math.sin(t * 0.45 + Math.PI) * 0.03;
+    }
+
+    // Discussion / talk / wave overlay
+    if (social === "talk" || social === "discuss") {
+      // One arm gesturing, other more open; head nods handled on head group
+      const gest = Math.sin(t * 2.4) * 0.35;
+      const gest2 = Math.sin(t * 1.8 + 0.8) * 0.22;
+      armA = -0.35 + gest * 0.55; // raise + sweep
+      armAz = -0.25 + gest2 * 0.2;
+      armAy = gest * 0.25;
+      armB = -0.15 + Math.sin(t * 1.5) * 0.12;
+      armBz = 0.12;
+      if (social === "discuss") {
+        // Both hands more active, slightly open stance
+        armB = -0.25 + gest2 * 0.45;
+        armBz = 0.18 + gest * 0.1;
+        armBy = -gest * 0.2;
+        legA = 0.08 + Math.sin(t * 0.9) * 0.04;
+        legB = -0.05 + Math.sin(t * 0.9 + 1) * 0.03;
+      }
+    } else if (social === "wave") {
+      armB = -1.55 + Math.sin(t * 5.5) * 0.35;
+      armBz = 0.15;
+      armBy = Math.sin(t * 5.5) * 0.4;
+      armA = -0.1 + Math.sin(t * 0.8) * 0.05;
+    }
 
     if (leftLeg.current) leftLeg.current.rotation.x = legA;
     if (rightLeg.current) rightLeg.current.rotation.x = legB;
-    if (leftArm.current) leftArm.current.rotation.x = armA;
-    if (rightArm.current) rightArm.current.rotation.x = armB;
+    if (leftArm.current) {
+      leftArm.current.rotation.x = armA;
+      leftArm.current.rotation.z = armAz;
+      leftArm.current.rotation.y = armAy;
+    }
+    if (rightArm.current) {
+      rightArm.current.rotation.x = armB;
+      rightArm.current.rotation.z = armBz;
+      rightArm.current.rotation.y = armBy;
+    }
     if (torso.current) {
-      torso.current.rotation.y = moving ? Math.sin(t * pace) * 0.06 : 0;
-      torso.current.rotation.x = moveState === "run" ? 0.12 : 0;
+      torso.current.rotation.y = moving
+        ? Math.sin(t * pace) * 0.06
+        : social === "discuss" || social === "talk"
+          ? Math.sin(t * 1.2) * 0.05
+          : Math.sin(t * 0.5) * 0.02;
+      torso.current.rotation.x =
+        moveState === "run"
+          ? 0.12
+          : social === "discuss" || social === "talk"
+            ? 0.04 + Math.sin(t * 2.1) * 0.025
+            : Math.sin(t * 1.5) * 0.015;
+    }
+
+    // ——— Head: idle scan, talk nods, look-at player ———
+    if (head.current) {
+      let targetYaw = 0;
+      let targetPitch = 0;
+
+      if (lookAt) {
+        const wp = new THREE.Vector3();
+        root.current.getWorldPosition(wp);
+        const dx = lookAt[0] - wp.x;
+        const dy = lookAt[1] - (wp.y + 1.55);
+        const dz = lookAt[2] - wp.z;
+        const dist = Math.hypot(dx, dz);
+        if (dist > 0.15 && dist < 14) {
+          // Character faces local +Z after parent rotation; convert world dir → local yaw
+          const parentYaw = root.current.parent
+            ? new THREE.Euler().setFromQuaternion(
+                root.current.parent.getWorldQuaternion(new THREE.Quaternion()),
+                "YXZ",
+              ).y
+            : root.current.rotation.y;
+          const worldYaw = Math.atan2(dx, dz);
+          let rel = worldYaw - parentYaw;
+          while (rel > Math.PI) rel -= Math.PI * 2;
+          while (rel < -Math.PI) rel += Math.PI * 2;
+          targetYaw = THREE.MathUtils.clamp(rel, -0.85, 0.85);
+          targetPitch = THREE.MathUtils.clamp(-Math.atan2(dy, dist) * 0.55, -0.35, 0.25);
+        }
+      }
+
+      // Idle / talk micro motion on top of look-at
+      let idleYaw = Math.sin(t * 0.42) * 0.08 + Math.sin(t * 0.17) * 0.04;
+      let idlePitch = Math.sin(t * 0.55) * 0.04;
+      if (social === "talk" || social === "discuss") {
+        // Nod while speaking + slight side turns
+        idlePitch = Math.sin(t * 3.2) * 0.09 + Math.sin(t * 1.1) * 0.03;
+        idleYaw = Math.sin(t * 1.35) * 0.12 + Math.sin(t * 0.6) * 0.05;
+      } else if (social === "wave") {
+        idleYaw = Math.sin(t * 0.9) * 0.1;
+        idlePitch = 0.05;
+      }
+
+      const blend = lookAt ? 0.72 : 0;
+      const desiredYaw = targetYaw * blend + idleYaw * (1 - blend * 0.55);
+      const desiredPitch = targetPitch * blend + idlePitch * (1 - blend * 0.4);
+
+      lookSmooth.current.yaw += (desiredYaw - lookSmooth.current.yaw) * 0.08;
+      lookSmooth.current.pitch += (desiredPitch - lookSmooth.current.pitch) * 0.08;
+      head.current.rotation.y = lookSmooth.current.yaw;
+      head.current.rotation.x = lookSmooth.current.pitch;
     }
   });
 
@@ -647,7 +780,9 @@ export function StylizedCharacter({
         </group>
       </group>
 
-      {/* ——— NECK + HEAD ——— */}
+      {/* ——— NECK + HEAD (pivots at neck for look-at / talk) ——— */}
+      <group ref={head} position={[0, 1.44, 0]}>
+      <group position={[0, -1.44, 0]}>
       <mesh position={[0, 1.44, 0]} castShadow>
         <cylinderGeometry args={[0.085, 0.115, 0.18, 20]} />
         <SkinMat color={appearance.skin} />
@@ -963,6 +1098,8 @@ export function StylizedCharacter({
           </mesh>
         </>
       )}
+      </group>
+      </group>
       {acc?.id === "acc-chain" && (
         <group>
           <mesh position={[0, 1.36, 0.15]}>

@@ -26,43 +26,44 @@ export interface HutSpec {
 
 export type TreeKind = "acacia" | "broad" | "palm";
 
+/** Human-scale hut footprints (~2.2–2.8 m wide, ~2.1–2.4 m tall). */
 export const VILLAGE_HUTS: HutSpec[] = [
   // Market compound
-  { x: -4.4, z: 3.8, style: "thatch", wall: VILLAGE_PALETTE.wallSand, w: 1.25, d: 1.1 },
-  { x: -3.0, z: 4.4, style: "zinc", wall: VILLAGE_PALETTE.wallWarm, w: 1.35, d: 1.15, h: 1.05 },
-  { x: -5.2, z: 2.6, style: "thatch", wall: VILLAGE_PALETTE.wallClay, rot: 0.35, w: 1.2 },
-  { x: -3.5, z: 2.0, style: "round", wall: VILLAGE_PALETTE.wallTan, w: 1.35, h: 1.0 },
-  { x: -2.0, z: 3.2, style: "zinc", wall: VILLAGE_PALETTE.wallDusk, rot: -0.25 },
-  { x: -4.8, z: 4.6, style: "round", wall: VILLAGE_PALETTE.wallOchre, w: 1.1, h: 0.9 },
-  { x: -5.5, z: 3.5, style: "thatch", wall: VILLAGE_PALETTE.wallSand, rot: 0.6, w: 1.05 },
+  { x: -5.2, z: 4.6, style: "thatch", wall: VILLAGE_PALETTE.wallSand, w: 2.7, d: 2.4, h: 2.2 },
+  { x: -2.6, z: 5.4, style: "zinc", wall: VILLAGE_PALETTE.wallWarm, w: 2.9, d: 2.5, h: 2.3 },
+  { x: -6.4, z: 2.4, style: "thatch", wall: VILLAGE_PALETTE.wallClay, rot: 0.35, w: 2.6, d: 2.3, h: 2.15 },
+  { x: -3.4, z: 1.6, style: "round", wall: VILLAGE_PALETTE.wallTan, w: 2.8, h: 2.2 },
+  { x: -1.0, z: 3.8, style: "zinc", wall: VILLAGE_PALETTE.wallDusk, rot: -0.25, w: 2.5, d: 2.3, h: 2.15 },
+  { x: -6.0, z: 5.8, style: "round", wall: VILLAGE_PALETTE.wallOchre, w: 2.4, h: 2.05 },
+  { x: -7.2, z: 3.8, style: "thatch", wall: VILLAGE_PALETTE.wallSand, rot: 0.6, w: 2.35, d: 2.2, h: 2.1 },
   // Civic
-  { x: -1.4, z: -2.6, style: "thatch", wall: VILLAGE_PALETTE.wallOchre, w: 1.3, d: 1.15 },
-  { x: 1.5, z: -3.0, style: "zinc", wall: VILLAGE_PALETTE.wallLight, w: 1.45, d: 1.25, h: 1.1 },
-  { x: 0.15, z: -3.8, style: "round", wall: VILLAGE_PALETTE.wallPale, w: 1.3, h: 1.05 },
-  { x: 2.4, z: -1.6, style: "thatch", wall: VILLAGE_PALETTE.wallSand, rot: 0.45 },
-  { x: -2.2, z: -1.4, style: "zinc", wall: VILLAGE_PALETTE.wallGrey, w: 1.2 },
-  { x: 0.6, z: -2.0, style: "thatch", wall: VILLAGE_PALETTE.wallClay, rot: -0.2 },
-  { x: -0.5, z: -3.2, style: "round", wall: VILLAGE_PALETTE.wallOchre, w: 1.15 },
+  { x: -2.0, z: -3.4, style: "thatch", wall: VILLAGE_PALETTE.wallOchre, w: 2.8, d: 2.5, h: 2.2 },
+  { x: 2.2, z: -3.8, style: "zinc", wall: VILLAGE_PALETTE.wallLight, w: 3.0, d: 2.7, h: 2.35 },
+  { x: 0.2, z: -5.2, style: "round", wall: VILLAGE_PALETTE.wallPale, w: 2.7, h: 2.25 },
+  { x: 3.6, z: -1.8, style: "thatch", wall: VILLAGE_PALETTE.wallSand, rot: 0.45, w: 2.5, d: 2.3, h: 2.15 },
+  { x: -3.2, z: -1.6, style: "zinc", wall: VILLAGE_PALETTE.wallGrey, w: 2.6, d: 2.4, h: 2.2 },
+  { x: 0.8, z: -2.4, style: "thatch", wall: VILLAGE_PALETTE.wallClay, rot: -0.2, w: 2.5, d: 2.3, h: 2.15 },
+  { x: -0.8, z: -4.4, style: "round", wall: VILLAGE_PALETTE.wallOchre, w: 2.5, h: 2.15 },
   // Creekside
-  { x: -6.8, z: -2.8, style: "round", wall: VILLAGE_PALETTE.wallOchre, w: 1.4, h: 1.05 },
-  { x: -7.6, z: -4.2, style: "thatch", wall: VILLAGE_PALETTE.wallClay, rot: 0.2, w: 1.25 },
-  { x: -5.4, z: -4.4, style: "zinc", wall: VILLAGE_PALETTE.wallDusk, w: 1.2 },
-  { x: -8.0, z: -1.8, style: "thatch", wall: VILLAGE_PALETTE.wallTan, rot: -0.45 },
-  { x: -6.2, z: -1.5, style: "round", wall: VILLAGE_PALETTE.wallSand, w: 1.15 },
-  { x: -7.0, z: -5.0, style: "thatch", wall: VILLAGE_PALETTE.wallClay, w: 1.1 },
+  { x: -8.2, z: -3.4, style: "round", wall: VILLAGE_PALETTE.wallOchre, w: 2.9, h: 2.25 },
+  { x: -9.4, z: -5.4, style: "thatch", wall: VILLAGE_PALETTE.wallClay, rot: 0.2, w: 2.7, d: 2.4, h: 2.2 },
+  { x: -6.4, z: -5.6, style: "zinc", wall: VILLAGE_PALETTE.wallDusk, w: 2.6, d: 2.4, h: 2.15 },
+  { x: -10.0, z: -2.0, style: "thatch", wall: VILLAGE_PALETTE.wallTan, rot: -0.45, w: 2.5, d: 2.3, h: 2.1 },
+  { x: -7.4, z: -1.4, style: "round", wall: VILLAGE_PALETTE.wallSand, w: 2.5, h: 2.15 },
+  { x: -8.6, z: -6.6, style: "thatch", wall: VILLAGE_PALETTE.wallClay, w: 2.4, d: 2.2, h: 2.1 },
   // Port edge
-  { x: 5.4, z: 3.6, style: "zinc", wall: VILLAGE_PALETTE.wallStone, w: 1.55, d: 1.25, h: 1.1 },
-  { x: 6.8, z: 2.5, style: "thatch", wall: VILLAGE_PALETTE.wallOchre, w: 1.2 },
-  { x: 4.7, z: 1.7, style: "zinc", wall: VILLAGE_PALETTE.wallGrey, rot: 0.3, w: 1.3 },
-  { x: 7.4, z: 3.9, style: "round", wall: VILLAGE_PALETTE.wallWarm, w: 1.2 },
-  { x: 6.0, z: 4.5, style: "thatch", wall: VILLAGE_PALETTE.wallClay, rot: 0.15 },
-  { x: 8.0, z: 2.8, style: "zinc", wall: VILLAGE_PALETTE.wallStone, w: 1.15 },
+  { x: 6.6, z: 4.4, style: "zinc", wall: VILLAGE_PALETTE.wallStone, w: 3.2, d: 2.7, h: 2.35 },
+  { x: 8.4, z: 2.8, style: "thatch", wall: VILLAGE_PALETTE.wallOchre, w: 2.6, d: 2.4, h: 2.2 },
+  { x: 5.4, z: 1.6, style: "zinc", wall: VILLAGE_PALETTE.wallGrey, rot: 0.3, w: 2.8, d: 2.5, h: 2.2 },
+  { x: 9.2, z: 4.8, style: "round", wall: VILLAGE_PALETTE.wallWarm, w: 2.6, h: 2.2 },
+  { x: 7.2, z: 5.8, style: "thatch", wall: VILLAGE_PALETTE.wallClay, rot: 0.15, w: 2.5, d: 2.3, h: 2.15 },
+  { x: 10.0, z: 3.2, style: "zinc", wall: VILLAGE_PALETTE.wallStone, w: 2.5, d: 2.3, h: 2.15 },
   // Path-side
-  { x: 1.7, z: 2.5, style: "thatch", wall: VILLAGE_PALETTE.wallSand, rot: 0.12 },
-  { x: -0.9, z: 1.3, style: "zinc", wall: VILLAGE_PALETTE.wallDusk },
-  { x: 3.9, z: -0.5, style: "thatch", wall: VILLAGE_PALETTE.wallClay },
-  { x: -4.5, z: -0.3, style: "round", wall: VILLAGE_PALETTE.wallTan, w: 1.05 },
-  { x: 2.8, z: 1.2, style: "round", wall: VILLAGE_PALETTE.wallOchre, w: 1.0 },
+  { x: 2.4, z: 3.2, style: "thatch", wall: VILLAGE_PALETTE.wallSand, rot: 0.12, w: 2.5, d: 2.3, h: 2.15 },
+  { x: -1.4, z: 1.6, style: "zinc", wall: VILLAGE_PALETTE.wallDusk, w: 2.5, d: 2.3, h: 2.15 },
+  { x: 5.0, z: -0.8, style: "thatch", wall: VILLAGE_PALETTE.wallClay, w: 2.5, d: 2.3, h: 2.15 },
+  { x: -5.6, z: -0.6, style: "round", wall: VILLAGE_PALETTE.wallTan, w: 2.35, h: 2.1 },
+  { x: 3.6, z: 1.6, style: "round", wall: VILLAGE_PALETTE.wallOchre, w: 2.3, h: 2.1 },
 ];
 
 export const VILLAGE_TREES: Array<[number, number, number, TreeKind]> = [
@@ -90,10 +91,10 @@ export const VILLAGE_TREES: Array<[number, number, number, TreeKind]> = [
 
 /** Compound rings: centre x, z, radius, post count. */
 export const VILLAGE_WALLS: Array<[number, number, number, number]> = [
-  [-3.8, 3.4, 2.5, 12],
-  [0.2, -2.6, 2.7, 12],
-  [-6.8, -3.2, 2.35, 11],
-  [6.2, 3.2, 2.4, 11],
+  [-4.6, 4.0, 5.8, 14],
+  [0.4, -3.4, 6.0, 14],
+  [-8.2, -4.0, 5.5, 13],
+  [7.6, 3.8, 5.6, 13],
 ];
 
 /** Rocks: x, z, scale. */
@@ -230,9 +231,9 @@ export function addCompoundWall(batch: PropBatch, x: number, z: number, radius: 
     const len = Math.hypot(qx - px, qz - pz);
     const ang = Math.atan2(qx - px, qz - pz);
     p.part(
-      new THREE.BoxGeometry(0.14, 0.85, len * 0.95),
+      new THREE.BoxGeometry(0.22, 1.45, len * 0.95),
       VILLAGE_PALETTE.wallSand,
-      [(px + qx) / 2, 0.4, (pz + qz) / 2],
+      [(px + qx) / 2, 0.72, (pz + qz) / 2],
       [0, ang, 0],
       undefined,
       { roughness: 0.98, castShadow: true, receiveShadow: true },
@@ -241,80 +242,161 @@ export function addCompoundWall(batch: PropBatch, x: number, z: number, radius: 
 }
 
 export function addHut(batch: PropBatch, spec: HutSpec): void {
-  const { x, z, rot = 0, w = 1.15, d = 1.05, h = 0.95, style = "thatch", wall = VILLAGE_PALETTE.wallOchre } = spec;
+  const { x, z, rot = 0, w = 2.5, d = 2.3, h = 2.2, style = "thatch", wall = VILLAGE_PALETTE.wallOchre } = spec;
   const p = new Placer(batch, groupMatrix([x, 0, z], rot));
   const thatch = VILLAGE_PALETTE.thatch;
   const thatchDark = VILLAGE_PALETTE.thatchDark;
   const zinc = VILLAGE_PALETTE.zincRoof;
   const door = VILLAGE_PALETTE.doorWood;
   const isRound = style === "round";
-  const roofY = h + (isRound ? 0.42 : 0.28);
+  const plinthH = 0.28;
+  const wallH = h;
+  const roofY = plinthH + wallH + (isRound ? 0.9 : 0.55);
+  const doorH = Math.min(1.78, wallH * 0.82);
+  const doorW = 0.88;
+  const doorZ = isRound ? w * 0.52 : d / 2 + 0.02;
 
-  // packed earth pad
-  p.part(new THREE.CircleGeometry(Math.max(w, d) * 0.75, 12), VILLAGE_PALETTE.groundDirt, [0, 0.01, 0], [-Math.PI / 2, 0, 0], undefined, {
-    receiveShadow: true,
-  });
-
-  // walls
+  // packed earth apron
   p.part(
-    isRound ? new THREE.CylinderGeometry(w * 0.52, w * 0.55, h, 12) : new THREE.BoxGeometry(w, h, d),
+    new THREE.CircleGeometry(Math.max(w, d) * 0.82, 14),
+    VILLAGE_PALETTE.groundDirt,
+    [0, 0.008, 0],
+    [-Math.PI / 2, 0, 0],
+    undefined,
+    { receiveShadow: true },
+  );
+
+  // stone plinth
+  p.part(
+    isRound
+      ? new THREE.CylinderGeometry(w * 0.56, w * 0.58, plinthH, 14)
+      : new THREE.BoxGeometry(w * 1.08, plinthH, d * 1.08),
+    VILLAGE_PALETTE.wallStone,
+    [0, plinthH / 2, 0],
+    undefined,
+    undefined,
+    { roughness: 1, castShadow: true, receiveShadow: true },
+  );
+
+  // mud walls
+  p.part(
+    isRound
+      ? new THREE.CylinderGeometry(w * 0.5, w * 0.54, wallH, 14)
+      : new THREE.BoxGeometry(w, wallH, d),
     wall,
-    [0, h / 2, 0],
+    [0, plinthH + wallH / 2, 0],
     undefined,
     undefined,
     { roughness: 0.98, castShadow: true, receiveShadow: true },
   );
 
-  // plaster band
+  // lime wash band
   p.part(
-    isRound ? new THREE.CylinderGeometry(w * 0.56, w * 0.56, 0.18, 12) : new THREE.BoxGeometry(w * 1.04, 0.18, d * 1.04),
+    isRound
+      ? new THREE.CylinderGeometry(w * 0.545, w * 0.545, 0.22, 14)
+      : new THREE.BoxGeometry(w * 1.03, 0.22, d * 1.03),
     VILLAGE_PALETTE.wallPale,
-    [0, 0.12, 0],
+    [0, plinthH + 0.2, 0],
   );
 
-  // door frame and lintel
-  p.part(new THREE.BoxGeometry(0.32, h * 0.62, 0.04), door, [0, h * 0.38, isRound ? w * 0.52 : d / 2 + 0.015], undefined, undefined, {
-    castShadow: true,
-  });
-  p.part(new THREE.BoxGeometry(0.38, 0.06, 0.05), VILLAGE_PALETTE.timberDark, [0, h * 0.72, isRound ? w * 0.54 : d / 2 + 0.03]);
+  // recessed door void + two leaves
+  p.part(new THREE.BoxGeometry(doorW * 1.1, doorH * 1.02, 0.22), "#1a120c", [
+    0,
+    plinthH + doorH / 2,
+    doorZ * 0.92,
+  ]);
+  p.part(
+    new THREE.BoxGeometry(doorW * 0.46, doorH * 0.95, 0.05),
+    door,
+    [-doorW * 0.22, plinthH + doorH / 2, doorZ],
+    undefined,
+    undefined,
+    { castShadow: true },
+  );
+  p.part(
+    new THREE.BoxGeometry(doorW * 0.46, doorH * 0.95, 0.05),
+    door,
+    [doorW * 0.22, plinthH + doorH / 2, doorZ],
+    undefined,
+    undefined,
+    { castShadow: true },
+  );
+  p.part(new THREE.BoxGeometry(doorW * 1.25, 0.1, 0.12), VILLAGE_PALETTE.timberDark, [
+    0,
+    plinthH + doorH + 0.06,
+    doorZ * 0.98,
+  ]);
+  p.part(new THREE.BoxGeometry(0.07, doorH, 0.1), VILLAGE_PALETTE.timberDark, [
+    -doorW * 0.52,
+    plinthH + doorH / 2,
+    doorZ * 0.96,
+  ]);
+  p.part(new THREE.BoxGeometry(0.07, doorH, 0.1), VILLAGE_PALETTE.timberDark, [
+    doorW * 0.52,
+    plinthH + doorH / 2,
+    doorZ * 0.96,
+  ]);
 
-  // small window
+  // window
   if (!isRound) {
-    p.part(new THREE.PlaneGeometry(0.18, 0.16), VILLAGE_PALETTE.windowDark, [w * 0.35, h * 0.55, d / 2 + 0.012]);
+    p.part(new THREE.BoxGeometry(0.08, 0.32, 0.36), VILLAGE_PALETTE.windowDark, [
+      w * 0.5 + 0.01,
+      plinthH + wallH * 0.55,
+      0,
+    ]);
+  } else {
+    p.part(new THREE.BoxGeometry(0.32, 0.26, 0.1), VILLAGE_PALETTE.windowDark, [
+      0,
+      plinthH + wallH * 0.7,
+      -w * 0.5,
+    ]);
   }
 
   // roof
   if (isRound) {
-    p.part(new THREE.ConeGeometry(w * 0.78, 0.85, 12), thatch, [0, roofY, 0], undefined, undefined, {
+    p.part(new THREE.ConeGeometry(w * 0.72, 1.55, 14), thatchDark, [0, roofY * 0.95, 0], undefined, undefined, {
+      roughness: 1,
+      castShadow: true,
+    });
+    p.part(new THREE.ConeGeometry(w * 0.78, 1.75, 14), thatch, [0, roofY, 0], undefined, undefined, {
       roughness: 0.95,
       castShadow: true,
     });
-    p.part(new THREE.ConeGeometry(w * 0.35, 0.35, 8), thatchDark, [0, roofY + 0.28, 0]);
+    p.part(new THREE.ConeGeometry(w * 0.28, 0.5, 8), thatchDark, [0, roofY + 0.7, 0]);
+    for (let i = 0; i < 10; i++) {
+      const a = (i / 10) * Math.PI * 2;
+      p.part(
+        new THREE.BoxGeometry(0.12, 0.05, 0.22),
+        i % 2 ? thatchDark : thatch,
+        [Math.cos(a) * w * 0.74, roofY - 0.75, Math.sin(a) * w * 0.74],
+        [0.5, -a, 0],
+      );
+    }
   } else if (style === "zinc") {
-    p.part(new THREE.BoxGeometry(w * 1.2, 0.06, d * 0.7), zinc, [0, roofY + 0.05, d * 0.18], [0.45, 0, 0], undefined, {
+    p.part(new THREE.BoxGeometry(w * 1.22, 0.1, d * 0.72), zinc, [0, roofY + 0.08, d * 0.18], [0.45, 0, 0], undefined, {
       roughness: 0.5,
       metalness: 0.4,
       castShadow: true,
     });
-    p.part(new THREE.BoxGeometry(w * 1.2, 0.06, d * 0.7), zinc, [0, roofY + 0.05, -d * 0.18], [-0.45, 0, 0], undefined, {
+    p.part(new THREE.BoxGeometry(w * 1.22, 0.1, d * 0.72), zinc, [0, roofY + 0.08, -d * 0.18], [-0.45, 0, 0], undefined, {
       roughness: 0.55,
       metalness: 0.35,
       castShadow: true,
     });
-    p.part(new THREE.BoxGeometry(w * 1.22, 0.05, 0.08), VILLAGE_PALETTE.roofSteel, [0, roofY + 0.22, 0], undefined, undefined, {
+    p.part(new THREE.BoxGeometry(w * 1.24, 0.08, 0.14), VILLAGE_PALETTE.roofSteel, [0, roofY + 0.38, 0], undefined, undefined, {
       roughness: 0.45,
       metalness: 0.5,
     });
   } else {
-    p.part(new THREE.BoxGeometry(w * 1.25, 0.22, d * 0.75), thatch, [0, roofY + 0.08, d * 0.16], [0.42, 0, 0], undefined, {
-      roughness: 0.98,
+    p.part(new THREE.BoxGeometry(w * 1.28, 0.32, d * 0.78), thatch, [0, roofY + 0.1, d * 0.16], [0.42, 0, 0], undefined, {
+      roughness: 0.97,
       castShadow: true,
     });
-    p.part(new THREE.BoxGeometry(w * 1.25, 0.22, d * 0.75), thatchDark, [0, roofY + 0.08, -d * 0.16], [-0.42, 0, 0], undefined, {
-      roughness: 0.98,
+    p.part(new THREE.BoxGeometry(w * 1.28, 0.32, d * 0.78), thatchDark, [0, roofY + 0.1, -d * 0.16], [-0.42, 0, 0], undefined, {
+      roughness: 0.97,
       castShadow: true,
     });
-    p.part(new THREE.BoxGeometry(w * 1.15, 0.12, 0.15), VILLAGE_PALETTE.beamWood, [0, roofY + 0.28, 0]);
+    p.part(new THREE.BoxGeometry(w * 1.18, 0.12, 0.18), VILLAGE_PALETTE.beamWood, [0, roofY + 0.4, 0]);
   }
 }
 
