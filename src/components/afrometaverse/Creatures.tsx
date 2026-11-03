@@ -198,8 +198,8 @@ function Leg({
             [-radius * 0.7, radius * 0.55],
             [-radius * 0.25, radius * 0.7],
             [radius * 0.25, radius * 0.7],
-            [radius * 0.7, radius * 0.55],
-          ].map(([tx, tz], i) => (
+          [radius * 0.7, radius * 0.55],
+        ] as const).map(([tx, tz], i) => (
             <group key={i} position={[tx, -0.005, tz]}>
               <mesh castShadow>
                 <sphereGeometry args={[radius * 0.35, 5, 4]} />

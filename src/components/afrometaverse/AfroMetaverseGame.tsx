@@ -977,8 +977,8 @@ export function AfroMetaverseGame() {
     // Small KOWRY gift when trading at market (barter culture)
     kowryEarn(1, "barter", good.name);
     announce(
-      price !== good.price
-        ? `Purchased ${good.name} for ${price} City Coins (${tm.vibe.split("—")[0].trim()}).`
+        price !== good.price
+        ? `Purchased ${good.name} for ${price} City Coins (${tm.vibe.split("—")[0]?.trim() ?? tm.vibe}).`
         : `Purchased ${good.name} for ${price} City Coins.`,
     );
     persist({ purchasedGoods: nextGoods, balance: nextBalance });
@@ -1124,7 +1124,7 @@ export function AfroMetaverseGame() {
             <section>
               <ImmersionBar
                 onlineCount={onlineCount}
-                districtName={nearDistrictId ? DISTRICT_WORLD[nearDistrictId]?.name : null}
+                districtName={nearDistrictId ? DISTRICT_WORLD[nearDistrictId]?.name ?? null : null}
               />
 
               <div className="am-screen-head">
@@ -1634,7 +1634,7 @@ export function AfroMetaverseGame() {
                   <div className="am-immersion-fs">
                     <ImmersionBar
                       onlineCount={onlineCount}
-                      districtName={nearDistrictId ? DISTRICT_WORLD[nearDistrictId]?.name : null}
+                      districtName={nearDistrictId ? DISTRICT_WORLD[nearDistrictId]?.name ?? null : null}
                     />
                   </div>
                 )}

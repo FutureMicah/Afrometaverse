@@ -442,7 +442,7 @@ function TraditionalMarketStalls({
           </mesh>
           <mesh position={[0, 1.35, 0]} rotation={[0.2, 0, 0]} castShadow>
             <planeGeometry args={[0.95, 0.7]} />
-            <meshStandardMaterial color={s.cloth} roughness={0.92} side={2} />
+            <meshStandardMaterial color={s.cloth ?? SCENE_PALETTE.clothWarm} roughness={0.92} side={2} />
           </mesh>
           <mesh position={[0, 0.42, 0]} castShadow receiveShadow>
             <boxGeometry args={[0.85, 0.08, 0.55]} />
@@ -618,11 +618,11 @@ function VillageTreeRing() {
     push(14, 12, "baobab", 1.05);
     push(-12, -5, "baobab", 0.9);
     // palms near water / landing
-    [[-6.5, -5], [-4, -7], [5.5, 1.5], [7, 3], [6, 0], [4.5, 2.8]].forEach(([x, z], i) =>
+    ([[-6.5, -5], [-4, -7], [5.5, 1.5], [7, 3], [6, 0], [4.5, 2.8]] as const).forEach(([x, z], i) =>
       push(x, z, "palm", 0.85 + (i % 3) * 0.1),
     );
     // bananas near compounds / small market
-    [[-3, 5], [-1.5, 6.5], [0.5, 4.5], [-4.5, 4], [1.5, 7], [-2.5, 3]].forEach(([x, z], i) =>
+    ([[-3, 5], [-1.5, 6.5], [0.5, 4.5], [-4.5, 4], [1.5, 7], [-2.5, 3]] as const).forEach(([x, z], i) =>
       push(x, z, "banana", 0.9 + (i % 2) * 0.15),
     );
     // bushes along paths
@@ -968,7 +968,7 @@ function LandmarkGroves() {
           <meshStandardMaterial color={SCENE_PALETTE.ember} emissive={SCENE_PALETTE.emberDeep} emissiveIntensity={0.6} />
         </mesh>
         {/* mossy rocks in grove */}
-        {[[-2, 1.5], [2.2, -1], [-1.5, -2], [1.8, 2]].map(([x, z], i) => (
+        {([[-2, 1.5], [2.2, -1], [-1.5, -2], [1.8, 2]] as const).map(([x, z], i) => (
           <group key={`sg-r-${i}`} position={[x, 0, z]}>
             <MossyRock scale={0.7 + i * 0.1} />
           </group>
@@ -1015,7 +1015,7 @@ function LandmarkGroves() {
       <AncientTree position={[12, 0, -14]} scale={0.9} />
 
       {/* Extra palms & bananas near waterfall stream */}
-      {[[2, -11], [0, -13], [6, -12.5], [3.5, -10]].map(([x, z], i) => (
+      {([[2, -11], [0, -13], [6, -12.5], [3.5, -10]] as const).map(([x, z], i) => (
         <group key={`wf-p-${i}`} position={[x, 0, z]}>
           <FloraPlant species={i % 2 ? "banana" : "palm"} scale={0.85 + i * 0.05} />
         </group>
@@ -1200,14 +1200,14 @@ function SacredGroveEcology({ onInteract }: { onInteract?: (label: string) => vo
       <GroveMonkey phase={2.1} base={[cx - 2.0, 0, cz - 1.5]} />
       <GroveMonkey phase={4.0} base={[cx + 1.0, 0, cz - 2.8]} />
       {/* medicinal forage */}
-      {[
+      {([
         [cx - 1.5, cz + 2.0],
         [cx + 2.0, cz + 1.5],
         [cx - 2.5, cz - 0.5],
         [cx + 1.2, cz - 2.2],
         [cx + 0.3, cz + 3.0],
         [cx - 0.8, cz - 3.0],
-      ].map(([x, z], i) => (
+      ] as const).map(([x, z], i) => (
         <MedicinePlant
           key={`med-${i}`}
           position={[x, 0, z]}
@@ -2139,34 +2139,34 @@ function ForestCritters() {
         <Crab key={`fc-${i}`} x={c.x} z={c.z} phase={c.phase} />
       ))}
       {/* Forest extras — snakes, hares, squirrels, butterflies, chameleons, tortoises */}
-      {[
+      {([
         [8, -12], [12, -14], [20, -17], [40, 30], [-34, 40], [6, -9],
-      ].map(([x, z], i) => (
+      ] as const).map(([x, z], i) => (
         <Snake key={`fsn-${i}`} x={x} z={z} phase={i * 0.7} />
       ))}
-      {[
+      {([
         [9, -11], [15, -15], [38, 32], [-36, 38], [7, -8],
-      ].map(([x, z], i) => (
+      ] as const).map(([x, z], i) => (
         <Chameleon key={`fch-${i}`} x={x} z={z} phase={i * 0.9} />
       ))}
-      {[
+      {([
         [5, -10], [14, 10], [36, 28], [-30, 36], [2, 6], [11, -5],
-      ].map(([x, z], i) => (
+      ] as const).map(([x, z], i) => (
         <Hare key={`fha-${i}`} x={x} z={z} phase={i * 0.6} />
       ))}
-      {[
+      {([
         [10, -9], [13, -12], [42, 30], [-32, 42], [8, 4], [16, 8], [4, -7],
-      ].map(([x, z], i) => (
+      ] as const).map(([x, z], i) => (
         <Squirrel key={`fsq-${i}`} x={x} z={z} phase={i * 0.55} />
       ))}
-      {[
+      {([
         [10, -10], [3, -14], [40, 35], [-35, 40], [0, 2], [18, 20], [8, -6], [12, 5],
-      ].map(([x, z], i) => (
+      ] as const).map(([x, z], i) => (
         <Butterfly key={`fbu-${i}`} x={x} z={z} phase={i * 0.4} />
       ))}
-      {[
+      {([
         [7, -11], [22, -16], [35, 30], [-33, 39],
-      ].map(([x, z], i) => (
+      ] as const).map(([x, z], i) => (
         <Tortoise key={`fto-${i}`} x={x} z={z} phase={i * 1.1} />
       ))}
     </group>
@@ -3104,7 +3104,7 @@ export function AfroMetaverseScene({
           position={h.p}
           rotation={h.r}
           scale={h.s}
-          wallColor={h.c}
+          {...(h.c !== undefined ? { wallColor: h.c } : {})}
           band={h.band}
           climateIntensity={wetness}
           windIntensity={0.3 + dust * 0.35 + (i % 5) * 0.02}
@@ -3121,7 +3121,7 @@ export function AfroMetaverseScene({
       <SacredGroveMist position={[7, 0.5, -10]} />
       <SacredGroveMist position={[3, 0.7, -14]} />
       <LandmarkGroves />
-      <SacredGroveEcology onInteract={onInteract} />
+      <SacredGroveEcology {...(onInteract ? { onInteract } : {})} />
 
       {/* Soft district markers — no neon towers; village grows into city later */}
       {Object.entries(DISTRICT_LAYOUT).map(([id, info]) => (
