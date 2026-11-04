@@ -131,7 +131,7 @@ export function PawPrint({
 }
 
 /** Butterfly that flutters nearby */
-export function Butterfly({
+export function GardenButterfly({
   x,
   z,
   phase = 0,
@@ -178,7 +178,7 @@ export function Butterfly({
 }
 
 /** Beetle on the ground */
-export function Beetle({
+export function GroundBeetle({
   x,
   z,
   phase = 0,
@@ -348,10 +348,10 @@ export function ChunkOrganicDetail({
         <PawPrint key={`p${i}`} x={p.x} z={p.z} scale={p.s} rotation={p.r} />
       ))}
       {content.butterflies.map((b, i) => (
-        <Butterfly key={`bf${i}`} x={b.x} z={b.z} phase={b.p} />
+        <GardenButterfly key={`bf${i}`} x={b.x} z={b.z} phase={b.p} />
       ))}
       {content.beetles.map((b, i) => (
-        <Beetle key={`be${i}`} x={b.x} z={b.z} phase={b.p} />
+        <GroundBeetle key={`be${i}`} x={b.x} z={b.z} phase={b.p} />
       ))}
       {content.feathers.map((f, i) => (
         <FallenFeather key={`f${i}`} x={f.x} z={f.z} phase={f.p} />

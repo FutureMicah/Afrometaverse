@@ -320,12 +320,12 @@ export function ExpandedWorld({ wetness = 0 }: { wetness?: number }) {
     <group>
       {/* Deep rainforest — SE / S */}
       <RainforestPatch cx={42} cz={38} count={90} radius={32} darkness={0.7} />
-      <RainforestPatch cx={58} cz={18} count={55} radius={22} darkness={0.6} />
-      <RainforestPatch cx={28} cz={52} count={45} radius={18} darkness={0.75} />
+      <RainforestPatch cx={58} cz={18} count={15} radius={22} darkness={0.6} />
+      <RainforestPatch cx={28} cz={52} count={22} radius={18} darkness={0.75} />
 
       {/* Secondary forest belts */}
-      <RainforestPatch cx={-35} cz={40} count={40} radius={16} darkness={0.45} />
-      <RainforestPatch cx={-48} cz={-10} count={35} radius={14} darkness={0.5} />
+      <RainforestPatch cx={-35} cz={40} count={20} radius={16} darkness={0.45} />
+      <RainforestPatch cx={-48} cz={-10} count={18} radius={14} darkness={0.5} />
 
       {/* Mountains — N / NE */}
       <MountainRidge cx={-40} cz={-45} peaks={8} spread={28} height={16} />
@@ -336,16 +336,16 @@ export function ExpandedWorld({ wetness = 0 }: { wetness?: number }) {
       <River points={riverPts} width={3.6} />
 
       {/* Savannah fill around village ring — denser canopy */}
-      <SavannahTrees cx={0} cz={0} count={95} radius={42} />
-      <SavannahTrees cx={25} cz={-25} count={55} radius={24} />
-      <SavannahTrees cx={-30} cz={25} count={50} radius={22} />
-      <SavannahTrees cx={18} cz={20} count={40} radius={16} />
-      <SavannahTrees cx={-8} cz={-6} count={35} radius={14} />
-      <SavannahTrees cx={12} cz={8} count={30} radius={12} />
-      <SavannahTrees cx={-20} cz={10} count={32} radius={15} />
-      <SavannahTrees cx={5} cz={-18} count={28} radius={14} />
-      <SavannahTrees cx={8} cz={-12} count={45} radius={12} />
-      <SavannahTrees cx={3} cz={-14} count={30} radius={10} />
+      <SavannahTrees cx={0} cz={0} count={14} radius={42} />
+      <SavannahTrees cx={25} cz={-25} count={15} radius={24} />
+      <SavannahTrees cx={-30} cz={25} count={14} radius={22} />
+      <SavannahTrees cx={18} cz={20} count={20} radius={16} />
+      <SavannahTrees cx={-8} cz={-6} count={18} radius={14} />
+      <SavannahTrees cx={12} cz={8} count={15} radius={12} />
+      <SavannahTrees cx={-20} cz={10} count={16} radius={15} />
+      <SavannahTrees cx={5} cz={-18} count={14} radius={14} />
+      <SavannahTrees cx={8} cz={-12} count={22} radius={12} />
+      <SavannahTrees cx={3} cz={-14} count={15} radius={10} />
       <SavannahTrees cx={20} cz={-16} count={25} radius={10} />
 
       {/* Outer communities */}

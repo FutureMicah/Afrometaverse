@@ -2061,14 +2061,14 @@ function ForestCritters() {
     const colors = ["#6b8f3a", "#5a7a30", "#8a9a40", "#4a6a28", "#7a8a38"];
 
     // Sacred grove ring (~10, -10)
-    for (let i = 0; i < 10; i++) {
-      const a = (i / 10) * Math.PI * 2;
+    for (let i = 0; i < 5; i++) {
+      const a = (i / 5) * Math.PI * 2;
       const d = 2.5 + (i % 4) * 0.7;
       frogs.push({ x: 10 + Math.cos(a) * d * 0.6, z: -10 + Math.sin(a) * d * 0.6, phase: i * 0.7 });
       beetles.push({ x: 10 + Math.cos(a + 0.3) * (d + 0.5), z: -10 + Math.sin(a + 0.3) * (d + 0.5), phase: i * 0.5 });
     }
-    for (let i = 0; i < 8; i++) {
-      const a = (i / 8) * Math.PI * 2 + 0.4;
+    for (let i = 0; i < 4; i++) {
+      const a = (i / 4) * Math.PI * 2 + 0.4;
       lizards.push({
         x: 10 + Math.cos(a) * 4.5,
         z: -10 + Math.sin(a) * 4.5,
@@ -2091,7 +2091,7 @@ function ForestCritters() {
       geckos.push({ x: 22 + Math.cos(i) * 1.2, z: -16 + Math.sin(i) * 1.0, phase: i * 0.7 });
     }
     // Forest edge / rainforest approach (~40, 30) and secondary belts
-    for (let i = 0; i < 12; i++) {
+    for (let i = 0; i < 6; i++) {
       const fx = 38 + (i % 6) * 2.2;
       const fz = 28 + Math.floor(i / 6) * 3.5;
       lizards.push({ x: fx, z: fz, phase: i * 0.55, color: colors[i % colors.length]! });
@@ -2100,7 +2100,7 @@ function ForestCritters() {
       if (i % 3 === 0) frogs.push({ x: fx + 1, z: fz + 1.2, phase: i * 0.5 });
     }
     // NW secondary forest
-    for (let i = 0; i < 8; i++) {
+    for (let i = 0; i < 4; i++) {
       const fx = -35 + (i % 4) * 2;
       const fz = 38 + Math.floor(i / 4) * 2.5;
       lizards.push({ x: fx, z: fz, phase: i * 0.8, color: colors[(i + 2) % colors.length]! });
@@ -3012,7 +3012,7 @@ export function AfroMetaverseScene({
       </mesh>
       <NeonRoads />
       <LivingWater type="pond" position={[-5.5, 0, -5.4]} radius={3.8} />
-      <BiomeFlora count={480} />
+      <BiomeFlora count={200} />
       <VillageTreeRing />
       {/* Always-loaded village dressing, merged once (was re-drawn in every loaded chunk). */}
       <StaticVillageProps />

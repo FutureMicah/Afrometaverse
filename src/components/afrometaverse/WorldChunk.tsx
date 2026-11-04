@@ -31,7 +31,6 @@ import {
   type CreatureKind,
 } from "@/components/afrometaverse/Creatures";
 import { ChunkOrganicDetail } from "@/components/afrometaverse/EnvironmentalLife";
-import { AnatomyVillager } from "@/components/afrometaverse/characters/AnatomyBody";
 import { useWeatherStore } from "@/stores/weatherStore";
 
 const SEGMENTS = 20; // ~6.4 m resolution per chunk
@@ -49,14 +48,11 @@ interface WorldChunkProps {
 export function WorldChunk({ chunk, densityScale = 1 }: WorldChunkProps) {
   const origin = worldChunkOrigin(chunk.cx, chunk.cz);
   const centre = worldChunkCentre(chunk.cx, chunk.cz);
+  const inVillageCore = isVillageCore(centre.x, centre.z, 105);
 
-  // Village core is owned by HeritageTerrain + village props.
-  if (isVillageCore(centre.x, centre.z, 105)) {
-    return null;
-  }
-
+  // Hooks must run unconditionally (no early return before hooks).
   const region = sampleRegion(centre.x, centre.z);
-  const density = sampleContentDensity(centre.x, centre.z) * densityScale;
+  const density = inVillageCore ? 0 : sampleContentDensity(centre.x, centre.z) * densityScale;
   const rainIntensity = useWeatherStore((s) => s.rainIntensity);
   const dustIntensity = useWeatherStore((s) => s.dustIntensity);
   const climate = Math.max(rainIntensity, dustIntensity * 0.5);
@@ -138,7 +134,7 @@ export function WorldChunk({ chunk, densityScale = 1 }: WorldChunkProps) {
     }
 
     // People near the hearth / yard (detailed anatomy bodies)
-    const peopleCount = 1 + Math.floor(seeded(chunk.cx + chunk.cz, 55) * 3);
+    const peopleCount = Math.min(2, Math.floor(hutCount * 0.5));
     const skinTones = ["#5c3317", "#6b4423", "#8d5524", "#a0673f", "#c68642"];
     const people: {
       x: number;
@@ -219,7 +215,7 @@ export function WorldChunk({ chunk, densityScale = 1 }: WorldChunkProps) {
 
   // ---- Creatures (region-aware) — meshes live in Creatures.tsx ----
   const animals = useMemo(() => {
-    const count = Math.floor(2 + density * 7 * densityScale);
+    const count = Math.floor(1 + density * 3 * densityScale);
     const kinds: CreatureKind[] =
       region === "SAVANNAH"
         ? ["goat", "goat", "sheep", "cow", "dog", "antelope", "antelope"]
@@ -275,7 +271,7 @@ export function WorldChunk({ chunk, densityScale = 1 }: WorldChunkProps) {
       kind: "chicken" | "duck" | "heron" | "flyer";
     }[] = [];
     if (settlement) {
-      const count = 5 + Math.floor(seeded(chunk.cx + chunk.cz, 70) * 6);
+      const count = 2 + Math.floor(seeded(chunk.cx + chunk.cz, 70) * 3);
       for (let i = 0; i < count; i++) {
         const a = seeded(i, 71) * Math.PI * 2;
         const d = 2 + seeded(i, 72) * 6;
@@ -323,7 +319,7 @@ export function WorldChunk({ chunk, densityScale = 1 }: WorldChunkProps) {
 
   // ---- Bushes ----
   const bushes = useMemo(() => {
-    const count = Math.floor(8 + density * 18 * densityScale);
+    const count = Math.floor(3 + density * 6 * densityScale);
     const out: { x: number; y: number; z: number; s: number; rot: number }[] = [];
     for (let i = 0; i < count; i++) {
       const lx = (seeded(i, 10) - 0.5) * WORLD_CHUNK_SIZE * 0.88;
@@ -340,6 +336,9 @@ export function WorldChunk({ chunk, densityScale = 1 }: WorldChunkProps) {
     }
     return out;
   }, [centre.x, centre.z, density, densityScale]);
+
+  // Village core is owned by HeritageTerrain + village props.
+  if (inVillageCore) return null;
 
   return (
     <group>
@@ -385,14 +384,17 @@ export function WorldChunk({ chunk, densityScale = 1 }: WorldChunkProps) {
           )}
           <VillageHearth position={[settlement.hearth.x, settlement.hearth.y, settlement.hearth.z]} />
           {settlement.people.map((p, i) => (
-            <AnatomyVillager
-              key={`p${i}`}
-              gender={p.gender}
-              position={[p.x, p.y, p.z]}
-              rotationY={p.rot}
-              skinColor={p.skin}
-              height={p.height}
-            />
+            <group key={`p${i}`} position={[p.x, p.y, p.z]} rotation={[0, p.rot, 0]}>
+              {/* Lightweight villager proxy — avoids loading heavy anatomy GLBs per NPC */}
+              <mesh position={[0, p.height * 0.35, 0]} castShadow>
+                <capsuleGeometry args={[0.18, p.height * 0.45, 4, 6]} />
+                <meshStandardMaterial color={p.skin} roughness={0.85} />
+              </mesh>
+              <mesh position={[0, p.height * 0.72, 0]} castShadow>
+                <sphereGeometry args={[0.14, 8, 6]} />
+                <meshStandardMaterial color={p.skin} roughness={0.8} />
+              </mesh>
+            </group>
           ))}
         </group>
       )}
