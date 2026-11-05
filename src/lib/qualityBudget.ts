@@ -1,10 +1,9 @@
 /**
- * Quality budgets keyed by adaptive tier (FPS-driven).
- * Permanent approach: safe boot → measure → raise detail when the machine can hold it.
+ * Quality budgets + staged heavy flags (see adaptiveQuality heavyAllows).
  */
 
 import type { RenderTier } from "./renderTier";
-import { useAdaptiveQuality } from "./adaptiveQuality";
+import { heavyAllows, useAdaptiveQuality } from "./adaptiveQuality";
 
 export type QualityBudget = {
   floraCount: number;
@@ -53,7 +52,7 @@ const BUDGETS: Record<RenderTier, QualityBudget> = {
     shadows: false,
     characterDetail: true,
     expandedWorld: true,
-    streamOuterWorld: false, // still village-first; outer only on high
+    streamOuterWorld: false,
     forestCritters: false,
     villageAnimals: true,
     animalScale: 0.5,
@@ -63,10 +62,10 @@ const BUDGETS: Record<RenderTier, QualityBudget> = {
     fireflies: 16,
   },
   high: {
-    floraCount: 120,
-    worldDensity: 0.5,
-    animRadius: 32,
-    cullRadius: 55,
+    floraCount: 110,
+    worldDensity: 0.42,
+    animRadius: 30,
+    cullRadius: 50,
     maxChunkLoads: 1,
     shadows: true,
     characterDetail: true,
@@ -74,19 +73,43 @@ const BUDGETS: Record<RenderTier, QualityBudget> = {
     streamOuterWorld: true,
     forestCritters: true,
     villageAnimals: true,
-    animalScale: 0.7,
-    maxNpcs: 36,
-    dprMax: 1.25,
-    dustMotes: 55,
-    fireflies: 22,
+    animalScale: 0.65,
+    maxNpcs: 32,
+    dprMax: 1.15,
+    dustMotes: 48,
+    fireflies: 20,
   },
 };
 
-/** Live budget from adaptive FPS controller (or locked localStorage tier). */
+/**
+ * Live budget: base numbers from tier, heavy flags gated by STAGE
+ * so high mode never dumps outer world + fauna + shadows in one frame.
+ */
 export function qualityBudget(override?: RenderTier): QualityBudget {
-  if (override) return BUDGETS[override];
   const { tier, locked } = useAdaptiveQuality.getState();
-  return BUDGETS[locked ?? tier];
+  const t = override ?? locked ?? tier;
+  const base = { ...BUDGETS[t] };
+
+  // Stage gates override the static flags
+  base.villageAnimals = heavyAllows("animals");
+  base.expandedWorld = heavyAllows("expanded");
+  base.forestCritters = heavyAllows("forest");
+  base.streamOuterWorld = heavyAllows("outer");
+  base.shadows = heavyAllows("shadows");
+
+  // Soften counts while still climbing stages
+  const stage = useAdaptiveQuality.getState().stage;
+  if (stage === 0) {
+    base.floraCount = Math.min(base.floraCount, 32);
+    base.maxNpcs = Math.min(base.maxNpcs, 12);
+    base.dustMotes = Math.min(base.dustMotes, 16);
+    base.fireflies = Math.min(base.fireflies, 8);
+  } else if (stage === 1) {
+    base.floraCount = Math.round(base.floraCount * 0.7);
+    base.maxNpcs = Math.round(base.maxNpcs * 0.75);
+  }
+
+  return base;
 }
 
 export function qualityTier(): RenderTier {

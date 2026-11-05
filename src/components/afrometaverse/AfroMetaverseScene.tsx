@@ -2994,10 +2994,15 @@ function CityHotspots({ onInteract }: { onInteract?: (label: string) => void }) 
 /** Inside Canvas: measures FPS and drives adaptive quality tier. */
 function AdaptiveQualityController() {
   const init = useAdaptiveQuality((s) => s.init);
+  const setPlayerRadius = useAdaptiveQuality((s) => s.setPlayerRadius);
   useEffect(() => {
     init();
   }, [init]);
   useFrame((_, dt) => {
+    // Distance from village origin — outer world unlocks only when exploring out
+    const pos = useRoamStore.getState().position;
+    const r = Math.hypot(pos[0], pos[2]);
+    setPlayerRadius(r);
     adaptiveQualityTick(dt);
   });
   return null;
@@ -3027,11 +3032,12 @@ export function AfroMetaverseScene({
   const dust = weather?.dustIntensity ?? 0;
   // Subscribe so Canvas / world layers re-render when FPS-driven tier changes
   const adaptiveTier = useAdaptiveQuality((s) => s.locked ?? s.tier);
+  const heavyStage = useAdaptiveQuality((s) => s.stage);
   const budget = qualityBudget(adaptiveTier);
 
   return (
     <Canvas
-      key={`am-q-${adaptiveTier}`}
+      key={`am-q-${adaptiveTier}-s${heavyStage}`}
       shadows={budget.shadows}
       dpr={[1, budget.dprMax]}
       performance={{ min: 0.4, max: 1, debounce: 200 }}
