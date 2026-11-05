@@ -35,6 +35,7 @@ import { TouchControls, useIsTouchDevice } from "@/components/afrometaverse/Touc
 import { PlaySessionHud } from "@/components/afrometaverse/PlaySessionHud";
 import { MissionObjectiveHud } from "@/components/afrometaverse/MissionObjectiveHud";
 import { ImmersionBar } from "@/components/afrometaverse/ImmersionBar";
+import { SceneActionChat } from "@/components/afrometaverse/SceneActionChat";
 import { useKowryStore } from "@/stores/kowryStore";
 import { worldModifiers } from "@/lib/timeEffects";
 import { CharacterPreview } from "@/components/afrometaverse/characters/CharacterPreview";
@@ -1099,6 +1100,14 @@ export function AfroMetaverseGame() {
           )}
         </div>
       </header>
+
+      <SceneActionChat
+        reputation={reputation}
+        displayName={displayName}
+        isAuthenticated={isAuthenticated}
+        onNeedAuth={() => setAuthOpen(true)}
+        onToast={(msg) => announce(msg)}
+      />
 
       <div className="am-body">
         <nav className={`am-rail ${mobileNavOpen ? "am-rail-open" : ""}`} aria-label="City navigation">
