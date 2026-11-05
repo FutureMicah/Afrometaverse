@@ -361,6 +361,24 @@ function getDistrictWeatherNote(districtId: string | undefined, weatherId: Weath
   return "Conditions are steady in this district. The city remains open for business.";
 }
 
+
+/** Top control strip — auto-hides so it does not cover the village. */
+function FsControlsHint({ isTouch }: { isTouch: boolean }) {
+  const [show, setShow] = useState(true);
+  useEffect(() => {
+    const t = window.setTimeout(() => setShow(false), 4500);
+    return () => window.clearTimeout(t);
+  }, []);
+  if (!show) return null;
+  return (
+    <span className="am-fs-hint">
+      {isTouch
+        ? "Left walk · Right look · RUN / JUMP · VIEW eyes"
+        : "WASD · Mouse · V eyes · Esc shrink"}
+    </span>
+  );
+}
+
 export function AfroMetaverseGame() {
   const {
     user,
@@ -1618,22 +1636,35 @@ export function AfroMetaverseGame() {
                 </div>
                 {cityFullscreen && (
                   <div className="am-fs-hud">
-                    <span className="am-fs-hint">
-                      {isTouchDevice
-                        ? "Left walk · Right look · RUN / JUMP · RIDE·DOOR·EXIT · VIEW eyes"
-                        : "WASD · Mouse · V eyes · Shift run · C crouch · Space jump · F interact · Esc"}
-                    </span>
-                    <button
-                      type="button"
-                      className="am-btn am-btn-secondary am-fs-exit"
-                      onClick={() => {
-                        setCityFullscreen(false);
-                        setRoamMode("orbit");
-                        if (document.pointerLockElement) document.exitPointerLock();
-                      }}
-                    >
-                      <Minimize2 size={14} /> Shrink
-                    </button>
+                    <FsControlsHint isTouch={isTouchDevice} />
+                    <div className="am-fs-actions">
+                      <button
+                        type="button"
+                        className="am-btn am-btn-secondary am-fs-settings"
+                        title="Camera & controls"
+                        aria-label="Open settings"
+                        onClick={() => {
+                          setCityFullscreen(false);
+                          setRoamMode("orbit");
+                          if (document.pointerLockElement) document.exitPointerLock();
+                          go("settings");
+                        }}
+                      >
+                        <Settings size={14} />
+                        <span>Settings</span>
+                      </button>
+                      <button
+                        type="button"
+                        className="am-btn am-btn-secondary am-fs-exit"
+                        onClick={() => {
+                          setCityFullscreen(false);
+                          setRoamMode("orbit");
+                          if (document.pointerLockElement) document.exitPointerLock();
+                        }}
+                      >
+                        <Minimize2 size={14} /> Shrink
+                      </button>
+                    </div>
                   </div>
                 )}
                 {cityFullscreen && roamMode !== "orbit" && (
@@ -1642,6 +1673,7 @@ export function AfroMetaverseGame() {
                 {cityFullscreen && (
                   <div className="am-immersion-fs">
                     <ImmersionBar
+                      compact
                       onlineCount={onlineCount}
                       districtName={nearDistrictId ? DISTRICT_WORLD[nearDistrictId]?.name ?? null : null}
                     />
@@ -1741,7 +1773,7 @@ export function AfroMetaverseGame() {
                     Enter {INTERIORS[nearDoorId].name} (F)
                   </button>
                 )}
-                {roamMode !== "orbit" && (
+                {roamMode !== "orbit" && !cityFullscreen && (
                   <div className="am-roam-hint">
                     {isTouchDevice
                       ? "Touch pads · RIDE/DOOR when close · VIEW = first-person eyes · vehicles glow when near"

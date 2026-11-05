@@ -3109,3 +3109,70 @@
     bottom: 6.5rem;
   }
 }
+
+
+/* —— Cleaner fullscreen HUD (less screen coverage) —— */
+.am-fs-hud {
+  padding: 8px 12px;
+  padding-right: 12px;
+  background: linear-gradient(to bottom, oklch(0.12 0.02 280 / 0.45), transparent);
+}
+.am-fs-actions {
+  display: flex;
+  gap: 8px;
+  pointer-events: auto;
+  margin-left: auto;
+}
+.am-fs-settings,
+.am-fs-exit {
+  pointer-events: auto !important;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px !important;
+  font-size: 12px !important;
+  border-radius: 999px !important;
+  background: oklch(0.18 0.03 280 / 0.75) !important;
+  border: 1px solid oklch(1 0 0 / 0.18) !important;
+  color: oklch(0.95 0.02 80) !important;
+}
+.am-fs-hint {
+  font-size: 11px;
+  opacity: 0.85;
+  max-width: 55%;
+}
+.am-immersion-fs {
+  top: 44px;
+  left: 10px;
+  right: auto;
+  max-width: min(92vw, 420px);
+}
+.am-immersion-fs .am-immersion-bar {
+  padding: 6px 10px;
+  border-radius: 10px;
+  background: oklch(0.14 0.03 280 / 0.55);
+  backdrop-filter: blur(6px);
+}
+.am-immersion-compact .am-immersion-row {
+  font-size: 0.72rem;
+  gap: 6px 10px;
+  flex-wrap: nowrap;
+  overflow: hidden;
+}
+.am-immersion-compact .am-immersion-dist {
+  max-width: 7rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.am-play-mini-hint {
+  display: none !important;
+}
+@media (max-width: 640px) {
+  .am-fs-settings span {
+    display: none;
+  }
+  .am-immersion-fs {
+    max-width: calc(100vw - 24px);
+  }
+}

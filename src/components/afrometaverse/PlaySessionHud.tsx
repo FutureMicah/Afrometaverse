@@ -105,11 +105,7 @@ export function PlaySessionHud({ isTouch, fullscreen }: Props) {
         </div>
       )}
 
-      {coach === "done" && (
-        <div className="am-play-mini-hint">
-          {isTouch ? "VIEW = eyes · Esc / Shrink to leave" : "V eyes · F interact · Esc shrink"}
-        </div>
-      )}
+      {/* Permanent mini-hint removed — was covering the view. Coach shows once; Shrink is top-right. */}
     </div>
   );
 }

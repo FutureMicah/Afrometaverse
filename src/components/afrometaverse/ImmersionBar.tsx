@@ -1,5 +1,6 @@
 /**
  * Always-on immersion strip: game clock, weather vibe, KOWRY, online citizens.
+ * compact = one line only (fullscreen play — does not cover the village).
  */
 
 import { useMemo } from "react";
@@ -10,6 +11,8 @@ import { formatGameClock, worldModifiers } from "@/lib/timeEffects";
 type Props = {
   onlineCount?: number;
   districtName?: string | null;
+  /** Fullscreen play: single slim row, no flavor text */
+  compact?: boolean;
 };
 
 const FLAVOR = [
@@ -23,7 +26,7 @@ const FLAVOR = [
   "A ferry whistle answers from the creek.",
 ];
 
-export function ImmersionBar({ onlineCount = 0, districtName }: Props) {
+export function ImmersionBar({ onlineCount = 0, districtName, compact = false }: Props) {
   const hour = useWeatherStore((s) => s.state.hour);
   const timeOfDay = useWeatherStore((s) => s.state.timeOfDay);
   const weatherId = useWeatherStore((s) => s.state.weatherId);
@@ -40,7 +43,7 @@ export function ImmersionBar({ onlineCount = 0, districtName }: Props) {
   const flavor = FLAVOR[Math.floor(hour * 3) % FLAVOR.length];
 
   return (
-    <div className="am-immersion-bar" aria-label="City conditions">
+    <div className={`am-immersion-bar ${compact ? "am-immersion-compact" : ""}`} aria-label="City conditions">
       <div className="am-immersion-row">
         <span className="am-immersion-clock" title="In-game clock">
           {formatGameClock(hour)}
@@ -51,17 +54,19 @@ export function ImmersionBar({ onlineCount = 0, districtName }: Props) {
         </span>
         <span className="am-immersion-kowry" title="KOWRY shells — heritage play currency">
           🐚 {kowry}
-          {influence > 0 && <small>· infl {influence}</small>}
+          {!compact && influence > 0 && <small>· infl {influence}</small>}
         </span>
         <span className="am-immersion-online" title="Citizens with recent presence">
           ◎ {Math.max(onlineCount, 0)} live
         </span>
         {districtName && <span className="am-immersion-dist">{districtName}</span>}
       </div>
-      <div className="am-immersion-vibe">
-        <span>{mods.vibe}</span>
-        <span className="am-immersion-flavor">{flavor}</span>
-      </div>
+      {!compact && (
+        <div className="am-immersion-vibe">
+          <span>{mods.vibe}</span>
+          <span className="am-immersion-flavor">{flavor}</span>
+        </div>
+      )}
     </div>
   );
 }
