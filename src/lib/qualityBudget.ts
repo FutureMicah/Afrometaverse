@@ -1,10 +1,10 @@
 /**
- * Performance budgets — default path must stay playable on phone AND PC.
- * Outer world stream and dense fauna are opt-in (high tier only).
+ * Quality budgets keyed by adaptive tier (FPS-driven).
+ * Permanent approach: safe boot → measure → raise detail when the machine can hold it.
  */
 
 import type { RenderTier } from "./renderTier";
-import { currentRenderTier } from "./renderTier";
+import { useAdaptiveQuality } from "./adaptiveQuality";
 
 export type QualityBudget = {
   floraCount: number;
@@ -15,7 +15,6 @@ export type QualityBudget = {
   shadows: boolean;
   characterDetail: boolean;
   expandedWorld: boolean;
-  /** 12 km WorldChunk stream — heavy; only high */
   streamOuterWorld: boolean;
   forestCritters: boolean;
   villageAnimals: boolean;
@@ -28,10 +27,10 @@ export type QualityBudget = {
 
 const BUDGETS: Record<RenderTier, QualityBudget> = {
   low: {
-    floraCount: 24,
-    worldDensity: 0.15,
-    animRadius: 12,
-    cullRadius: 22,
+    floraCount: 28,
+    worldDensity: 0.2,
+    animRadius: 14,
+    cullRadius: 24,
     maxChunkLoads: 1,
     shadows: false,
     characterDetail: false,
@@ -39,35 +38,35 @@ const BUDGETS: Record<RenderTier, QualityBudget> = {
     streamOuterWorld: false,
     forestCritters: false,
     villageAnimals: false,
-    animalScale: 0.25,
-    maxNpcs: 10,
+    animalScale: 0.3,
+    maxNpcs: 12,
     dprMax: 1,
-    dustMotes: 20,
+    dustMotes: 18,
     fireflies: 8,
   },
   mid: {
-    floraCount: 60,
-    worldDensity: 0.3,
-    animRadius: 18,
-    cullRadius: 32,
+    floraCount: 70,
+    worldDensity: 0.35,
+    animRadius: 22,
+    cullRadius: 36,
     maxChunkLoads: 1,
     shadows: false,
-    characterDetail: false,
-    expandedWorld: false,
-    streamOuterWorld: false,
+    characterDetail: true,
+    expandedWorld: true,
+    streamOuterWorld: false, // still village-first; outer only on high
     forestCritters: false,
     villageAnimals: true,
-    animalScale: 0.4,
-    maxNpcs: 18,
+    animalScale: 0.5,
+    maxNpcs: 22,
     dprMax: 1,
-    dustMotes: 40,
-    fireflies: 14,
+    dustMotes: 36,
+    fireflies: 16,
   },
   high: {
-    floraCount: 100,
-    worldDensity: 0.45,
-    animRadius: 28,
-    cullRadius: 48,
+    floraCount: 120,
+    worldDensity: 0.5,
+    animRadius: 32,
+    cullRadius: 55,
     maxChunkLoads: 1,
     shadows: true,
     characterDetail: true,
@@ -75,26 +74,24 @@ const BUDGETS: Record<RenderTier, QualityBudget> = {
     streamOuterWorld: true,
     forestCritters: true,
     villageAnimals: true,
-    animalScale: 0.65,
-    maxNpcs: 28,
+    animalScale: 0.7,
+    maxNpcs: 36,
     dprMax: 1.25,
-    dustMotes: 60,
-    fireflies: 24,
+    dustMotes: 55,
+    fireflies: 22,
   },
 };
 
-/** Optional override: localStorage am-quality = low|mid|high */
-export function qualityBudget(tier?: RenderTier): QualityBudget {
-  let t = tier ?? currentRenderTier();
-  if (typeof window !== "undefined") {
-    try {
-      const o = window.localStorage.getItem("am-quality");
-      if (o === "low" || o === "mid" || o === "high") t = o;
-    } catch {
-      /* ignore */
-    }
-  }
-  return BUDGETS[t];
+/** Live budget from adaptive FPS controller (or locked localStorage tier). */
+export function qualityBudget(override?: RenderTier): QualityBudget {
+  if (override) return BUDGETS[override];
+  const { tier, locked } = useAdaptiveQuality.getState();
+  return BUDGETS[locked ?? tier];
+}
+
+export function qualityTier(): RenderTier {
+  const { tier, locked } = useAdaptiveQuality.getState();
+  return locked ?? tier;
 }
 
 let frame = 0;

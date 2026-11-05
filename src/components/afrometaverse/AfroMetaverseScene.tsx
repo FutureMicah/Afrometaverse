@@ -29,6 +29,7 @@ import { groupByChunk, chunksContaining, chunkOrigin } from "@/lib/chunkAssign";
 import { chunkOf } from "@/lib/chunkStreaming";
 import { currentRenderTier } from "@/lib/renderTier";
 import { qualityBudget } from "@/lib/qualityBudget";
+import { adaptiveQualityTick, useAdaptiveQuality } from "@/lib/adaptiveQuality";
 import { worldFogEnd } from "@/lib/worldConfig";
 import { StylizedCharacter } from "@/components/afrometaverse/characters/StylizedCharacter";
 import {
@@ -2989,6 +2990,19 @@ function CityHotspots({ onInteract }: { onInteract?: (label: string) => void }) 
   );
 }
 
+
+/** Inside Canvas: measures FPS and drives adaptive quality tier. */
+function AdaptiveQualityController() {
+  const init = useAdaptiveQuality((s) => s.init);
+  useEffect(() => {
+    init();
+  }, [init]);
+  useFrame((_, dt) => {
+    adaptiveQualityTick(dt);
+  });
+  return null;
+}
+
 export function AfroMetaverseScene({
   weather,
   selectedDistrict,
@@ -3011,15 +3025,19 @@ export function AfroMetaverseScene({
   const nearDistrictId = useRoamStore((s) => s.nearDistrictId);
   const wetness = weather?.rainIntensity ?? 0;
   const dust = weather?.dustIntensity ?? 0;
+  // Subscribe so Canvas / world layers re-render when FPS-driven tier changes
+  const adaptiveTier = useAdaptiveQuality((s) => s.locked ?? s.tier);
+  const budget = qualityBudget(adaptiveTier);
 
   return (
     <Canvas
-      shadows={qualityBudget().shadows}
-      dpr={[1, qualityBudget().dprMax]}
+      key={`am-q-${adaptiveTier}`}
+      shadows={budget.shadows}
+      dpr={[1, budget.dprMax]}
       performance={{ min: 0.4, max: 1, debounce: 200 }}
       gl={{
         powerPreference: "high-performance",
-        antialias: qualityBudget().characterDetail,
+        antialias: budget.characterDetail,
         stencil: false,
         depth: true,
       }}
@@ -3027,10 +3045,11 @@ export function AfroMetaverseScene({
       style={{ width: "100%", height: "100%", background: SCENE_PALETTE.skyHaze }}
       tabIndex={0}
     >
+      <AdaptiveQualityController />
       <DayNightSky dust={dust} />
       {/* Multi-biome heritage terrain (Day 2) — single draw call + climate tint */}
       <HeritageTerrain wetness={wetness} dust={dust} />
-      {qualityBudget().expandedWorld ? <ExpandedWorld wetness={wetness} /> : null}
+      {budget.expandedWorld ? <ExpandedWorld wetness={wetness} /> : null}
       {/* Keep a soft local dust pad under the village for road contrast */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.001, 0]} receiveShadow>
         <planeGeometry args={[28, 24]} />
@@ -3038,7 +3057,7 @@ export function AfroMetaverseScene({
       </mesh>
       <NeonRoads />
       <LivingWater type="pond" position={[-5.5, 0, -5.4]} radius={3.8} />
-      <BiomeFlora count={qualityBudget().floraCount} />
+      <BiomeFlora count={budget.floraCount} />
       <VillageTreeRing />
       {/* Always-loaded village dressing, merged once (was re-drawn in every loaded chunk). */}
       <StaticVillageProps />
@@ -3051,13 +3070,13 @@ export function AfroMetaverseScene({
       />
 
       {/* Outer 12 km stream — high tier only (main freeze source on PC/phone). */}
-      {qualityBudget().streamOuterWorld ? (
+      {budget.streamOuterWorld ? (
         <ChunkedWorld
           mode="world"
-          tier={currentRenderTier()}
+          tier={adaptiveTier}
           focusRef={playerFocusRef}
-          maxLoadsPerUpdate={qualityBudget().maxChunkLoads}
-          buildChunk={(c) => <WorldChunk chunk={c} densityScale={qualityBudget().worldDensity} />}
+          maxLoadsPerUpdate={budget.maxChunkLoads}
+          buildChunk={(c) => <WorldChunk chunk={c} densityScale={budget.worldDensity} />}
         />
       ) : null}
 
@@ -3140,8 +3159,8 @@ export function AfroMetaverseScene({
       ))}
 
       {/* Day 1 atmospheric life */}
-      <DustMotes count={qualityBudget().dustMotes} active={dust > 0.25 || wetness < 0.3} />
-      <SpiritFireflies count={qualityBudget().fireflies} active={dust < 0.5} />
+      <DustMotes count={budget.dustMotes} active={dust > 0.25 || wetness < 0.3} />
+      <SpiritFireflies count={budget.fireflies} active={dust < 0.5} />
       <SavannahGrass count={200} windIntensity={0.35 + dust * 0.5} />
       <LightningFlash active={wetness > 0.55} />
       <SacredGroveMist position={[10, 0.6, -9]} />
@@ -3182,8 +3201,8 @@ export function AfroMetaverseScene({
       <VillageHearth position={[-1.0, 0, 4.5]} />
       <TorchPosts />
       <MissionWorldMarker />
-      {qualityBudget().villageAnimals ? <VillageAnimals /> : null}
-      {qualityBudget().forestCritters ? <ForestCritters /> : null}
+      {budget.villageAnimals ? <VillageAnimals /> : null}
+      {budget.forestCritters ? <ForestCritters /> : null}
       <NpcCrowd />
       {onInteract && <CityHotspots onInteract={onInteract} />}
       {onNearDistrict ? <PlayerController onDistrictChange={onNearDistrict} /> : <PlayerController />}
