@@ -1,55 +1,72 @@
 /**
- * Performance budgets by render tier.
- * Keeps visual quality high near the player while preventing Lovable/mobile freezes.
+ * Performance budgets by render tier — tuned to stop Lovable preview freezes.
  */
 
 import type { RenderTier } from "./renderTier";
 import { currentRenderTier } from "./renderTier";
 
 export type QualityBudget = {
-  /** BiomeFlora instance count in village */
   floraCount: number;
-  /** Multiplier for WorldChunk props / animals / trees (0–1) */
   worldDensity: number;
-  /** Max distance (m) to fully animate NPCs / creatures */
   animRadius: number;
-  /** Beyond this, creatures skip useFrame updates */
   cullRadius: number;
-  /** World chunk loads per streamer tick */
   maxChunkLoads: number;
-  /** Shadow map — lower on weak devices */
   shadows: boolean;
-  /** Detail flag for StylizedCharacter */
   characterDetail: boolean;
+  /** Mount ExpandedWorld ring of outer biomes */
+  expandedWorld: boolean;
+  /** Mount ForestCritters (many useFrame animals) */
+  forestCritters: boolean;
+  /** Fraction of village animal list to spawn 0–1 */
+  animalScale: number;
+  /** Cap on animated NPCs in NpcCrowd */
+  maxNpcs: number;
+  /** Pixel ratio cap */
+  dprMax: number;
 };
 
 const BUDGETS: Record<RenderTier, QualityBudget> = {
   low: {
-    floraCount: 80,
-    worldDensity: 0.35,
-    animRadius: 18,
-    cullRadius: 42,
+    floraCount: 40,
+    worldDensity: 0.2,
+    animRadius: 14,
+    cullRadius: 28,
     maxChunkLoads: 1,
     shadows: false,
     characterDetail: false,
+    expandedWorld: false,
+    forestCritters: false,
+    animalScale: 0.35,
+    maxNpcs: 16,
+    dprMax: 1,
   },
   mid: {
+    floraCount: 90,
+    worldDensity: 0.4,
+    animRadius: 22,
+    cullRadius: 40,
+    maxChunkLoads: 1,
+    shadows: false,
+    characterDetail: false,
+    expandedWorld: true,
+    forestCritters: false,
+    animalScale: 0.55,
+    maxNpcs: 28,
+    dprMax: 1,
+  },
+  high: {
     floraCount: 140,
     worldDensity: 0.55,
-    animRadius: 28,
+    animRadius: 32,
     cullRadius: 55,
     maxChunkLoads: 1,
     shadows: true,
     characterDetail: true,
-  },
-  high: {
-    floraCount: 200,
-    worldDensity: 0.75,
-    animRadius: 40,
-    cullRadius: 70,
-    maxChunkLoads: 2,
-    shadows: true,
-    characterDetail: true,
+    expandedWorld: true,
+    forestCritters: true,
+    animalScale: 0.75,
+    maxNpcs: 40,
+    dprMax: 1.25,
   },
 };
 
@@ -57,7 +74,6 @@ export function qualityBudget(tier?: RenderTier): QualityBudget {
   return BUDGETS[tier ?? currentRenderTier()];
 }
 
-/** Shared frame counter so many systems can throttle without desyncing badly. */
 let frame = 0;
 export function nextFrameId(): number {
   frame = (frame + 1) | 0;
@@ -65,5 +81,5 @@ export function nextFrameId(): number {
 }
 
 export function shouldUpdateSparse(phase: number, everyN = 2): boolean {
-  return ((frame + (phase * 10) | 0) % everyN) === 0;
+  return ((frame + ((phase * 10) | 0)) % everyN) === 0;
 }

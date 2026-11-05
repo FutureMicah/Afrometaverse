@@ -1,6 +1,6 @@
 /**
- * Render tier from device hints (era-progression-spec.md 10.1, 10.3).
- * Low, mid and high set render radius 2, 3 and 4 chunks.
+ * Render tier from device hints.
+ * Conservative defaults: missing deviceMemory must NOT imply a powerful GPU.
  */
 
 export type RenderTier = "low" | "mid" | "high";
@@ -13,14 +13,21 @@ export interface DeviceHints {
 
 export function detectRenderTier(h: DeviceHints): RenderTier {
   const cores = h.hardwareConcurrency ?? 4;
-  const mem = h.deviceMemory ?? 4;
-  if (h.mobile) {
-    if (mem >= 8 && cores >= 8) return "high";
-    if (mem >= 6 && cores >= 6) return "mid";
+  const mem = h.deviceMemory; // may be undefined (Chrome often hides this)
+  const mobile = !!h.mobile;
+
+  // Mobile: stay low unless clearly strong
+  if (mobile) {
+    if (mem != null && mem >= 8 && cores >= 8) return "mid";
     return "low";
   }
-  if (cores >= 4 && mem >= 4) return "high";
-  return "mid";
+
+  // Desktop / tablet: only "high" when memory is known and healthy
+  if (mem != null && mem >= 8 && cores >= 8) return "high";
+  if (mem != null && mem >= 4 && cores >= 4) return "mid";
+  // Unknown memory (common): prefer mid for desktop, never auto-high
+  if (!mobile && cores >= 6) return "mid";
+  return "low";
 }
 
 export function readDeviceHints(): DeviceHints {

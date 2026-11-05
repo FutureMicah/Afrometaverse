@@ -5,7 +5,7 @@
 
 import { useRef, type RefObject } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
-import { qualityBudget } from "@/lib/qualityBudget";
+import { qualityBudget, shouldUpdateSparse, nextFrameId } from "@/lib/qualityBudget";
 import * as THREE from "three";
 import { sampleHeight } from "@/lib/worldGen";
 
@@ -99,6 +99,8 @@ export function Creature({
     const cx = root.current.position.x;
     const cz = root.current.position.z;
     if (farFromCamera(cam, cx, cz, budget.cullRadius)) return;
+    nextFrameId();
+    if (!shouldUpdateSparse(phase, 2)) return;
     const t = clock.elapsedTime;
     // Lissajous-style path so they cover area, not a tight circle
     const ox = Math.sin(t * speed + phase) * roam + Math.sin(t * speed * 0.37 + phase * 1.7) * roam * 0.25;

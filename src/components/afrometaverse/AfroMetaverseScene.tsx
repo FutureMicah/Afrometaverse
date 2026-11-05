@@ -2430,60 +2430,63 @@ function VillageAnimals() {
     [],
   );
 
+  const scale = qualityBudget().animalScale;
+  const take = <T,>(arr: T[]) => arr.slice(0, Math.max(1, Math.floor(arr.length * scale)));
+
   return (
     <group>
-      {herd.map((a, i) => (
+      {take(herd).map((a, i) => (
         <Creature key={`h-${i}`} x={a.x} y={0} z={a.z} phase={a.phase} scale={a.scale} kind={a.kind} />
       ))}
-      {poultry.map((c, i) => (
+      {take(poultry).map((c, i) => (
         <Chicken key={`c-${i}`} x={c.x} y={0} z={c.z} phase={c.phase} />
       ))}
-      {ducks.map((d, i) => (
+      {take(ducks).map((d, i) => (
         <Duck key={`d-${i}`} x={d.x} y={0} z={d.z} phase={d.phase} />
       ))}
-      {herons.map((h, i) => (
+      {take(herons).map((h, i) => (
         <Heron key={`he-${i}`} x={h.x} y={0} z={h.z} phase={h.phase} />
       ))}
-      {birds.map((b, i) => (
+      {take(birds).map((b, i) => (
         <FlyingBird key={`fb-${i}`} x={b.x} y={b.y} z={b.z} phase={b.phase} />
       ))}
-      {frogs.map((c, i) => (
+      {take(frogs).map((c, i) => (
         <Frog key={`fr-${i}`} x={c.x} z={c.z} phase={c.phase} />
       ))}
-      {lizards.map((c, i) => (
+      {take(lizards).map((c, i) => (
         <Lizard key={`lz-${i}`} x={c.x} z={c.z} phase={c.phase} color={c.color} />
       ))}
-      {geckos.map((c, i) => (
+      {take(geckos).map((c, i) => (
         <Gecko key={`gk-${i}`} x={c.x} z={c.z} phase={c.phase} />
       ))}
-      {rats.map((c, i) => (
+      {take(rats).map((c, i) => (
         <Rat key={`rt-${i}`} x={c.x} z={c.z} phase={c.phase} />
       ))}
-      {mice.map((c, i) => (
+      {take(mice).map((c, i) => (
         <Mouse key={`ms-${i}`} x={c.x} z={c.z} phase={c.phase} />
       ))}
-      {beetles.map((c, i) => (
+      {take(beetles).map((c, i) => (
         <Beetle key={`bt-${i}`} x={c.x} z={c.z} phase={c.phase} />
       ))}
-      {crabs.map((c, i) => (
+      {take(crabs).map((c, i) => (
         <Crab key={`cb-${i}`} x={c.x} z={c.z} phase={c.phase} />
       ))}
-      {snakes.map((c, i) => (
+      {take(snakes).map((c, i) => (
         <Snake key={`sn-${i}`} x={c.x} z={c.z} phase={c.phase} />
       ))}
-      {tortoises.map((c, i) => (
+      {take(tortoises).map((c, i) => (
         <Tortoise key={`to-${i}`} x={c.x} z={c.z} phase={c.phase} />
       ))}
-      {hares.map((c, i) => (
+      {take(hares).map((c, i) => (
         <Hare key={`ha-${i}`} x={c.x} z={c.z} phase={c.phase} />
       ))}
-      {squirrels.map((c, i) => (
+      {take(squirrels).map((c, i) => (
         <Squirrel key={`sq-${i}`} x={c.x} z={c.z} phase={c.phase} />
       ))}
-      {butterflies.map((c, i) => (
+      {take(butterflies).map((c, i) => (
         <Butterfly key={`bu-${i}`} x={c.x} z={c.z} phase={c.phase} />
       ))}
-      {chameleons.map((c, i) => (
+      {take(chameleons).map((c, i) => (
         <Chameleon key={`ch-${i}`} x={c.x} z={c.z} phase={c.phase} />
       ))}
     </group>
@@ -2708,7 +2711,9 @@ function NpcCrowd() {
       }),
     );
 
-    return list;
+    // Cap crowd size by quality tier so weak devices stay interactive
+    const cap = qualityBudget().maxNpcs;
+    return list.slice(0, cap);
   }, []);
 
   const refs = useRef<(THREE.Group | null)[]>([]);
@@ -3010,9 +3015,14 @@ export function AfroMetaverseScene({
   return (
     <Canvas
       shadows={qualityBudget().shadows}
-      dpr={[1, qualityBudget().characterDetail ? 1.5 : 1]}
-      performance={{ min: 0.5 }}
-      gl={{ powerPreference: "high-performance", antialias: qualityBudget().characterDetail }}
+      dpr={[1, qualityBudget().dprMax]}
+      performance={{ min: 0.4, max: 1, debounce: 200 }}
+      gl={{
+        powerPreference: "high-performance",
+        antialias: qualityBudget().characterDetail,
+        stencil: false,
+        depth: true,
+      }}
       camera={{ position: [0, 10, 15], fov: 45 }}
       style={{ width: "100%", height: "100%", background: SCENE_PALETTE.skyHaze }}
       tabIndex={0}
@@ -3020,7 +3030,7 @@ export function AfroMetaverseScene({
       <DayNightSky dust={dust} />
       {/* Multi-biome heritage terrain (Day 2) — single draw call + climate tint */}
       <HeritageTerrain wetness={wetness} dust={dust} />
-      <ExpandedWorld wetness={wetness} />
+      {qualityBudget().expandedWorld ? <ExpandedWorld wetness={wetness} /> : null}
       {/* Keep a soft local dust pad under the village for road contrast */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.001, 0]} receiveShadow>
         <planeGeometry args={[28, 24]} />
@@ -3171,7 +3181,7 @@ export function AfroMetaverseScene({
       <TorchPosts />
       <MissionWorldMarker />
       <VillageAnimals />
-      <ForestCritters />
+      {qualityBudget().forestCritters ? <ForestCritters /> : null}
       <NpcCrowd />
       {onInteract && <CityHotspots onInteract={onInteract} />}
       {onNearDistrict ? <PlayerController onDistrictChange={onNearDistrict} /> : <PlayerController />}
