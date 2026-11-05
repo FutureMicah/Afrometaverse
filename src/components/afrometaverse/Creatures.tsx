@@ -3,7 +3,7 @@
  * and smooth idle motion. Designed to read as animals at a glance, not primitives.
  */
 
-import { useRef } from "react";
+import { useRef, type RefObject } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import { qualityBudget } from "@/lib/qualityBudget";
 import * as THREE from "three";
@@ -147,12 +147,12 @@ export function Creature({
 }
 
 type MeshRefs = {
-  root: React.RefObject<THREE.Group | null>;
-  head: React.RefObject<THREE.Group | null>;
-  legFL: React.RefObject<THREE.Group | null>;
-  legFR: React.RefObject<THREE.Group | null>;
-  legBL: React.RefObject<THREE.Group | null>;
-  legBR: React.RefObject<THREE.Group | null>;
+  root: RefObject<THREE.Group | null>;
+  head: RefObject<THREE.Group | null>;
+  legFL: RefObject<THREE.Group | null>;
+  legFR: RefObject<THREE.Group | null>;
+  legBL: RefObject<THREE.Group | null>;
+  legBR: RefObject<THREE.Group | null>;
   scale: number;
   x: number;
   y: number;
@@ -167,7 +167,7 @@ function Leg({
   color,
   paw = false,
 }: {
-  legRef: React.RefObject<THREE.Group | null>;
+  legRef: RefObject<THREE.Group | null>;
   position: [number, number, number];
   length: number;
   radius: number;
@@ -207,12 +207,12 @@ function Leg({
             <HideMat color="#2a2218" />
           </mesh>
           {/* Toes + toenails */}
-          {[
+          {([
             [-radius * 0.7, radius * 0.55],
             [-radius * 0.25, radius * 0.7],
             [radius * 0.25, radius * 0.7],
-          [radius * 0.7, radius * 0.55],
-        ] as const).map(([tx, tz], i) => (
+            [radius * 0.7, radius * 0.55],
+          ] as const).map(([tx, tz], i) => (
             <group key={i} position={[tx, -0.005, tz]}>
               <mesh castShadow>
                 <sphereGeometry args={[radius * 0.35, 5, 4]} />
