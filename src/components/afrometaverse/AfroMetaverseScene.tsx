@@ -28,6 +28,7 @@ import { WorldChunk } from "@/components/afrometaverse/WorldChunk";
 import { groupByChunk, chunksContaining, chunkOrigin } from "@/lib/chunkAssign";
 import { chunkOf } from "@/lib/chunkStreaming";
 import { currentRenderTier } from "@/lib/renderTier";
+import { qualityBudget } from "@/lib/qualityBudget";
 import { worldFogEnd } from "@/lib/worldConfig";
 import { StylizedCharacter } from "@/components/afrometaverse/characters/StylizedCharacter";
 import {
@@ -2727,10 +2728,22 @@ function NpcCrowd() {
   useFrame(({ clock }, dt) => {
     const t = clock.getElapsedTime();
     const clampedDt = Math.min(dt, 0.05);
+    const budget = qualityBudget();
+    const animR2 = budget.animRadius * budget.animRadius;
+    const px = playerPos[0];
+    const pz = playerPos[2];
     npcs.forEach((n, i) => {
       const g = refs.current[i];
       const L = live.current[i];
       if (!g || !L) return;
+
+      // Far NPCs: freeze locomotion/activity (still visible, cheap)
+      const dx = g.position.x - px;
+      const dz = g.position.z - pz;
+      if (dx * dx + dz * dz > animR2) {
+        L.moving = false;
+        return;
+      }
 
       // Cycle standing activities every few seconds
       if (n.cycle && n.cycle.length > 0 && !n.path && !n.roam) {
@@ -2845,10 +2858,10 @@ function NpcCrowd() {
               appearance={n.appearance}
               equipped={n.equipped}
               scale={0.82}
-              animate
-              detail
-              moveState={moving ? "walk" : "idle"}
-              activity={activity}
+              animate={nearPlayer || distToPlayer < qualityBudget().animRadius}
+              detail={qualityBudget().characterDetail && distToPlayer < qualityBudget().animRadius}
+              moveState={moving && distToPlayer < qualityBudget().animRadius ? "walk" : "idle"}
+              activity={distToPlayer < qualityBudget().animRadius ? activity : "idle"}
               lookAt={lookAt}
               motionPhase={n.phase}
             />
@@ -2996,7 +3009,10 @@ export function AfroMetaverseScene({
 
   return (
     <Canvas
-      shadows
+      shadows={qualityBudget().shadows}
+      dpr={[1, qualityBudget().characterDetail ? 1.5 : 1]}
+      performance={{ min: 0.5 }}
+      gl={{ powerPreference: "high-performance", antialias: qualityBudget().characterDetail }}
       camera={{ position: [0, 10, 15], fov: 45 }}
       style={{ width: "100%", height: "100%", background: SCENE_PALETTE.skyHaze }}
       tabIndex={0}
@@ -3012,7 +3028,7 @@ export function AfroMetaverseScene({
       </mesh>
       <NeonRoads />
       <LivingWater type="pond" position={[-5.5, 0, -5.4]} radius={3.8} />
-      <BiomeFlora count={200} />
+      <BiomeFlora count={qualityBudget().floraCount} />
       <VillageTreeRing />
       {/* Always-loaded village dressing, merged once (was re-drawn in every loaded chunk). */}
       <StaticVillageProps />
@@ -3029,8 +3045,8 @@ export function AfroMetaverseScene({
         mode="world"
         tier={currentRenderTier()}
         focusRef={playerFocusRef}
-        maxLoadsPerUpdate={2}
-        buildChunk={(c) => <WorldChunk chunk={c} densityScale={1} />}
+        maxLoadsPerUpdate={qualityBudget().maxChunkLoads}
+        buildChunk={(c) => <WorldChunk chunk={c} densityScale={qualityBudget().worldDensity} />}
       />
 
       {/* Village hearths */}

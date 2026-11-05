@@ -4,9 +4,16 @@
  */
 
 import { useRef } from "react";
-import { useFrame } from "@react-three/fiber";
+import { useFrame, useThree } from "@react-three/fiber";
+import { qualityBudget } from "@/lib/qualityBudget";
 import * as THREE from "three";
 import { sampleHeight } from "@/lib/worldGen";
+
+function farFromCamera(cam: { position: { x: number; z: number } }, x: number, z: number, radius: number) {
+  const dx = cam.position.x - x;
+  const dz = cam.position.z - z;
+  return dx * dx + dz * dz > radius * radius;
+}
 
 function FurMat({ color, rough = 0.92 }: { color: string; rough?: number }) {
   return (
@@ -60,6 +67,7 @@ export function Creature({
   const legFR = useRef<THREE.Group>(null);
   const legBL = useRef<THREE.Group>(null);
   const legBR = useRef<THREE.Group>(null);
+  const cam = useThree((s) => s.camera);
 
   const speed =
     kind === "dog" || kind === "cat"
@@ -86,6 +94,11 @@ export function Creature({
 
   useFrame(({ clock }) => {
     if (!root.current) return;
+    const budget = qualityBudget();
+    // Cull far animals — still drawn, but skip roam math
+    const cx = root.current.position.x;
+    const cz = root.current.position.z;
+    if (farFromCamera(cam, cx, cz, budget.cullRadius)) return;
     const t = clock.elapsedTime;
     // Lissajous-style path so they cover area, not a tight circle
     const ox = Math.sin(t * speed + phase) * roam + Math.sin(t * speed * 0.37 + phase * 1.7) * roam * 0.25;
@@ -634,9 +647,11 @@ export function Chicken({
 }) {
   const root = useRef<THREE.Group>(null);
   const head = useRef<THREE.Group>(null);
+  const cam = useThree((s) => s.camera);
 
   useFrame(({ clock }) => {
     if (!root.current) return;
+    if (farFromCamera(cam, root.current.position.x, root.current.position.z, qualityBudget().cullRadius)) return;
     const t = clock.elapsedTime;
     const ox = Math.sin(t * 0.35 + phase) * 3.2 + Math.sin(t * 0.11 + phase * 2) * 1.2;
     const oz = Math.cos(t * 0.28 + phase) * 2.6 + Math.cos(t * 0.09 + phase * 1.5) * 1.0;
@@ -720,9 +735,11 @@ export function Duck({
 }) {
   const root = useRef<THREE.Group>(null);
   const head = useRef<THREE.Group>(null);
+  const cam = useThree((s) => s.camera);
 
   useFrame(({ clock }) => {
     if (!root.current) return;
+    if (farFromCamera(cam, root.current.position.x, root.current.position.z, qualityBudget().cullRadius)) return;
     const t = clock.elapsedTime;
     const ox = Math.sin(t * 0.5 + phase) * 0.8;
     const oz = Math.cos(t * 0.42 + phase) * 0.6;
@@ -860,9 +877,12 @@ export function FlyingBird({
   const root = useRef<THREE.Group>(null);
   const wingL = useRef<THREE.Mesh>(null);
   const wingR = useRef<THREE.Mesh>(null);
+  const cam = useThree((s) => s.camera);
 
   useFrame(({ clock }) => {
     if (!root.current) return;
+    // Birds can be farther; still skip when very far
+    if (farFromCamera(cam, root.current.position.x, root.current.position.z, qualityBudget().cullRadius * 1.4)) return;
     const t = clock.elapsedTime;
     const radius = 22 + (phase % 1) * 18;
     const spd = 0.16 + (phase % 1) * 0.1;
