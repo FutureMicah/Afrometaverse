@@ -3050,14 +3050,16 @@ export function AfroMetaverseScene({
         buildChunk={(c) => <ChunkVillageProps chunk={c} />}
       />
 
-      {/* High-polish 12 km world layer — 128 m chunks, continuous height + biome, streams with the player. */}
-      <ChunkedWorld
-        mode="world"
-        tier={currentRenderTier()}
-        focusRef={playerFocusRef}
-        maxLoadsPerUpdate={qualityBudget().maxChunkLoads}
-        buildChunk={(c) => <WorldChunk chunk={c} densityScale={qualityBudget().worldDensity} />}
-      />
+      {/* Outer 12 km stream — high tier only (main freeze source on PC/phone). */}
+      {qualityBudget().streamOuterWorld ? (
+        <ChunkedWorld
+          mode="world"
+          tier={currentRenderTier()}
+          focusRef={playerFocusRef}
+          maxLoadsPerUpdate={qualityBudget().maxChunkLoads}
+          buildChunk={(c) => <WorldChunk chunk={c} densityScale={qualityBudget().worldDensity} />}
+        />
+      ) : null}
 
       {/* Village hearths */}
       <VillageHearth position={[-3.6, 0, 3.0]} />
@@ -3138,8 +3140,8 @@ export function AfroMetaverseScene({
       ))}
 
       {/* Day 1 atmospheric life */}
-      <DustMotes count={90} active={dust > 0.25 || wetness < 0.3} />
-      <SpiritFireflies count={36} active={dust < 0.5} />
+      <DustMotes count={qualityBudget().dustMotes} active={dust > 0.25 || wetness < 0.3} />
+      <SpiritFireflies count={qualityBudget().fireflies} active={dust < 0.5} />
       <SavannahGrass count={200} windIntensity={0.35 + dust * 0.5} />
       <LightningFlash active={wetness > 0.55} />
       <SacredGroveMist position={[10, 0.6, -9]} />
@@ -3180,7 +3182,7 @@ export function AfroMetaverseScene({
       <VillageHearth position={[-1.0, 0, 4.5]} />
       <TorchPosts />
       <MissionWorldMarker />
-      <VillageAnimals />
+      {qualityBudget().villageAnimals ? <VillageAnimals /> : null}
       {qualityBudget().forestCritters ? <ForestCritters /> : null}
       <NpcCrowd />
       {onInteract && <CityHotspots onInteract={onInteract} />}

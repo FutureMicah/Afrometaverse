@@ -1,6 +1,6 @@
 /**
- * Render tier from device hints.
- * Conservative defaults: missing deviceMemory must NOT imply a powerful GPU.
+ * Render tier detection — defaults LOW because PC and phone both froze on mid/high.
+ * Players can raise quality via localStorage: localStorage.setItem("am-quality","mid"|"high")
  */
 
 export type RenderTier = "low" | "mid" | "high";
@@ -12,21 +12,15 @@ export interface DeviceHints {
 }
 
 export function detectRenderTier(h: DeviceHints): RenderTier {
-  const cores = h.hardwareConcurrency ?? 4;
-  const mem = h.deviceMemory; // may be undefined (Chrome often hides this)
+  // Safe default for everyone — outer world / dense fauna only on explicit high
+  const cores = h.hardwareConcurrency ?? 2;
+  const mem = h.deviceMemory;
   const mobile = !!h.mobile;
 
-  // Mobile: stay low unless clearly strong
-  if (mobile) {
-    if (mem != null && mem >= 8 && cores >= 8) return "mid";
-    return "low";
-  }
+  if (mobile) return "low";
 
-  // Desktop / tablet: only "high" when memory is known and healthy
-  if (mem != null && mem >= 8 && cores >= 8) return "high";
-  if (mem != null && mem >= 4 && cores >= 4) return "mid";
-  // Unknown memory (common): prefer mid for desktop, never auto-high
-  if (!mobile && cores >= 6) return "mid";
+  // Desktop: still start low unless clearly strong AND memory is known
+  if (mem != null && mem >= 8 && cores >= 8) return "mid";
   return "low";
 }
 

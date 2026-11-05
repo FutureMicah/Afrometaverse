@@ -1,5 +1,6 @@
 /**
- * Performance budgets by render tier — tuned to stop Lovable preview freezes.
+ * Performance budgets — default path must stay playable on phone AND PC.
+ * Outer world stream and dense fauna are opt-in (high tier only).
  */
 
 import type { RenderTier } from "./renderTier";
@@ -13,65 +14,87 @@ export type QualityBudget = {
   maxChunkLoads: number;
   shadows: boolean;
   characterDetail: boolean;
-  /** Mount ExpandedWorld ring of outer biomes */
   expandedWorld: boolean;
-  /** Mount ForestCritters (many useFrame animals) */
+  /** 12 km WorldChunk stream — heavy; only high */
+  streamOuterWorld: boolean;
   forestCritters: boolean;
-  /** Fraction of village animal list to spawn 0–1 */
+  villageAnimals: boolean;
   animalScale: number;
-  /** Cap on animated NPCs in NpcCrowd */
   maxNpcs: number;
-  /** Pixel ratio cap */
   dprMax: number;
+  dustMotes: number;
+  fireflies: number;
 };
 
 const BUDGETS: Record<RenderTier, QualityBudget> = {
   low: {
-    floraCount: 40,
-    worldDensity: 0.2,
-    animRadius: 14,
-    cullRadius: 28,
+    floraCount: 24,
+    worldDensity: 0.15,
+    animRadius: 12,
+    cullRadius: 22,
     maxChunkLoads: 1,
     shadows: false,
     characterDetail: false,
     expandedWorld: false,
+    streamOuterWorld: false,
     forestCritters: false,
-    animalScale: 0.35,
-    maxNpcs: 16,
+    villageAnimals: false,
+    animalScale: 0.25,
+    maxNpcs: 10,
     dprMax: 1,
+    dustMotes: 20,
+    fireflies: 8,
   },
   mid: {
-    floraCount: 90,
-    worldDensity: 0.4,
-    animRadius: 22,
-    cullRadius: 40,
+    floraCount: 60,
+    worldDensity: 0.3,
+    animRadius: 18,
+    cullRadius: 32,
     maxChunkLoads: 1,
     shadows: false,
     characterDetail: false,
-    expandedWorld: true,
+    expandedWorld: false,
+    streamOuterWorld: false,
     forestCritters: false,
-    animalScale: 0.55,
-    maxNpcs: 28,
+    villageAnimals: true,
+    animalScale: 0.4,
+    maxNpcs: 18,
     dprMax: 1,
+    dustMotes: 40,
+    fireflies: 14,
   },
   high: {
-    floraCount: 140,
-    worldDensity: 0.55,
-    animRadius: 32,
-    cullRadius: 55,
+    floraCount: 100,
+    worldDensity: 0.45,
+    animRadius: 28,
+    cullRadius: 48,
     maxChunkLoads: 1,
     shadows: true,
     characterDetail: true,
     expandedWorld: true,
+    streamOuterWorld: true,
     forestCritters: true,
-    animalScale: 0.75,
-    maxNpcs: 40,
+    villageAnimals: true,
+    animalScale: 0.65,
+    maxNpcs: 28,
     dprMax: 1.25,
+    dustMotes: 60,
+    fireflies: 24,
   },
 };
 
+/** Optional override: localStorage am-quality = low|mid|high */
 export function qualityBudget(tier?: RenderTier): QualityBudget {
-  return BUDGETS[tier ?? currentRenderTier()];
+  let t = tier ?? currentRenderTier();
+  if (typeof window !== "undefined") {
+    try {
+      const o = window.localStorage.getItem("am-quality");
+      if (o === "low" || o === "mid" || o === "high") t = o;
+    } catch {
+      /* ignore */
+    }
+  }
+  return BUDGETS[t];
 }
 
 let frame = 0;
