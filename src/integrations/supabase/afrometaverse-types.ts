@@ -15,7 +15,7 @@ type CitizenGearRow = {
   ammo: Record<string, number>;
 };
 
-type CitizenRow = {
+type CitizenRowShape = {
   id: string;
   display_name: string;
   avatar_initials: string;
@@ -75,7 +75,7 @@ type VoteProposalRow = {
 export type AfroMetaverseDatabase = Omit<Database, "public"> & {
   public: Omit<Database["public"], "Tables" | "Functions"> & {
     Tables: {
-      citizens: Table<CitizenRow, Partial<CitizenRow> & Pick<CitizenRow, "id">>;
+      citizens: Table<CitizenRowShape, Partial<CitizenRowShape> & Pick<CitizenRowShape, "id">>;
       town_posts: Table<
         TownPostRow,
         Partial<TownPostRow> & Pick<TownPostRow, "author_name" | "body">
