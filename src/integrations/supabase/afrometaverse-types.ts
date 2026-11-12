@@ -1,4 +1,4 @@
-import type { Database, Json } from "@/integrations/supabase/types";
+import type { Database } from "@/integrations/supabase/types";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -9,6 +9,12 @@ type Table<Row, Insert, Update = Partial<Insert>> = {
   Relationships: [];
 };
 
+type CitizenGearRow = {
+  equipped: string;
+  unlocked: string[];
+  ammo: Record<string, number>;
+};
+
 type CitizenRow = {
   id: string;
   display_name: string;
@@ -16,13 +22,13 @@ type CitizenRow = {
   balance: number;
   reputation: number;
   city_day: number;
-  completed_jobs: Json;
-  purchased_goods: Json;
+  completed_jobs: string[];
+  purchased_goods: string[];
   voted_for: string | null;
-  done_courses: Json;
-  liked_posts: Json;
+  done_courses: string[];
+  liked_posts: string[];
   heat_points: number;
-  gear: Json;
+  gear: CitizenGearRow;
   created_at: string;
   updated_at: string;
 };

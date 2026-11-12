@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { Session, User } from "@supabase/supabase-js";
 import { afroMetaverseSupabase, type CitizenRow } from "@/integrations/supabase/afrometaverse-types";
+import { supabase } from "@/integrations/supabase/client";
 
 export type { CitizenRow };
 
