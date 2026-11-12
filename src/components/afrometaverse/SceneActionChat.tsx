@@ -4,13 +4,12 @@
  */
 import { useCallback, useMemo, useState } from "react";
 import { MessageCircle, Send, Loader2, X } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { useServerFn } from "@tanstack/react-start";
+import { generateNpcDialogue } from "@/lib/npc-dialogue.functions";
 import { useRoamStore, DISTRICT_WORLD } from "@/stores/roamStore";
 import { useInteriorStore } from "@/stores/interiorStore";
 import { useWeatherStore } from "@/stores/weatherStore";
 import { INTERIOR_LIST } from "@/data/interiors";
-
-const FUNCTION_NAME = "npc-dialogue";
 
 type DialogueResult = {
   speaker: string;
@@ -59,6 +58,7 @@ export function SceneActionChat({
   onNeedAuth,
   onToast,
 }: Props) {
+  const generateDialogue = useServerFn(generateNpcDialogue);
   const [open, setOpen] = useState(false);
   const [action, setAction] = useState("");
   const [loading, setLoading] = useState(false);
@@ -74,6 +74,7 @@ export function SceneActionChat({
   const missionLog = useRoamStore((s) => s.missionLog);
   const pushLog = useRoamStore((s) => s.pushLog);
   const interiorId = useInteriorStore((s) => s.insideId);
+  const hour = useWeatherStore((s) => s.state.hour);
   const rain = useWeatherStore((s) => s.config.rainIntensity);
   const dust = useWeatherStore((s) => s.config.dustIntensity);
 
@@ -104,8 +105,8 @@ export function SceneActionChat({
     setLoading(true);
     setError(null);
     try {
-      const { data, error: fnErr } = await supabase.functions.invoke(FUNCTION_NAME, {
-        body: {
+      const result = await generateDialogue({
+        data: {
           action: text,
           reputation,
           heat: heatPoints,
@@ -115,28 +116,12 @@ export function SceneActionChat({
             district: nearDistrictId ?? "village",
             place,
             interior: interiorName || undefined,
-            timeOfDay: timeOfDayLabel(),
+            timeOfDay: timeOfDayLabel(hour),
             weather: weatherLabel,
             recentLog: missionLog.slice(-4),
           },
         },
       });
-
-      if (fnErr) {
-        throw new Error(fnErr.message || "Could not reach the city voice.");
-      }
-      if (data?.error) {
-        throw new Error(String(data.error));
-      }
-
-      const reputationHint = data?.reputationHint ? String(data.reputationHint) : undefined;
-      const result: DialogueResult = {
-        speaker: String(data?.speaker ?? "Villager"),
-        mood: String(data?.mood ?? "wary"),
-        reply: String(data?.reply ?? ""),
-        ...(reputationHint ? { reputationHint } : {}),
-      };
-      if (!result.reply) throw new Error("No reply came back.");
 
       setHistory((h) => [{ action: text, result }, ...h].slice(0, 8));
       setAction("");
@@ -157,6 +142,7 @@ export function SceneActionChat({
     reputation,
     heatPoints,
     wantedLevel,
+    hour,
     displayName,
     nearDistrictId,
     place,
