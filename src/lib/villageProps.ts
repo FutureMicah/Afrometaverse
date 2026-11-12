@@ -245,7 +245,7 @@ export function addHut(batch: PropBatch, spec: HutSpec): void {
   const p = new Placer(batch, groupMatrix([x, 0, z], rot));
   const thatch = VILLAGE_PALETTE.thatch;
   const thatchDark = VILLAGE_PALETTE.thatchDark;
-  const thatchGold = VILLAGE_PALETTE.thatchGold ?? "#b08a4e";
+  const thatchGold = VILLAGE_PALETTE.thatch;
   const door = VILLAGE_PALETTE.doorWood;
   const r = w * 0.52; // wall radius
   const plinthH = 0.62;

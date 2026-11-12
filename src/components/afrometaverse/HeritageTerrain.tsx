@@ -245,7 +245,7 @@ export function HeritageTerrain({ wetness = 0, dust = 0 }: HeritageTerrainProps)
   // plane joins seamlessly with streamed WorldChunks.
   const geometry = useMemo(() => {
     const geo = new THREE.PlaneGeometry(TERRAIN_SIZE, TERRAIN_SIZE, SEGMENTS, SEGMENTS);
-    const pos = geo.attributes.position;
+    const pos = geo.attributes["position"];
     if (!pos) return geo;
     for (let i = 0; i < pos.count; i++) {
       const lx = pos.getX(i); // local −100 … +100

@@ -224,5 +224,7 @@ export const useControlLayoutStore = create<ControlLayoutState>((set, get) => ({
 }));
 
 export function getControlDef(id: ControlId): ControlDef {
-  return CONTROL_CATALOG.find((c) => c.id === id) ?? CONTROL_CATALOG[0];
+  const control = CONTROL_CATALOG.find((c) => c.id === id);
+  if (!control) throw new Error(`No control definition found for ${id}`);
+  return control;
 }

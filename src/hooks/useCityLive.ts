@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import type { Tables } from "@/integrations/supabase/types";
+import { afroMetaverseSupabase, type AfroMetaverseDatabase } from "@/integrations/supabase/afrometaverse-types";
 
 export type TownPost = {
   id: string;
@@ -37,6 +36,8 @@ export type PresencePeer = {
 
 const PRESENCE_TTL_MS = 90_000;
 const HEARTBEAT_MS = 25_000;
+
+type Tables<Name extends keyof AfroMetaverseDatabase["public"]["Tables"]> = AfroMetaverseDatabase["public"]["Tables"][Name]["Row"];
 
 function mapPost(row: Tables<"town_posts">): TownPost {
   return {
@@ -111,16 +112,16 @@ export function useCityLive({
     setError(null);
     try {
       const [postsRes, eventsRes, proposalsRes, presenceRes] = await Promise.all([
-        supabase.from("town_posts").select("*").order("created_at", { ascending: false }).limit(40),
-        supabase
+        afroMetaverseSupabase.from("town_posts").select("*").order("created_at", { ascending: false }).limit(40),
+        afroMetaverseSupabase
           .from("city_events")
           .select("*")
           .eq("is_active", true)
           .lte("starts_on_day", cityDay)
           .gte("ends_on_day", cityDay)
           .order("starts_on_day", { ascending: true }),
-        supabase.from("vote_proposals").select("*").order("id", { ascending: true }),
-        supabase
+        afroMetaverseSupabase.from("vote_proposals").select("*").order("id", { ascending: true }),
+        afroMetaverseSupabase
           .from("presence")
           .select("*")
           .gte("last_seen", new Date(Date.now() - PRESENCE_TTL_MS).toISOString()),
@@ -146,10 +147,10 @@ export function useCityLive({
       setLiveReady(true);
 
       // Resolve votes if the city day has passed the close day
-      void supabase.rpc("resolve_votes_for_day", { p_day: cityDay }).then(({ error: rpcErr }) => {
+      void afroMetaverseSupabase.rpc("resolve_votes_for_day", { p_day: cityDay }).then(({ error: rpcErr }) => {
         if (rpcErr) console.warn("[city-live] resolve votes", rpcErr.message);
         else {
-          void supabase
+          void afroMetaverseSupabase
             .from("vote_proposals")
             .select("*")
             .order("id", { ascending: true })
@@ -176,7 +177,7 @@ export function useCityLive({
   useEffect(() => {
     if (!enabled) return;
 
-    const channel = supabase
+    const channel = afroMetaverseSupabase
       .channel("city-live")
       .on(
         "postgres_changes",
@@ -201,7 +202,7 @@ export function useCityLive({
         "postgres_changes",
         { event: "*", schema: "public", table: "presence" },
         () => {
-          void supabase
+          void afroMetaverseSupabase
             .from("presence")
             .select("*")
             .gte("last_seen", new Date(Date.now() - PRESENCE_TTL_MS).toISOString())
@@ -231,7 +232,7 @@ export function useCityLive({
       .subscribe();
 
     return () => {
-      void supabase.removeChannel(channel);
+      void afroMetaverseSupabase.removeChannel(channel);
     };
   }, [enabled]);
 
@@ -240,7 +241,7 @@ export function useCityLive({
     if (!enabled || !userId) return;
 
     const beat = async () => {
-      const { error: upErr } = await supabase.from("presence").upsert({
+      const { error: upErr } = await afroMetaverseSupabase.from("presence").upsert({
         user_id: userId,
         display_name: displayName,
         district_id: districtId,
@@ -263,7 +264,7 @@ export function useCityLive({
       const body = text.trim().slice(0, 280);
       if (!body) return null;
 
-      const { data, error: insertError } = await supabase
+      const { data, error: insertError } = await afroMetaverseSupabase
         .from("town_posts")
         .insert({
           author_id: userId,
@@ -289,7 +290,7 @@ export function useCityLive({
       if (!enabled) return false;
       const current = posts.find((p) => p.id === postId);
       if (!current) return false;
-      const { error: upErr } = await supabase
+      const { error: upErr } = await afroMetaverseSupabase
         .from("town_posts")
         .update({ likes: current.likes + 1 })
         .eq("id", postId);
@@ -308,7 +309,7 @@ export function useCityLive({
   const castLiveVote = useCallback(
     async (proposalId: string) => {
       if (!enabled || !userId) return false;
-      const { error: rpcErr } = await supabase.rpc("cast_civic_vote", {
+      const { error: rpcErr } = await afroMetaverseSupabase.rpc("cast_civic_vote", {
         p_proposal_id: proposalId,
         p_season: "003",
       });

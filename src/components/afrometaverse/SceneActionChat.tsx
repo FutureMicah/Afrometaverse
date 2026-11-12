@@ -36,7 +36,7 @@ function nearestDistrictLabel(x: number, z: number): string {
     const dist = dx * dx + dz * dz;
     if (dist < bestD) {
       bestD = dist;
-      best = d.name ?? d.id;
+      best = d.name;
     }
   }
   return best;
@@ -74,8 +74,8 @@ export function SceneActionChat({
   const missionLog = useRoamStore((s) => s.missionLog);
   const pushLog = useRoamStore((s) => s.pushLog);
   const interiorId = useInteriorStore((s) => s.insideId);
-  const rain = useWeatherStore((s) => s.rainIntensity);
-  const dust = useWeatherStore((s) => s.dustIntensity);
+  const rain = useWeatherStore((s) => s.config.rainIntensity);
+  const dust = useWeatherStore((s) => s.config.dustIntensity);
 
   const place = useMemo(() => {
     if (nearDistrictId && DISTRICT_WORLD[nearDistrictId]) {
@@ -129,11 +129,12 @@ export function SceneActionChat({
         throw new Error(String(data.error));
       }
 
+      const reputationHint = data?.reputationHint ? String(data.reputationHint) : undefined;
       const result: DialogueResult = {
         speaker: String(data?.speaker ?? "Villager"),
         mood: String(data?.mood ?? "wary"),
         reply: String(data?.reply ?? ""),
-        reputationHint: data?.reputationHint ? String(data.reputationHint) : undefined,
+        ...(reputationHint ? { reputationHint } : {}),
       };
       if (!result.reply) throw new Error("No reply came back.");
 

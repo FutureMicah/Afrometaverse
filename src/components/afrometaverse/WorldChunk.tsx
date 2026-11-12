@@ -53,8 +53,8 @@ export function WorldChunk({ chunk, densityScale = 1 }: WorldChunkProps) {
   // Hooks must run unconditionally (no early return before hooks).
   const region = sampleRegion(centre.x, centre.z);
   const density = inVillageCore ? 0 : sampleContentDensity(centre.x, centre.z) * densityScale;
-  const rainIntensity = useWeatherStore((s) => s.rainIntensity);
-  const dustIntensity = useWeatherStore((s) => s.dustIntensity);
+  const rainIntensity = useWeatherStore((s) => s.config.rainIntensity);
+  const dustIntensity = useWeatherStore((s) => s.config.dustIntensity);
   const climate = Math.max(rainIntensity, dustIntensity * 0.5);
   const wind = 0.25 + dustIntensity * 0.5 + rainIntensity * 0.2;
 
@@ -66,7 +66,7 @@ export function WorldChunk({ chunk, densityScale = 1 }: WorldChunkProps) {
       SEGMENTS,
       SEGMENTS,
     );
-    const pos = geo.attributes.position;
+    const pos = geo.attributes["position"];
     if (!pos) return geo;
 
     for (let i = 0; i < pos.count; i++) {
