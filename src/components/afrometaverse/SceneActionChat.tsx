@@ -121,7 +121,6 @@ export function SceneActionChat({
             recentLog: missionLog.slice(-4),
           },
         },
-        },
       });
 
       setHistory((h) => [{ action: text, result }, ...h].slice(0, 8));
