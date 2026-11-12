@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { Session, User } from "@supabase/supabase-js";
 import { afroMetaverseSupabase, type CitizenRow } from "@/integrations/supabase/afrometaverse-types";
-import { supabase } from "@/integrations/supabase/client";
 
 export type { CitizenRow };
 
@@ -194,7 +193,7 @@ export function useCitizenAuth() {
   useEffect(() => {
     void loadSession();
 
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+    const { data: sub } = afroMetaverseSupabase.auth.onAuthStateChange((_event, nextSession) => {
       setSession(nextSession);
       setUser(nextSession?.user ?? null);
       if (nextSession?.user) {
@@ -217,7 +216,7 @@ export function useCitizenAuth() {
 
   const signInWithEmail = useCallback(async (email: string, password: string) => {
     setAuthError(null);
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    const { error } = await afroMetaverseSupabase.auth.signInWithPassword({ email, password });
     if (error) {
       setAuthError(error.message);
       return false;
@@ -229,7 +228,7 @@ export function useCitizenAuth() {
   const signUpWithEmail = useCallback(
     async (email: string, password: string, displayName?: string) => {
       setAuthError(null);
-      const { error } = await supabase.auth.signUp({
+      const { error } = await afroMetaverseSupabase.auth.signUp({
         email,
         password,
         options: {
@@ -250,7 +249,7 @@ export function useCitizenAuth() {
     setAuthError(null);
     const redirectTo =
       typeof window !== "undefined" ? `${window.location.origin}/` : undefined;
-    const { error } = await supabase.auth.signInWithOAuth({
+    const { error } = await afroMetaverseSupabase.auth.signInWithOAuth({
       provider: "google",
       options: redirectTo ? { redirectTo } : {},
     });
@@ -263,7 +262,7 @@ export function useCitizenAuth() {
 
   const signOut = useCallback(async () => {
     setAuthError(null);
-    await supabase.auth.signOut();
+    await afroMetaverseSupabase.auth.signOut();
     setSession(null);
     setUser(null);
     setProgress(DEFAULT_PROGRESS);
