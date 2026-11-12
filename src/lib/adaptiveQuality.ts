@@ -128,7 +128,9 @@ export function adaptiveQualityTick(dt: number) {
   const maxStage: HeavyStage =
     (locked ?? state.tier) === "high" ? 3 : (locked ?? state.tier) === "mid" ? 2 : 1;
 
-  if (stageGood >= 70 && state.stage < maxStage) {
+  // Faster first stage unlock so animals/forest/clouds land quickly after boot
+  const need = state.stage === 0 ? 35 : 70;
+  if (stageGood >= need && state.stage < maxStage) {
     // Outer world (stage 3) only if player left the village core
     if (state.stage === 2 && state.playerRadius < 85) {
       stageGood = 40; // wait until they explore outward
@@ -170,10 +172,13 @@ export function adaptiveQualityTick(dt: number) {
 export function heavyAllows(feature: "animals" | "expanded" | "forest" | "outer" | "shadows"): boolean {
   const { tier, stage, locked } = useAdaptiveQuality.getState();
   const t = locked ?? tier;
-  if (feature === "animals") return t !== "low" && stage >= 1;
-  if (feature === "expanded") return (t === "mid" || t === "high") && stage >= 2;
-  if (feature === "forest") return t === "high" && stage >= 2;
-  if (feature === "outer") return t === "high" && stage >= 3;
-  if (feature === "shadows") return t === "high" && stage >= 2;
+  // Animals / insects: visible from boot on mid+, and after stage 0 settle on low
+  if (feature === "animals") return t !== "low" || stage >= 1;
+  // Expanded biomes (forest patches, outer river, mountains): stage 1+
+  if (feature === "expanded") return (t === "mid" || t === "high") && stage >= 1;
+  // Dense forest critters: mid stage 1 or high stage 0
+  if (feature === "forest") return (t === "high" && stage >= 0) || (t === "mid" && stage >= 1);
+  if (feature === "outer") return t === "high" && stage >= 2;
+  if (feature === "shadows") return t === "high" && stage >= 1;
   return false;
 }

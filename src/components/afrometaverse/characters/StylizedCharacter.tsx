@@ -18,8 +18,32 @@ type Props = {
   /**
    * Social / secondary motion layer on top of locomotion.
    * talk / discuss drive head nods + arm gestures; wave is a one-sided hello.
+   * sit / sit_bench / confident / dance / dance_kick / crouch / reach
+   * + full combat set from the character design pose sheet.
    */
-  activity?: "none" | "idle" | "talk" | "discuss" | "wave";
+  activity?:
+    | "none"
+    | "idle"
+    | "talk"
+    | "discuss"
+    | "wave"
+    | "sit"
+    | "sit_bench"
+    | "confident"
+    | "dance"
+    | "dance_kick"
+    | "crouch"
+    | "reach"
+    | "combat_ready"
+    | "combat_lunge"
+    | "combat_staff"
+    | "combat_guard"
+    | "combat_slash"
+    | "combat_kick"
+    | "combat_overhead"
+    | "combat_block"
+    | "combat_dodge"
+    | "combat_combo";
   /** World-space point to glance toward (player, speaker). Head yaw/pitch only. */
   lookAt?: [number, number, number] | null;
   /** Unique phase so crowds don't sync their micro-motions */
@@ -161,7 +185,26 @@ export function StylizedCharacter({
     if (!animate || !root.current) return;
     const t = clock.getElapsedTime() + phase.current;
     const social =
-      activity === "talk" || activity === "discuss" || activity === "wave"
+      activity === "talk" ||
+      activity === "discuss" ||
+      activity === "wave" ||
+      activity === "sit" ||
+      activity === "sit_bench" ||
+      activity === "confident" ||
+      activity === "dance" ||
+      activity === "dance_kick" ||
+      activity === "crouch" ||
+      activity === "reach" ||
+      activity === "combat_ready" ||
+      activity === "combat_lunge" ||
+      activity === "combat_staff" ||
+      activity === "combat_guard" ||
+      activity === "combat_slash" ||
+      activity === "combat_kick" ||
+      activity === "combat_overhead" ||
+      activity === "combat_block" ||
+      activity === "combat_dodge" ||
+      activity === "combat_combo"
         ? activity
         : activity === "idle"
           ? "idle"
@@ -177,6 +220,512 @@ export function StylizedCharacter({
       if (head.current) {
         head.current.rotation.y = Math.sin(t * 0.55) * 0.06;
         head.current.rotation.x = Math.sin(t * 0.9) * 0.03;
+      }
+      return;
+    }
+
+    // Full-body pose overrides (from character design pose sheet)
+    if (social === "sit") {
+      // Ground sit — one knee up / side sit energy, relaxed arms
+      root.current.position.y = -0.42 + Math.sin(t * 1.1) * 0.01;
+      root.current.rotation.y = postureLean + Math.sin(t * 0.35) * 0.04;
+      root.current.rotation.z = 0.04;
+      if (leftLeg.current) {
+        leftLeg.current.rotation.x = -1.35;
+        leftLeg.current.rotation.z = 0.35;
+      }
+      if (rightLeg.current) {
+        rightLeg.current.rotation.x = -0.55;
+        rightLeg.current.rotation.z = -0.15;
+      }
+      if (leftArm.current) {
+        leftArm.current.rotation.x = -0.55 + Math.sin(t * 0.7) * 0.05;
+        leftArm.current.rotation.z = 0.45;
+        leftArm.current.rotation.y = 0.15;
+      }
+      if (rightArm.current) {
+        rightArm.current.rotation.x = -0.4 + Math.sin(t * 0.65) * 0.04;
+        rightArm.current.rotation.z = -0.25;
+        rightArm.current.rotation.y = -0.1;
+      }
+      if (torso.current) {
+        torso.current.rotation.x = 0.18;
+        torso.current.rotation.y = Math.sin(t * 0.4) * 0.06;
+      }
+      if (head.current) {
+        head.current.rotation.y = Math.sin(t * 0.45) * 0.12;
+        head.current.rotation.x = -0.08 + Math.sin(t * 0.6) * 0.04;
+      }
+      return;
+    }
+
+    if (social === "crouch") {
+      // Ready / low crouch — weight forward, arms braced
+      root.current.position.y = -0.28 + Math.sin(t * 2.2) * 0.012;
+      root.current.rotation.y = postureLean;
+      root.current.rotation.z = Math.sin(t * 1.8) * 0.02;
+      if (leftLeg.current) leftLeg.current.rotation.x = -1.05;
+      if (rightLeg.current) rightLeg.current.rotation.x = -0.95;
+      if (leftArm.current) {
+        leftArm.current.rotation.x = -0.85;
+        leftArm.current.rotation.z = 0.35;
+        leftArm.current.rotation.y = 0.2;
+      }
+      if (rightArm.current) {
+        rightArm.current.rotation.x = -0.9;
+        rightArm.current.rotation.z = -0.3;
+        rightArm.current.rotation.y = -0.15;
+      }
+      if (torso.current) {
+        torso.current.rotation.x = 0.35;
+        torso.current.rotation.y = Math.sin(t * 1.5) * 0.04;
+      }
+      if (head.current) {
+        head.current.rotation.y = Math.sin(t * 0.9) * 0.08;
+        head.current.rotation.x = 0.12;
+      }
+      return;
+    }
+
+    if (social === "confident") {
+      // Hands-on-hips / crossed-arms confident stance
+      root.current.position.y = Math.sin(t * 1.2) * 0.008;
+      root.current.rotation.y = postureLean + 0.04;
+      root.current.rotation.z = 0.03;
+      if (leftLeg.current) leftLeg.current.rotation.x = 0.08;
+      if (rightLeg.current) rightLeg.current.rotation.x = -0.06;
+      if (leftArm.current) {
+        leftArm.current.rotation.x = -0.25;
+        leftArm.current.rotation.z = 0.75;
+        leftArm.current.rotation.y = 0.45;
+      }
+      if (rightArm.current) {
+        rightArm.current.rotation.x = -0.25;
+        rightArm.current.rotation.z = -0.75;
+        rightArm.current.rotation.y = -0.45;
+      }
+      if (torso.current) {
+        torso.current.rotation.x = -0.04;
+        torso.current.rotation.y = Math.sin(t * 0.4) * 0.03;
+      }
+      if (head.current) {
+        head.current.rotation.y = Math.sin(t * 0.35) * 0.06;
+        head.current.rotation.x = -0.05;
+      }
+      return;
+    }
+
+    if (social === "dance") {
+      // High-energy heritage / Afrobeats step — strong line of action, one leg lifted
+      const beat = Math.sin(t * 6.2);
+      const beat2 = Math.sin(t * 6.2 + 1.1);
+      root.current.position.y = 0.04 + Math.abs(beat) * 0.06;
+      root.current.rotation.y = beat * 0.18 + postureLean;
+      root.current.rotation.z = beat2 * 0.08;
+      if (leftLeg.current) leftLeg.current.rotation.x = -0.15 + beat * 0.55;
+      if (rightLeg.current) rightLeg.current.rotation.x = -0.9 + Math.abs(beat2) * 0.35;
+      if (leftArm.current) {
+        leftArm.current.rotation.x = -1.4 + beat * 0.5;
+        leftArm.current.rotation.z = 0.2 + beat2 * 0.35;
+        leftArm.current.rotation.y = beat * 0.4;
+      }
+      if (rightArm.current) {
+        rightArm.current.rotation.x = -0.6 + beat2 * 0.7;
+        rightArm.current.rotation.z = -0.35 - beat * 0.25;
+        rightArm.current.rotation.y = -beat * 0.3;
+      }
+      if (torso.current) {
+        torso.current.rotation.x = 0.08 + beat * 0.06;
+        torso.current.rotation.y = beat * 0.12;
+      }
+      if (head.current) {
+        head.current.rotation.y = beat * 0.15;
+        head.current.rotation.x = -0.05 + beat2 * 0.08;
+      }
+      return;
+    }
+
+    if (social === "reach") {
+      // Reaching / pointing / calling out
+      root.current.position.y = Math.sin(t * 1.4) * 0.01;
+      root.current.rotation.y = postureLean + 0.12;
+      root.current.rotation.z = -0.04;
+      if (leftLeg.current) leftLeg.current.rotation.x = 0.12;
+      if (rightLeg.current) rightLeg.current.rotation.x = -0.18;
+      if (leftArm.current) {
+        leftArm.current.rotation.x = -0.2;
+        leftArm.current.rotation.z = 0.15;
+        leftArm.current.rotation.y = 0.05;
+      }
+      if (rightArm.current) {
+        rightArm.current.rotation.x = -1.65 + Math.sin(t * 2.2) * 0.08;
+        rightArm.current.rotation.z = -0.15;
+        rightArm.current.rotation.y = 0.35;
+      }
+      if (torso.current) {
+        torso.current.rotation.x = 0.15;
+        torso.current.rotation.y = 0.18;
+      }
+      if (head.current) {
+        head.current.rotation.y = 0.25 + Math.sin(t * 0.7) * 0.05;
+        head.current.rotation.x = 0.1;
+      }
+      return;
+    }
+
+    if (social === "sit_bench") {
+      // Bench / stool sit — upright torso, feet planted, hands on thighs
+      root.current.position.y = -0.28 + Math.sin(t * 0.9) * 0.008;
+      root.current.rotation.y = postureLean + Math.sin(t * 0.3) * 0.03;
+      root.current.rotation.z = 0;
+      if (leftLeg.current) {
+        leftLeg.current.rotation.x = -1.05;
+        leftLeg.current.rotation.z = 0.08;
+      }
+      if (rightLeg.current) {
+        rightLeg.current.rotation.x = -1.05;
+        rightLeg.current.rotation.z = -0.08;
+      }
+      if (leftArm.current) {
+        leftArm.current.rotation.x = -0.55 + Math.sin(t * 0.6) * 0.04;
+        leftArm.current.rotation.z = 0.2;
+        leftArm.current.rotation.y = 0.1;
+      }
+      if (rightArm.current) {
+        rightArm.current.rotation.x = -0.55 + Math.sin(t * 0.55 + 0.4) * 0.04;
+        rightArm.current.rotation.z = -0.2;
+        rightArm.current.rotation.y = -0.1;
+      }
+      if (torso.current) {
+        torso.current.rotation.x = 0.06;
+        torso.current.rotation.y = Math.sin(t * 0.35) * 0.04;
+      }
+      if (head.current) {
+        head.current.rotation.y = Math.sin(t * 0.4) * 0.1;
+        head.current.rotation.x = -0.04 + Math.sin(t * 0.5) * 0.03;
+      }
+      return;
+    }
+
+    if (social === "dance_kick") {
+      // High kick / sharp step — strong silhouette from the pose sheet
+      const kick = Math.max(0, Math.sin(t * 5.4));
+      const swing = Math.sin(t * 5.4 + 0.9);
+      root.current.position.y = 0.05 + kick * 0.08;
+      root.current.rotation.y = swing * 0.22 + postureLean;
+      root.current.rotation.z = swing * 0.1;
+      if (leftLeg.current) leftLeg.current.rotation.x = -0.2 + swing * 0.35;
+      if (rightLeg.current) rightLeg.current.rotation.x = -1.55 + kick * 0.9; // high kick
+      if (leftArm.current) {
+        leftArm.current.rotation.x = -1.2 + swing * 0.45;
+        leftArm.current.rotation.z = 0.25 + kick * 0.3;
+        leftArm.current.rotation.y = swing * 0.35;
+      }
+      if (rightArm.current) {
+        rightArm.current.rotation.x = -0.5 - kick * 0.4;
+        rightArm.current.rotation.z = -0.4 - swing * 0.2;
+        rightArm.current.rotation.y = -swing * 0.25;
+      }
+      if (torso.current) {
+        torso.current.rotation.x = 0.1 + kick * 0.08;
+        torso.current.rotation.y = swing * 0.15;
+      }
+      if (head.current) {
+        head.current.rotation.y = swing * 0.18;
+        head.current.rotation.x = -0.06 + kick * 0.1;
+      }
+      return;
+    }
+
+    if (social === "combat_ready") {
+      // Low ready stance — weight on back leg, hands up, alert
+      root.current.position.y = -0.06 + Math.sin(t * 2.8) * 0.01;
+      root.current.rotation.y = postureLean;
+      root.current.rotation.z = Math.sin(t * 1.6) * 0.015;
+      if (leftLeg.current) leftLeg.current.rotation.x = 0.25;
+      if (rightLeg.current) rightLeg.current.rotation.x = -0.55;
+      if (leftArm.current) {
+        leftArm.current.rotation.x = -1.05;
+        leftArm.current.rotation.z = 0.45;
+        leftArm.current.rotation.y = 0.35;
+      }
+      if (rightArm.current) {
+        rightArm.current.rotation.x = -1.15;
+        rightArm.current.rotation.z = -0.4;
+        rightArm.current.rotation.y = -0.3;
+      }
+      if (torso.current) {
+        torso.current.rotation.x = 0.22;
+        torso.current.rotation.y = Math.sin(t * 1.3) * 0.04;
+      }
+      if (head.current) {
+        head.current.rotation.y = Math.sin(t * 0.9) * 0.07;
+        head.current.rotation.x = 0.08;
+      }
+      return;
+    }
+
+    if (social === "combat_lunge") {
+      // Aggressive forward lunge / strike
+      const lunge = 0.55 + Math.sin(t * 3.2) * 0.08;
+      root.current.position.y = -0.04 + Math.sin(t * 4) * 0.015;
+      root.current.rotation.y = postureLean + 0.08;
+      root.current.rotation.z = -0.06;
+      if (leftLeg.current) leftLeg.current.rotation.x = 0.45;
+      if (rightLeg.current) rightLeg.current.rotation.x = -1.15;
+      if (leftArm.current) {
+        leftArm.current.rotation.x = -0.4;
+        leftArm.current.rotation.z = 0.3;
+        leftArm.current.rotation.y = 0.15;
+      }
+      if (rightArm.current) {
+        rightArm.current.rotation.x = -1.85 + Math.sin(t * 3.2) * 0.12;
+        rightArm.current.rotation.z = -0.2;
+        rightArm.current.rotation.y = 0.45;
+      }
+      if (torso.current) {
+        torso.current.rotation.x = 0.28 + lunge * 0.08;
+        torso.current.rotation.y = 0.2;
+      }
+      if (head.current) {
+        head.current.rotation.y = 0.15;
+        head.current.rotation.x = 0.12;
+      }
+      return;
+    }
+
+    if (social === "combat_staff") {
+      // Two-hand staff / spear ready (from the pose sheet bottom row)
+      root.current.position.y = Math.sin(t * 1.8) * 0.01;
+      root.current.rotation.y = postureLean - 0.06;
+      root.current.rotation.z = 0.03;
+      if (leftLeg.current) leftLeg.current.rotation.x = 0.15;
+      if (rightLeg.current) rightLeg.current.rotation.x = -0.35;
+      if (leftArm.current) {
+        leftArm.current.rotation.x = -0.95;
+        leftArm.current.rotation.z = 0.55;
+        leftArm.current.rotation.y = 0.55;
+      }
+      if (rightArm.current) {
+        rightArm.current.rotation.x = -1.25;
+        rightArm.current.rotation.z = -0.25;
+        rightArm.current.rotation.y = 0.15;
+      }
+      if (torso.current) {
+        torso.current.rotation.x = 0.1;
+        torso.current.rotation.y = -0.12 + Math.sin(t * 1.1) * 0.03;
+      }
+      if (head.current) {
+        head.current.rotation.y = -0.1 + Math.sin(t * 0.7) * 0.05;
+        head.current.rotation.x = 0.05;
+      }
+      return;
+    }
+
+    if (social === "combat_guard") {
+      // Defensive high guard — arms protecting, slight lean back
+      root.current.position.y = -0.03 + Math.sin(t * 2.4) * 0.01;
+      root.current.rotation.y = postureLean;
+      root.current.rotation.z = Math.sin(t * 1.5) * 0.02;
+      if (leftLeg.current) leftLeg.current.rotation.x = 0.2;
+      if (rightLeg.current) rightLeg.current.rotation.x = -0.4;
+      if (leftArm.current) {
+        leftArm.current.rotation.x = -1.45;
+        leftArm.current.rotation.z = 0.65;
+        leftArm.current.rotation.y = 0.5;
+      }
+      if (rightArm.current) {
+        rightArm.current.rotation.x = -1.55;
+        rightArm.current.rotation.z = -0.55;
+        rightArm.current.rotation.y = -0.45;
+      }
+      if (torso.current) {
+        torso.current.rotation.x = 0.18;
+        torso.current.rotation.y = Math.sin(t * 1.4) * 0.05;
+      }
+      if (head.current) {
+        head.current.rotation.y = Math.sin(t * 1.1) * 0.08;
+        head.current.rotation.x = 0.1;
+      }
+      return;
+    }
+
+    if (social === "combat_slash") {
+      // Horizontal / diagonal slash — sweeping arm arc
+      const slash = Math.sin(t * 4.6);
+      const windup = Math.sin(t * 4.6 + 1.2);
+      root.current.position.y = -0.02 + Math.abs(slash) * 0.02;
+      root.current.rotation.y = postureLean + slash * 0.25;
+      root.current.rotation.z = slash * 0.08;
+      if (leftLeg.current) leftLeg.current.rotation.x = 0.2 + windup * 0.1;
+      if (rightLeg.current) rightLeg.current.rotation.x = -0.45 - windup * 0.12;
+      if (leftArm.current) {
+        leftArm.current.rotation.x = -0.5;
+        leftArm.current.rotation.z = 0.25;
+        leftArm.current.rotation.y = 0.1;
+      }
+      if (rightArm.current) {
+        rightArm.current.rotation.x = -1.4 + slash * 0.7;
+        rightArm.current.rotation.z = -0.35 + slash * 0.55;
+        rightArm.current.rotation.y = 0.2 - slash * 0.6;
+      }
+      if (torso.current) {
+        torso.current.rotation.x = 0.15;
+        torso.current.rotation.y = slash * 0.28;
+      }
+      if (head.current) {
+        head.current.rotation.y = slash * 0.2;
+        head.current.rotation.x = 0.08;
+      }
+      return;
+    }
+
+    if (social === "combat_kick") {
+      // Forward / roundhouse kick
+      const kick = Math.max(0, Math.sin(t * 4.2));
+      const plant = Math.sin(t * 4.2 + 1.4);
+      root.current.position.y = 0.02 + kick * 0.06;
+      root.current.rotation.y = postureLean + plant * 0.15;
+      root.current.rotation.z = plant * 0.06;
+      if (leftLeg.current) leftLeg.current.rotation.x = 0.15 - plant * 0.1;
+      if (rightLeg.current) rightLeg.current.rotation.x = -0.3 - kick * 1.35;
+      if (leftArm.current) {
+        leftArm.current.rotation.x = -0.9 - kick * 0.3;
+        leftArm.current.rotation.z = 0.4;
+        leftArm.current.rotation.y = 0.25;
+      }
+      if (rightArm.current) {
+        rightArm.current.rotation.x = -0.6 + kick * 0.35;
+        rightArm.current.rotation.z = -0.3;
+        rightArm.current.rotation.y = -0.15;
+      }
+      if (torso.current) {
+        torso.current.rotation.x = 0.12 + kick * 0.1;
+        torso.current.rotation.y = plant * 0.12;
+      }
+      if (head.current) {
+        head.current.rotation.y = plant * 0.1;
+        head.current.rotation.x = 0.05 + kick * 0.08;
+      }
+      return;
+    }
+
+    if (social === "combat_overhead") {
+      // Overhead downward strike
+      const smash = Math.sin(t * 3.8);
+      const raise = Math.max(0, -smash);
+      root.current.position.y = -0.03 + raise * 0.03;
+      root.current.rotation.y = postureLean;
+      root.current.rotation.z = smash * 0.04;
+      if (leftLeg.current) leftLeg.current.rotation.x = 0.25;
+      if (rightLeg.current) rightLeg.current.rotation.x = -0.5;
+      if (leftArm.current) {
+        leftArm.current.rotation.x = -1.1 - raise * 0.5;
+        leftArm.current.rotation.z = 0.35;
+        leftArm.current.rotation.y = 0.2;
+      }
+      if (rightArm.current) {
+        rightArm.current.rotation.x = -1.6 - raise * 0.7 + Math.max(0, smash) * 0.9;
+        rightArm.current.rotation.z = -0.25;
+        rightArm.current.rotation.y = -0.1 + raise * 0.2;
+      }
+      if (torso.current) {
+        torso.current.rotation.x = 0.2 + Math.max(0, smash) * 0.15;
+        torso.current.rotation.y = smash * 0.06;
+      }
+      if (head.current) {
+        head.current.rotation.y = smash * 0.05;
+        head.current.rotation.x = 0.1 - raise * 0.08;
+      }
+      return;
+    }
+
+    if (social === "combat_block") {
+      // Active block — arms cross high, weight shifts with impact feel
+      const hit = Math.sin(t * 5.5);
+      root.current.position.y = -0.04 + Math.abs(hit) * 0.015;
+      root.current.rotation.y = postureLean + hit * 0.04;
+      root.current.rotation.z = hit * 0.03;
+      if (leftLeg.current) leftLeg.current.rotation.x = 0.3;
+      if (rightLeg.current) rightLeg.current.rotation.x = -0.35;
+      if (leftArm.current) {
+        leftArm.current.rotation.x = -1.55 + hit * 0.08;
+        leftArm.current.rotation.z = 0.7;
+        leftArm.current.rotation.y = 0.55;
+      }
+      if (rightArm.current) {
+        rightArm.current.rotation.x = -1.6 + hit * 0.08;
+        rightArm.current.rotation.z = -0.65;
+        rightArm.current.rotation.y = -0.5;
+      }
+      if (torso.current) {
+        torso.current.rotation.x = 0.2 + Math.abs(hit) * 0.04;
+        torso.current.rotation.y = hit * 0.06;
+      }
+      if (head.current) {
+        head.current.rotation.y = hit * 0.06;
+        head.current.rotation.x = 0.12;
+      }
+      return;
+    }
+
+    if (social === "combat_dodge") {
+      // Sidestep / lean evade
+      const dodge = Math.sin(t * 3.6);
+      root.current.position.y = -0.02 + Math.abs(dodge) * 0.02;
+      root.current.rotation.y = postureLean + dodge * 0.35;
+      root.current.rotation.z = dodge * 0.18;
+      if (leftLeg.current) leftLeg.current.rotation.x = 0.35 + dodge * 0.15;
+      if (rightLeg.current) rightLeg.current.rotation.x = -0.55 - dodge * 0.2;
+      if (leftArm.current) {
+        leftArm.current.rotation.x = -0.7;
+        leftArm.current.rotation.z = 0.45 + Math.abs(dodge) * 0.2;
+        leftArm.current.rotation.y = 0.3;
+      }
+      if (rightArm.current) {
+        rightArm.current.rotation.x = -0.8;
+        rightArm.current.rotation.z = -0.4 - Math.abs(dodge) * 0.15;
+        rightArm.current.rotation.y = -0.25;
+      }
+      if (torso.current) {
+        torso.current.rotation.x = 0.15;
+        torso.current.rotation.y = dodge * 0.2;
+      }
+      if (head.current) {
+        head.current.rotation.y = -dodge * 0.25;
+        head.current.rotation.x = 0.08;
+      }
+      return;
+    }
+
+    if (social === "combat_combo") {
+      // Multi-hit combo cycle: jab → cross → kick feel
+      const cycle = (t * 2.8) % (Math.PI * 2);
+      const jab = Math.sin(cycle);
+      const cross = Math.sin(cycle + 2.1);
+      const kickPhase = Math.max(0, Math.sin(cycle + 4.0));
+      root.current.position.y = -0.02 + kickPhase * 0.05;
+      root.current.rotation.y = postureLean + jab * 0.12 + cross * 0.1;
+      root.current.rotation.z = (jab - cross) * 0.04;
+      if (leftLeg.current) leftLeg.current.rotation.x = 0.2 - kickPhase * 0.1;
+      if (rightLeg.current) rightLeg.current.rotation.x = -0.4 - kickPhase * 1.1;
+      if (leftArm.current) {
+        leftArm.current.rotation.x = -1.0 + jab * 0.55;
+        leftArm.current.rotation.z = 0.35;
+        leftArm.current.rotation.y = 0.25 + jab * 0.2;
+      }
+      if (rightArm.current) {
+        rightArm.current.rotation.x = -1.15 + cross * 0.65;
+        rightArm.current.rotation.z = -0.3;
+        rightArm.current.rotation.y = -0.2 - cross * 0.25;
+      }
+      if (torso.current) {
+        torso.current.rotation.x = 0.18 + kickPhase * 0.08;
+        torso.current.rotation.y = jab * 0.15 + cross * 0.12;
+      }
+      if (head.current) {
+        head.current.rotation.y = (jab + cross) * 0.08;
+        head.current.rotation.x = 0.1;
       }
       return;
     }

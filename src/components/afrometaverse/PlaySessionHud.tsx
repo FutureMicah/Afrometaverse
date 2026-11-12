@@ -77,8 +77,8 @@ export function PlaySessionHud({ isTouch, fullscreen }: Props) {
           <strong>{isTouch ? "Move & look" : "Free roam"}</strong>
           <p>
             {isTouch
-              ? "Left side: drag to walk. Right side: drag to look. RUN · JUMP · CROUCH on the right."
-              : "WASD move · mouse look (click canvas) · Shift run · Space jump · C crouch · V eyes/shoulder."}
+              ? "Left: walk. Right: look. RUN · JUMP · CROUCH · ATK · GUARD on the right."
+              : "WASD move · mouse look · Shift run · Space jump · C crouch · V cam · J/LMB attack · K/RMB guard."}
           </p>
           <button type="button" className="am-btn am-btn-primary am-btn-sm" onClick={() => dismissCoach()}>
             Next

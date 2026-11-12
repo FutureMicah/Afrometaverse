@@ -5,6 +5,28 @@ export type RoamMode = "orbit" | "walk" | "ride";
 /** Locomotion for character animation */
 export type MoveState = "idle" | "walk" | "run" | "ride";
 
+/** Player combat poses (must match StylizedCharacter activity union) */
+export type CombatActivity =
+  | "combat_ready"
+  | "combat_lunge"
+  | "combat_staff"
+  | "combat_guard"
+  | "combat_slash"
+  | "combat_kick"
+  | "combat_overhead"
+  | "combat_block"
+  | "combat_dodge"
+  | "combat_combo";
+
+/** Attack cycle order for simple press-to-strike */
+export const COMBAT_ATTACK_CYCLE: CombatActivity[] = [
+  "combat_slash",
+  "combat_lunge",
+  "combat_kick",
+  "combat_overhead",
+  "combat_combo",
+];
+
 /** All player mobility options */
 export type TransportId =
   | "foot"
@@ -86,6 +108,12 @@ interface RoamState {
   mapZoom: number;
   showMinimap: boolean;
   worldVehicles: WorldVehicle[];
+  /** Active combat pose for player avatar, or null when idle */
+  combatActivity: CombatActivity | null;
+  /** performance.now() deadline for the current attack animation */
+  combatUntil: number;
+  /** Index into COMBAT_ATTACK_CYCLE */
+  combatComboIndex: number;
 
   setMode: (mode: RoamMode) => void;
   setTransport: (t: TransportId) => void;
@@ -95,6 +123,12 @@ interface RoamState {
   setNearDistrict: (id: string | null) => void;
   setNearVehicle: (id: string | null) => void;
   setInSafehouse: (id: string | null) => void;
+  /** Fire next attack in the cycle (slash → lunge → kick → overhead → combo) */
+  triggerAttack: () => void;
+  /** Hold guard / block; pass false to release */
+  setGuarding: (on: boolean) => void;
+  /** Clear expired combat pose each frame */
+  tickCombat: () => void;
   startMission: (mission: NonNullable<ActiveMission>) => void;
   completeStep: (stepId: string) => void;
   completeSubStep: (stepId: string, subId: string) => void;
@@ -218,6 +252,9 @@ export const useRoamStore = create<RoamState>((set, get) => ({
   mapZoom: 1,
   showMinimap: true,
   worldVehicles: INITIAL_VEHICLES.map((v) => ({ ...v })),
+  combatActivity: null,
+  combatUntil: 0,
+  combatComboIndex: 0,
 
   setMode: (mode) => set({ mode }),
   setTransport: (transport) => {
@@ -232,6 +269,40 @@ export const useRoamStore = create<RoamState>((set, get) => ({
   setPosition: (position) => set({ position }),
   setFacing: (facing) => set({ facing }),
   setMoveState: (moveState) => set({ moveState }),
+  triggerAttack: () => {
+    const st = get();
+    if (st.mountedVehicleId || st.transport !== "foot") return;
+    // Don't interrupt an attack that still has time left (tiny buffer for spam)
+    if (st.combatActivity && st.combatActivity !== "combat_guard" && st.combatActivity !== "combat_block" && st.combatActivity !== "combat_ready" && performance.now() < st.combatUntil - 120) {
+      return;
+    }
+    const idx = st.combatComboIndex % COMBAT_ATTACK_CYCLE.length;
+    const next = COMBAT_ATTACK_CYCLE[idx]!;
+    const duration =
+      next === "combat_combo" ? 1100 : next === "combat_kick" || next === "combat_overhead" ? 750 : 620;
+    set({
+      combatActivity: next,
+      combatUntil: performance.now() + duration,
+      combatComboIndex: (idx + 1) % COMBAT_ATTACK_CYCLE.length,
+    });
+  },
+  setGuarding: (on) => {
+    const st = get();
+    if (st.mountedVehicleId || st.transport !== "foot") return;
+    if (on) {
+      set({ combatActivity: "combat_guard", combatUntil: performance.now() + 10_000 });
+    } else if (st.combatActivity === "combat_guard" || st.combatActivity === "combat_block") {
+      set({ combatActivity: null, combatUntil: 0 });
+    }
+  },
+  tickCombat: () => {
+    const st = get();
+    if (!st.combatActivity) return;
+    if (st.combatActivity === "combat_guard" || st.combatActivity === "combat_block") return;
+    if (performance.now() >= st.combatUntil) {
+      set({ combatActivity: null, combatUntil: 0 });
+    }
+  },
   setNearDistrict: (nearDistrictId) => set({ nearDistrictId }),
   setNearVehicle: (nearVehicleId) => set({ nearVehicleId }),
   setInSafehouse: (inSafehouseId) => set({ inSafehouseId }),

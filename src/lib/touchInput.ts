@@ -12,6 +12,10 @@ export const touchInput = {
   sprint: false,
   crouch: false,
   jump: false,
+  /** Edge-triggered attack pulse (set true on press; PlayerController clears) */
+  attack: false,
+  /** Hold guard / block */
+  guard: false,
   lookDx: 0,
   lookDy: 0,
   viewToggles: 0,
@@ -32,6 +36,8 @@ export function resetTouchInput() {
   touchInput.sprint = false;
   touchInput.crouch = false;
   touchInput.jump = false;
+  touchInput.attack = false;
+  touchInput.guard = false;
   touchInput.lookDx = 0;
   touchInput.lookDy = 0;
 }

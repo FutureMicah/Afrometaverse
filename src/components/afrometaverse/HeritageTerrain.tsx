@@ -182,11 +182,11 @@ const fragmentShader = /* glsl */ `
     vec4 splat = texture2D(uSplat, vUv);
     float noise = texture2D(uNoise, vUv).r;
 
-    // Base biome colours (laterite / grass / rock / sand)
-    vec3 redEarth = vec3(0.62, 0.32, 0.16);   // Savannah laterite
-    vec3 grass    = vec3(0.35, 0.48, 0.18);   // Plateau / central
-    vec3 rock     = vec3(0.28, 0.26, 0.24);   // Mountain
-    vec3 sand     = vec3(0.78, 0.68, 0.48);   // Coastal
+    // Base biome colours — richer, more natural African landscape
+    vec3 redEarth = vec3(0.55, 0.28, 0.14);   // Deep laterite
+    vec3 grass    = vec3(0.28, 0.42, 0.16);   // Plateau grass
+    vec3 rock     = vec3(0.32, 0.29, 0.26);   // Weathered stone
+    vec3 sand     = vec3(0.72, 0.62, 0.42);   // Coastal sand
 
     float r = splat.r;
     float g = splat.g;
@@ -194,7 +194,6 @@ const fragmentShader = /* glsl */ `
     float sum = r + g + b;
     float sandW = max(0.0, 1.0 - sum);
 
-    // Renormalise when sum > 1
     if (sum > 1.0) {
       r /= sum; g /= sum; b /= sum;
       sandW = 0.0;
@@ -202,15 +201,20 @@ const fragmentShader = /* glsl */ `
 
     vec3 color = redEarth * r + grass * g + rock * b + sand * sandW;
 
-    // Height-driven rock exposure
+    // Height-driven rock exposure + dry grass on slopes
     color = mix(color, rock, smoothstep(0.8, 1.8, vHeight) * 0.55);
+    color = mix(color, vec3(0.42, 0.48, 0.22), smoothstep(-0.1, 0.35, vHeight) * (1.0 - smoothstep(0.6, 1.2, vHeight)) * g * 0.35);
 
-    // Micro variation
-    color *= 0.88 + noise * 0.24;
+    // Multi-frequency micro variation (avoids flat plastic look)
+    float n2 = texture2D(uNoise, vUv * 3.7).r;
+    color *= 0.84 + noise * 0.22 + n2 * 0.08;
+
+    // Soft ambient occlusion in depressions
+    color *= 0.92 + smoothstep(-0.4, 0.3, vHeight) * 0.1;
 
     // Climate: wet darkens & slightly greens; dust desaturates toward beige
-    color = mix(color, color * vec3(0.72, 0.68, 0.62), uWetness * 0.55);
-    color = mix(color, vec3(0.82, 0.74, 0.58), uDust * 0.35);
+    color = mix(color, color * vec3(0.68, 0.72, 0.58), uWetness * 0.5);
+    color = mix(color, vec3(0.78, 0.70, 0.55), uDust * 0.32);
 
     gl_FragColor = vec4(color, 1.0);
   }
@@ -291,51 +295,101 @@ export function HeritageTerrain({ wetness = 0, dust = 0 }: HeritageTerrainProps)
   );
 }
 
-/** Lightweight biome-aware grass / scrub scatter for outer rings */
-export function BiomeFlora({ count = 180 }: { count?: number }) {
+/** Fan of tapered grass blades for outer biome scatter */
+function makeBiomeTuftGeo(): THREE.BufferGeometry {
+  const positions: number[] = [];
+  const colors: number[] = [];
+  const blades = 6;
+  for (let i = 0; i < blades; i++) {
+    const a = (i / blades) * Math.PI * 2 + i * 0.05;
+    const h = 0.45 + (i % 3) * 0.08;
+    const lean = 0.07 + (i % 4) * 0.03;
+    const tipX = Math.cos(a) * lean;
+    const tipZ = Math.sin(a) * lean;
+    const hw = 0.08 + (i % 2) * 0.03;
+    const bx = Math.cos(a + Math.PI / 2) * hw;
+    const bz = Math.sin(a + Math.PI / 2) * hw;
+    positions.push(-bx, 0, -bz, bx, 0, bz, tipX, h, tipZ);
+    colors.push(0.25, 0.38, 0.12, 0.3, 0.42, 0.14, 0.5, 0.58, 0.2);
+  }
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
+  geo.setAttribute("color", new THREE.Float32BufferAttribute(colors, 3));
+  geo.computeVertexNormals();
+  return geo;
+}
+
+/**
+ * Biome-aware grass — real blade tufts (not cones), wind + color by biome.
+ */
+export function BiomeFlora({ count = 220 }: { count?: number }) {
   const meshRef = useRef<THREE.InstancedMesh>(null);
   const dummy = useMemo(() => new THREE.Object3D(), []);
+  const color = useMemo(() => new THREE.Color(), []);
 
   const placements = useMemo(() => {
-    const out: { x: number; z: number; s: number; biome: BiomeId }[] = [];
+    const out: { x: number; z: number; s: number; biome: BiomeId; phase: number }[] = [];
     let i = 0;
     let attempts = 0;
-    while (i < count && attempts < count * 8) {
+    while (i < count && attempts < count * 10) {
       attempts++;
       const x = (Math.random() - 0.5) * TERRAIN_SIZE * 0.92;
       const z = (Math.random() - 0.5) * TERRAIN_SIZE * 0.92;
-      // Keep clear of immediate door/plaza centres only
-      if (Math.hypot(x, z) < 7) continue;
-      const biome = sampleBiome(x, z);
+      if (Math.hypot(x, z) < 6.5) continue;
       out.push({
         x,
         z,
-        s: 0.55 + Math.random() * 0.9,
-        biome,
+        s: 0.55 + Math.random() * 1.0,
+        biome: sampleBiome(x, z),
+        phase: Math.random() * Math.PI * 2,
       });
       i++;
     }
     return out;
   }, [count]);
 
-  useFrame(() => {
+  const tuftGeo = useMemo(() => makeBiomeTuftGeo(), []);
+
+  useFrame(({ clock }) => {
     const mesh = meshRef.current;
     if (!mesh) return;
-    placements.forEach((p, i) => {
-      const y = sampleHeight(p.x, p.z) - 0.02;
+    const t = clock.elapsedTime;
+    for (let i = 0; i < placements.length; i++) {
+      const p = placements[i]!;
+      const y = sampleHeight(p.x, p.z);
+      const spatial = p.x * 0.18 + p.z * 0.12;
+      const gust = 0.5 + 0.5 * Math.sin(t * 0.3);
+      const bend = Math.sin(t * 2.0 + spatial + p.phase) * 0.35 * gust
+        + Math.sin(t * 3.2 + p.phase) * 0.12;
       dummy.position.set(p.x, y, p.z);
-      dummy.scale.set(p.s * 0.35, p.s, p.s * 0.35);
-      dummy.rotation.set(0, (i * 1.7) % (Math.PI * 2), 0);
+      dummy.rotation.set(Math.cos(0.65) * bend, p.phase, Math.sin(0.65) * bend);
+      dummy.scale.setScalar(p.s * (1 + Math.abs(bend) * 0.04));
       dummy.updateMatrix();
       mesh.setMatrixAt(i, dummy.matrix);
-    });
+
+      if (p.biome === "PLATEAU" || p.biome === "SAVANNAH") {
+        color.setRGB(0.38 + p.phase * 0.01, 0.5, 0.15);
+      } else if (p.biome === "COASTAL") {
+        color.setRGB(0.48, 0.55, 0.2);
+      } else if (p.biome === "MOUNTAIN") {
+        color.setRGB(0.32, 0.38, 0.18);
+      } else {
+        color.setRGB(0.26, 0.46, 0.16);
+      }
+      mesh.setColorAt(i, color);
+    }
     mesh.instanceMatrix.needsUpdate = true;
+    if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
   });
 
   return (
-    <instancedMesh ref={meshRef} args={[undefined, undefined, placements.length]} castShadow>
-      <coneGeometry args={[0.35, 1.4, 5]} />
-      <meshStandardMaterial color={SCENE_PALETTE.grassEdge} roughness={1} />
+    <instancedMesh ref={meshRef} args={[tuftGeo, undefined, Math.max(1, placements.length)]} frustumCulled={false}>
+      <meshStandardMaterial
+        color="#4a6a30"
+        vertexColors
+        side={THREE.DoubleSide}
+        roughness={0.93}
+      />
     </instancedMesh>
   );
 }
@@ -352,9 +406,9 @@ export function LivingWater({
 }) {
   const ref = useRef<THREE.Mesh>(null);
   const config = {
-    sea: { color: SCENE_PALETTE.seaBlue, opacity: 0.92, speed: 0.9, amp: 0.04 },
-    river: { color: SCENE_PALETTE.riverTeal, opacity: 0.9, speed: 1.6, amp: 0.025 },
-    pond: { color: SCENE_PALETTE.pondGreen, opacity: 0.88, speed: 0.55, amp: 0.012 },
+    sea: { color: "#1a4a6e", opacity: 0.94, speed: 0.9, amp: 0.04 },
+    river: { color: "#1e5c52", opacity: 0.92, speed: 1.6, amp: 0.028 },
+    pond: { color: "#2d4a38", opacity: 0.9, speed: 0.55, amp: 0.014 },
   }[type];
 
   useFrame(({ clock }) => {
@@ -364,20 +418,29 @@ export function LivingWater({
     }
   });
 
+  // Rivers render as elongated ovals so they read as flowing channels
+  const sx = type === "river" ? 2.4 : 1;
+  const sz = type === "river" ? 0.55 : 1;
+
   return (
     <group position={position}>
-      <mesh ref={ref} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+      <mesh ref={ref} rotation={[-Math.PI / 2, 0, type === "river" ? 0.6 : 0]} scale={[sx, 1, sz]} receiveShadow>
         <circleGeometry args={[radius, 28]} />
         <meshStandardMaterial
           color={config.color}
           transparent
           opacity={config.opacity}
-          roughness={0.32}
-          metalness={0.08}
+          roughness={0.18}
+          metalness={0.22}
+          envMapIntensity={0.6}
         />
       </mesh>
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.015, 0]}>
-        <ringGeometry args={[radius * 0.97, radius * 1.15, 28]} />
+      <mesh
+        rotation={[-Math.PI / 2, 0, type === "river" ? 0.6 : 0]}
+        position={[0, 0.015, 0]}
+        scale={[sx, 1, sz]}
+      >
+        <ringGeometry args={[radius * 0.97, radius * 1.18, 28]} />
         <meshStandardMaterial color={SCENE_PALETTE.earth} roughness={1} />
       </mesh>
     </group>

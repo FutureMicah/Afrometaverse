@@ -89,16 +89,18 @@ function River({
   width?: number;
 }) {
   const mesh = useRef<THREE.Mesh>(null);
-  const shape = useMemo(() => {
+  const { water, bank } = useMemo(() => {
     const curve = new THREE.CatmullRomCurve3(
-      points.map(([x, z]) => new THREE.Vector3(x, 0.04, z)),
+      points.map(([x, z]) => new THREE.Vector3(x, 0.05, z)),
       false,
       "catmullrom",
-      0.35,
+      0.4,
     );
-    const radial = 5;
-    const tubular = Math.max(32, points.length * 8);
-    return new THREE.TubeGeometry(curve, tubular, width * 0.5, radial, false);
+    const tubular = Math.max(48, points.length * 10);
+    return {
+      water: new THREE.TubeGeometry(curve, tubular, width * 0.5, 8, false),
+      bank: new THREE.TubeGeometry(curve, Math.max(32, points.length * 6), width * 0.72, 6, false),
+    };
   }, [points, width]);
 
   useFrame(({ clock }) => {
@@ -108,17 +110,22 @@ function River({
   });
 
   return (
-    <mesh ref={mesh} geometry={shape} rotation={[0, 0, 0]} receiveShadow>
-      <meshStandardMaterial
-        color={SCENE_PALETTE.waterDeep}
-        roughness={0.25}
-        metalness={0.15}
-        emissive={SCENE_PALETTE.waterDeep}
-        emissiveIntensity={0.1}
-        transparent
-        opacity={0.88}
-      />
-    </mesh>
+    <group>
+      <mesh geometry={bank} receiveShadow>
+        <meshStandardMaterial color="#5c4a32" roughness={1} />
+      </mesh>
+      <mesh ref={mesh} geometry={water} position={[0, 0.03, 0]} receiveShadow>
+        <meshStandardMaterial
+          color={SCENE_PALETTE.waterDeep}
+          roughness={0.22}
+          metalness={0.14}
+          emissive={SCENE_PALETTE.waterDeep}
+          emissiveIntensity={0.1}
+          transparent
+          opacity={0.9}
+        />
+      </mesh>
+    </group>
   );
 }
 
@@ -319,13 +326,16 @@ export function ExpandedWorld({ wetness = 0 }: { wetness?: number }) {
   return (
     <group>
       {/* Deep rainforest — SE / S */}
-      <RainforestPatch cx={42} cz={38} count={90} radius={32} darkness={0.7} />
-      <RainforestPatch cx={58} cz={18} count={15} radius={22} darkness={0.6} />
-      <RainforestPatch cx={28} cz={52} count={22} radius={18} darkness={0.75} />
+      <RainforestPatch cx={42} cz={38} count={120} radius={34} darkness={0.7} />
+      <RainforestPatch cx={58} cz={18} count={55} radius={24} darkness={0.6} />
+      <RainforestPatch cx={28} cz={52} count={50} radius={20} darkness={0.75} />
+      <RainforestPatch cx={50} cz={45} count={40} radius={18} darkness={0.65} />
 
       {/* Secondary forest belts */}
-      <RainforestPatch cx={-35} cz={40} count={20} radius={16} darkness={0.45} />
-      <RainforestPatch cx={-48} cz={-10} count={18} radius={14} darkness={0.5} />
+      <RainforestPatch cx={-35} cz={40} count={42} radius={18} darkness={0.45} />
+      <RainforestPatch cx={-48} cz={-10} count={38} radius={16} darkness={0.5} />
+      <RainforestPatch cx={-22} cz={-28} count={32} radius={14} darkness={0.5} />
+      <RainforestPatch cx={18} cz={-22} count={28} radius={12} darkness={0.55} />
 
       {/* Mountains — N / NE */}
       <MountainRidge cx={-40} cz={-45} peaks={8} spread={28} height={16} />
@@ -336,17 +346,19 @@ export function ExpandedWorld({ wetness = 0 }: { wetness?: number }) {
       <River points={riverPts} width={3.6} />
 
       {/* Savannah fill around village ring — denser canopy */}
-      <SavannahTrees cx={0} cz={0} count={14} radius={42} />
-      <SavannahTrees cx={25} cz={-25} count={15} radius={24} />
-      <SavannahTrees cx={-30} cz={25} count={14} radius={22} />
-      <SavannahTrees cx={18} cz={20} count={20} radius={16} />
-      <SavannahTrees cx={-8} cz={-6} count={18} radius={14} />
-      <SavannahTrees cx={12} cz={8} count={15} radius={12} />
-      <SavannahTrees cx={-20} cz={10} count={16} radius={15} />
-      <SavannahTrees cx={5} cz={-18} count={14} radius={14} />
-      <SavannahTrees cx={8} cz={-12} count={22} radius={12} />
-      <SavannahTrees cx={3} cz={-14} count={15} radius={10} />
-      <SavannahTrees cx={20} cz={-16} count={25} radius={10} />
+      <SavannahTrees cx={0} cz={0} count={28} radius={44} />
+      <SavannahTrees cx={25} cz={-25} count={32} radius={26} />
+      <SavannahTrees cx={-30} cz={25} count={30} radius={24} />
+      <SavannahTrees cx={18} cz={20} count={34} radius={18} />
+      <SavannahTrees cx={-8} cz={-6} count={30} radius={16} />
+      <SavannahTrees cx={12} cz={8} count={26} radius={14} />
+      <SavannahTrees cx={-20} cz={10} count={28} radius={16} />
+      <SavannahTrees cx={5} cz={-18} count={28} radius={15} />
+      <SavannahTrees cx={8} cz={-12} count={36} radius={14} />
+      <SavannahTrees cx={3} cz={-14} count={28} radius={12} />
+      <SavannahTrees cx={20} cz={-16} count={40} radius={12} />
+      <SavannahTrees cx={-25} cz={-20} count={30} radius={16} />
+      <SavannahTrees cx={32} cz={5} count={26} radius={14} />
 
       {/* Outer communities */}
       <OuterCommunity position={[-32, 0, 18]} name="Upland Compound" seed={1} wetness={wetness} />

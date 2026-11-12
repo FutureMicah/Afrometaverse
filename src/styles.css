@@ -2419,6 +2419,42 @@
   font-size: 10px;
 }
 
+/* Combat — primary action cluster */
+.am-touch-btn-attack {
+  grid-column: 1 / -1;
+  width: 100%;
+  height: 58px;
+  min-width: 100%;
+  min-height: 58px;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  background: oklch(0.48 0.18 25 / 0.82);
+  border-color: oklch(0.72 0.16 30 / 0.65);
+  color: oklch(0.99 0.01 80);
+  box-shadow: 0 8px 20px oklch(0.35 0.12 25 / 0.45);
+}
+.am-touch-btn-attack:active,
+.am-touch-btn-attack.am-touch-btn-on {
+  background: oklch(0.58 0.2 25 / 0.92);
+  border-color: oklch(0.8 0.14 35 / 0.8);
+  transform: scale(0.92);
+}
+
+.am-touch-btn-guard {
+  width: 56px;
+  height: 56px;
+  min-width: 56px;
+  min-height: 56px;
+  font-size: 10px;
+  background: oklch(0.38 0.08 250 / 0.75);
+  border-color: oklch(0.65 0.1 250 / 0.55);
+}
+.am-touch-btn-guard:active,
+.am-touch-btn-guard.am-touch-btn-on {
+  background: oklch(0.5 0.12 250 / 0.88);
+  border-color: oklch(0.75 0.1 250 / 0.7);
+}
+
 @media (max-width: 520px) {
   .am-touch-buttons {
     right: 8px;
@@ -2432,11 +2468,19 @@
     font-size: 8px;
   }
   .am-touch-btn-jump,
-  .am-touch-btn-run {
+  .am-touch-btn-run,
+  .am-touch-btn-guard {
     width: 52px;
     height: 52px;
     min-width: 52px;
     min-height: 52px;
+  }
+  .am-touch-btn-attack {
+    width: 100%;
+    min-width: 100%;
+    height: 54px;
+    min-height: 54px;
+    font-size: 11px;
   }
 }
 

@@ -1158,8 +1158,8 @@ export function AfroMetaverseGame() {
                 <h1>Port Harcourt, Day {cityDay}</h1>
                 <p>
                   {roamMode === "orbit"
-                    ? "Play full screen for COD-style move: WASD, mouse look, V = eyes/shoulder cam, Shift sprint, C crouch, Space jump, F vehicle. Esc exits."
-                    : "WASD / arrows to move. Reach the glowing district to advance your mission."}
+                    ? "Play full screen: WASD, mouse look, V cam, Shift sprint, C crouch, Space jump, F vehicle, J/LMB attack, K/RMB guard. Esc exits."
+                    : "WASD / arrows to move. J or left-click to attack, K or right-click to guard."}
                 </p>
               </div>
 

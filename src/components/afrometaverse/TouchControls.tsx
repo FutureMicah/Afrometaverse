@@ -11,7 +11,7 @@ import { INTERIORS } from "@/data/interiors";
 import { resetTouchInput, touchInput } from "@/lib/touchInput";
 
 /** Hold-to-press touch buttons. */
-type HoldKey = "run" | "jump" | "crouch";
+type HoldKey = "run" | "jump" | "crouch" | "guard" | "attack";
 
 /** Joystick travel radius in CSS px before the knob saturates. */
 const JOY_RADIUS = 44;
@@ -228,6 +228,7 @@ export function TouchControls({ forceShow = false }: { forceShow?: boolean } = {
       </div>
 
       <div className="am-touch-buttons">
+        {/* Row 1 — utility */}
         <button
           type="button"
           className={`am-touch-btn am-touch-btn-vehicle ${interactDim ? "am-touch-btn-dim" : "am-touch-btn-hot"}`}
@@ -254,6 +255,7 @@ export function TouchControls({ forceShow = false }: { forceShow?: boolean } = {
         >
           VIEW
         </button>
+        {/* Row 2 — movement holds */}
         <button
           type="button"
           className={`am-touch-btn am-touch-btn-crouch ${pressed.crouch ? "am-touch-btn-on" : ""}`}
@@ -272,6 +274,7 @@ export function TouchControls({ forceShow = false }: { forceShow?: boolean } = {
         >
           RUN
         </button>
+        {/* Row 3 — jump + guard */}
         <button
           type="button"
           className={`am-touch-btn am-touch-btn-jump ${pressed.jump ? "am-touch-btn-on" : ""}`}
@@ -280,6 +283,39 @@ export function TouchControls({ forceShow = false }: { forceShow?: boolean } = {
           {...holdProps("jump", (on) => (touchInput.jump = on))}
         >
           JUMP
+        </button>
+        <button
+          type="button"
+          className={`am-touch-btn am-touch-btn-guard ${pressed.guard ? "am-touch-btn-on" : ""}`}
+          aria-label="Guard (hold)"
+          aria-pressed={!!pressed.guard}
+          {...holdProps("guard", (on) => (touchInput.guard = on))}
+        >
+          GUARD
+        </button>
+        {/* Row 4 — primary attack (thumb reach) */}
+        <button
+          type="button"
+          className={`am-touch-btn am-touch-btn-attack ${pressed.attack ? "am-touch-btn-on" : ""}`}
+          aria-label="Attack"
+          onPointerDown={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            e.currentTarget.setPointerCapture?.(e.pointerId);
+            touchInput.attack = true;
+            setPressed((p) => ({ ...p, attack: true }));
+          }}
+          onPointerUp={(e) => {
+            if (e.currentTarget.hasPointerCapture?.(e.pointerId)) {
+              e.currentTarget.releasePointerCapture(e.pointerId);
+            }
+            setPressed((p) => ({ ...p, attack: false }));
+          }}
+          onPointerCancel={() => setPressed((p) => ({ ...p, attack: false }))}
+          onLostPointerCapture={() => setPressed((p) => ({ ...p, attack: false }))}
+          onContextMenu={(e) => e.preventDefault()}
+        >
+          ATK
         </button>
       </div>
     </div>

@@ -94,21 +94,82 @@ export function DayNightSky({ tier, dust = 0, clockRunning = true }: DayNightSky
     <>
       <color attach="background" args={[SCENE_PALETTE.skyHaze]} />
       <fog ref={fogRef} attach="fog" args={[SCENE_PALETTE.fogSand, 16, fogEndMeters(resolvedTier)]} />
-      <ambientLight ref={ambientRef} intensity={0.62} />
-      <hemisphereLight ref={hemiRef} args={[SCENE_PALETTE.skyPale, SCENE_PALETTE.groundBrown, 0.5]} />
+      <ambientLight ref={ambientRef} intensity={0.48} />
+      <hemisphereLight ref={hemiRef} args={[SCENE_PALETTE.skyPale, SCENE_PALETTE.groundBrown, 0.55]} />
       <directionalLight
         ref={sunRef}
-        position={[12, 20, 8]}
-        intensity={1.45}
-        color={SCENE_PALETTE.sunWarm}
+        position={[14, 22, 10]}
+        intensity={1.55}
+        color="#ffe0b0"
         castShadow
         shadow-mapSize-width={2048}
         shadow-mapSize-height={2048}
+        shadow-bias={-0.0003}
+        shadow-normalBias={0.03}
       />
+      {/* Soft sky fill — reduces plastic flat faces */}
+      <directionalLight position={[-10, 8, -6]} intensity={0.22} color="#b0c8e0" />
       <directionalLight ref={moonRef} position={[-12, -20, -8]} intensity={0} color={MOON_COLOR} />
       <points ref={starsRef} geometry={starGeom}>
         <pointsMaterial color={SCENE_PALETTE.pureWhite} size={0.6} sizeAttenuation transparent opacity={0} depthWrite={false} />
       </points>
+      <SkyClouds />
     </>
+  );
+}
+
+/** Soft billboard-style cloud puffs drifting across the sky */
+function SkyClouds() {
+  const group = useRef<THREE.Group>(null);
+  const clouds = useMemo(() => {
+    const out: { x: number; y: number; z: number; sx: number; sy: number; sz: number; speed: number }[] = [];
+    for (let i = 0; i < 14; i++) {
+      const a = (i / 14) * Math.PI * 2 + (i % 3) * 0.4;
+      const r = 28 + (i % 5) * 9;
+      out.push({
+        x: Math.cos(a) * r,
+        y: 14 + (i % 4) * 2.4,
+        z: Math.sin(a) * r * 0.85,
+        sx: 6 + (i % 5) * 2.2,
+        sy: 1.6 + (i % 3) * 0.5,
+        sz: 4 + (i % 4) * 1.5,
+        speed: 0.015 + (i % 4) * 0.008,
+      });
+    }
+    return out;
+  }, []);
+
+  useFrame((_, dt) => {
+    if (!group.current) return;
+    group.current.rotation.y += dt * 0.012;
+  });
+
+  return (
+    <group ref={group}>
+      {clouds.map((c, i) => (
+        <group key={i} position={[c.x, c.y, c.z]}>
+          <mesh scale={[c.sx, c.sy, c.sz]}>
+            <sphereGeometry args={[1, 8, 6]} />
+            <meshStandardMaterial
+              color="#f2f0ea"
+              transparent
+              opacity={0.55}
+              roughness={1}
+              depthWrite={false}
+            />
+          </mesh>
+          <mesh position={[c.sx * 0.35, -0.1, c.sz * 0.15]} scale={[c.sx * 0.55, c.sy * 0.85, c.sz * 0.6]}>
+            <sphereGeometry args={[1, 7, 5]} />
+            <meshStandardMaterial
+              color="#ebe8e0"
+              transparent
+              opacity={0.45}
+              roughness={1}
+              depthWrite={false}
+            />
+          </mesh>
+        </group>
+      ))}
+    </group>
   );
 }

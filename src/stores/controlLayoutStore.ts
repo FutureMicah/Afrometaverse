@@ -44,7 +44,7 @@ export const CONTROL_CATALOG: ControlDef[] = [
   { id: "crouch", kind: "button", label: "Crouch", glyph: "↓", x: 86, y: 28, baseSize: 44, defaultVisible: true },
   { id: "interact", kind: "button", label: "Interact", glyph: "F", x: 74, y: 26, baseSize: 48, defaultVisible: true },
   { id: "camera", kind: "button", label: "Camera", glyph: "V", x: 62, y: 10, baseSize: 40, defaultVisible: true },
-  { id: "fire", kind: "button", label: "Use gear", glyph: "●", x: 88, y: 42, baseSize: 44, defaultVisible: false },
+  { id: "fire", kind: "button", label: "Attack", glyph: "⚔", x: 88, y: 42, baseSize: 52, defaultVisible: true },
   { id: "minimap", kind: "button", label: "Minimap", glyph: "M", x: 8, y: 42, baseSize: 40, defaultVisible: false },
 ];
 

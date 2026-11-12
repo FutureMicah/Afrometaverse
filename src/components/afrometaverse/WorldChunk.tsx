@@ -104,8 +104,8 @@ export function WorldChunk({ chunk, densityScale = 1 }: WorldChunkProps) {
 
     const hutCount =
       region === "OUTER_SETTLEMENT"
-        ? 3 + Math.floor(seeded(chunk.cx + chunk.cz, 42) * 4)
-        : 2 + Math.floor(seeded(chunk.cx + chunk.cz, 42) * 2);
+        ? 3 + Math.floor(seeded(chunk.cx + chunk.cz, 42) * 3) // 3–5
+        : 2 + Math.floor(seeded(chunk.cx + chunk.cz, 42) * 2); // 2–3
 
     const cx = centre.x + (seeded(chunk.cx, 43) - 0.5) * 30;
     const cz = centre.z + (seeded(chunk.cz, 44) - 0.5) * 30;
@@ -118,23 +118,25 @@ export function WorldChunk({ chunk, densityScale = 1 }: WorldChunkProps) {
       kind: "bhunga" | "mud";
     }[] = [];
 
+    // Wide compound yards — huts sit on a larger ring with irregular gaps
     for (let i = 0; i < hutCount; i++) {
-      const angle = (i / hutCount) * Math.PI * 2 + seeded(i, 45) * 0.4;
-      const dist = 4 + seeded(i, 46) * 5 + (hutCount > 4 ? 2 : 0);
+      const angle = (i / hutCount) * Math.PI * 2 + seeded(i, 45) * 0.7;
+      const base = hutCount <= 3 ? 12 : 14;
+      const dist = base + seeded(i, 46) * 6 + (i % 2) * 2.5;
       const hx = cx + Math.cos(angle) * dist;
       const hz = cz + Math.sin(angle) * dist;
       huts.push({
         x: hx,
         y: sampleHeight(hx, hz),
         z: hz,
-        rot: angle + Math.PI + (seeded(i, 47) - 0.5) * 0.5,
-        scale: 0.85 + seeded(i, 48) * 0.35,
+        rot: angle + Math.PI + (seeded(i, 47) - 0.5) * 0.6,
+        scale: 0.9 + seeded(i, 48) * 0.3,
         kind: seeded(i, 49) > 0.4 ? "bhunga" : "mud",
       });
     }
 
-    // People near the hearth / yard (detailed anatomy bodies)
-    const peopleCount = Math.min(2, Math.floor(hutCount * 0.5));
+    // People near the hearth / yard
+    const peopleCount = Math.min(3, Math.floor(hutCount * 0.6) + 1);
     const skinTones = ["#5c3317", "#6b4423", "#8d5524", "#a0673f", "#c68642"];
     const people: {
       x: number;
@@ -147,7 +149,7 @@ export function WorldChunk({ chunk, densityScale = 1 }: WorldChunkProps) {
     }[] = [];
     for (let i = 0; i < peopleCount; i++) {
       const a = seeded(i, 56) * Math.PI * 2;
-      const d = 1.5 + seeded(i, 57) * 3.5;
+      const d = 2.2 + seeded(i, 57) * 4.5;
       const px = cx + Math.cos(a) * d;
       const pz = cz + Math.sin(a) * d;
       people.push({
@@ -168,7 +170,7 @@ export function WorldChunk({ chunk, densityScale = 1 }: WorldChunkProps) {
         y: sampleHeight(cx, cz),
         z: cz,
       },
-      yard: { x: cx, y: sampleHeight(cx, cz) + 0.02, z: cz, r: 6 + hutCount * 0.8 },
+      yard: { x: cx, y: sampleHeight(cx, cz) + 0.02, z: cz, r: 12 + hutCount * 1.8 },
       people,
     };
   }, [region, centre.x, centre.z, chunk.cx, chunk.cz]);

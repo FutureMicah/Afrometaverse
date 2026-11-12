@@ -13,6 +13,7 @@ import {
 import { INTERIOR_LIST, DOOR_RADIUS } from "@/data/interiors";
 import { useInteriorStore, enterBuilding, type InteriorId } from "@/stores/interiorStore";
 import { takeTouchLook, touchInput } from "@/lib/touchInput";
+import { useControlLayoutStore } from "@/stores/controlLayoutStore";
 import { useCameraSettingsStore } from "@/stores/cameraSettingsStore";
 import { useWeatherStore } from "@/stores/weatherStore";
 import { worldModifiers } from "@/lib/timeEffects";
@@ -197,7 +198,7 @@ function NeonGround() {
   );
 }
 
-/** Laterite / red-dirt roads — dual tracks, soft shoulders, no neon centre lines */
+/** Laterite / red-dirt roads — dual tracks, soft shoulders, path wear to compounds */
 function NeonRoads() {
   const segs = [
     { x: 0, z: 0.2, w: 26, d: 2.0 },
@@ -208,34 +209,40 @@ function NeonRoads() {
     { x: 5.5, z: 1.5, w: 1.45, d: 10 },
     { x: -5.5, z: -1.2, w: 1.4, d: 11 },
   ];
+  // Foot-worn paths linking compounds (site plan laterite tracks)
+  const wearPaths: { x: number; z: number; w: number; d: number; rot?: number }[] = [
+    { x: -4.5, z: 3.5, w: 1.1, d: 8 },
+    { x: 4.5, z: 3.0, w: 1.05, d: 7.5 },
+    { x: -2.0, z: -4.0, w: 1.0, d: 7 },
+    { x: 6.0, z: -3.0, w: 0.95, d: 6 },
+    { x: 12.0, z: 12.0, w: 1.2, d: 10, rot: 0.4 },
+    { x: -9.0, z: -2.0, w: 1.0, d: 6.5 },
+    { x: 2.0, z: 10.0, w: 1.1, d: 8 },
+    { x: 15.0, z: 18.0, w: 1.15, d: 7 },
+  ];
   return (
     <group>
       {segs.map((r, i) => {
         const alongX = r.w >= r.d;
         const shoulderW = alongX ? r.w + 0.7 : r.w + 0.55;
         const shoulderD = alongX ? r.d + 0.55 : r.d + 0.7;
-        // dual tyre ruts
         const rutOffset = alongX ? r.d * 0.18 : r.w * 0.18;
         const rutW = alongX ? r.w * 0.96 : 0.22;
         const rutD = alongX ? 0.22 : r.d * 0.96;
         return (
           <group key={i}>
-            {/* Soft dust shoulder */}
             <mesh position={[r.x, 0.02, r.z]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
               <planeGeometry args={[shoulderW, shoulderD]} />
               <meshStandardMaterial color={N.dust} roughness={0.98} />
             </mesh>
-            {/* Main laterite bed */}
             <mesh position={[r.x, 0.035, r.z]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
               <planeGeometry args={[r.w, r.d]} />
               <meshStandardMaterial color={N.laterite} roughness={0.9} />
             </mesh>
-            {/* Darker compacted centre */}
             <mesh position={[r.x, 0.038, r.z]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
               <planeGeometry args={[r.w * 0.72, r.d * 0.72]} />
               <meshStandardMaterial color={N.lateriteDark} roughness={0.88} />
             </mesh>
-            {/* Tyre tracks */}
             <mesh
               position={alongX ? [r.x, 0.04, r.z - rutOffset] : [r.x - rutOffset, 0.04, r.z]}
               rotation={[-Math.PI / 2, 0, 0]}
@@ -252,7 +259,6 @@ function NeonRoads() {
               <planeGeometry args={[rutW, rutD]} />
               <meshStandardMaterial color={N.lateriteDark} roughness={0.95} />
             </mesh>
-            {/* Sparse dry grass edge strips */}
             <mesh
               position={alongX ? [r.x, 0.041, r.z - r.d * 0.55] : [r.x - r.w * 0.55, 0.041, r.z]}
               rotation={[-Math.PI / 2, 0, 0]}
@@ -270,6 +276,24 @@ function NeonRoads() {
           </group>
         );
       })}
+      {/* Foot-worn connecting paths */}
+      {wearPaths.map((p, i) => (
+        <group key={`wp-${i}`} position={[p.x, 0, p.z]} rotation={[0, p.rot ?? 0, 0]}>
+          <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.018, 0]} receiveShadow>
+            <planeGeometry args={[p.w + 0.45, p.d + 0.4]} />
+            <meshStandardMaterial color="#9a6a40" roughness={0.98} transparent opacity={0.55} />
+          </mesh>
+          <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.025, 0]} receiveShadow>
+            <planeGeometry args={[p.w, p.d]} />
+            <meshStandardMaterial color={N.lateriteDark} roughness={0.92} transparent opacity={0.75} />
+          </mesh>
+          {/* centre foot-rut */}
+          <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.028, 0]} receiveShadow>
+            <planeGeometry args={[p.w * 0.35, p.d * 0.95]} />
+            <meshStandardMaterial color="#5a3a22" roughness={0.95} transparent opacity={0.5} />
+          </mesh>
+        </group>
+      ))}
     </group>
   );
 }
@@ -477,24 +501,34 @@ function FloraPlant({
   if (species === "baobab") {
     return (
       <group scale={scale}>
-        <mesh position={[0, 1.1, 0]} castShadow>
-          <cylinderGeometry args={[0.45, 0.55, 2.2, 8]} />
-          <meshStandardMaterial color={SCENE_PALETTE.woodWarm} roughness={1} />
+        {/* Massive tapered trunk */}
+        <mesh position={[0, 1.15, 0]} castShadow>
+          <cylinderGeometry args={[0.48, 0.62, 2.3, 10]} />
+          <meshStandardMaterial color="#6b5340" roughness={0.95} />
         </mesh>
-        <mesh position={[0, 2.35, 0]} castShadow>
-          <cylinderGeometry args={[0.35, 0.42, 0.5, 8]} />
-          <meshStandardMaterial color={SCENE_PALETTE.woodWarm} roughness={1} />
+        <mesh position={[0, 2.45, 0]} castShadow>
+          <cylinderGeometry args={[0.32, 0.45, 0.55, 8]} />
+          <meshStandardMaterial color="#5a4535" roughness={0.95} />
         </mesh>
-        {/* sparse high branches */}
-        {[-0.5, 0.4, -0.15].map((ox, i) => (
-          <mesh key={i} position={[ox, 2.7 + i * 0.15, (i - 1) * 0.3]} rotation={[0.3, i, 0.2]} castShadow>
-            <cylinderGeometry args={[0.06, 0.1, 1.1, 5]} />
-            <meshStandardMaterial color={SCENE_PALETTE.woodDark} roughness={1} />
+        {/* Sparse high branches */}
+        {[-0.55, 0.45, -0.2, 0.3].map((ox, i) => (
+          <mesh key={i} position={[ox, 2.75 + i * 0.12, (i - 1.5) * 0.28]} rotation={[0.35, i * 0.7, 0.15]} castShadow>
+            <cylinderGeometry args={[0.05, 0.1, 1.15, 5]} />
+            <meshStandardMaterial color="#4a3828" roughness={1} />
           </mesh>
         ))}
-        <mesh position={[0, 3.3, 0]} castShadow>
-          <sphereGeometry args={[1.1, 7, 5]} />
-          <meshStandardMaterial color={SCENE_PALETTE.grassDry} roughness={1} flatShading />
+        {/* Multi-lobed canopy */}
+        <mesh position={[0, 3.35, 0]} castShadow>
+          <sphereGeometry args={[1.05, 8, 6]} />
+          <meshStandardMaterial color="#6a7a38" roughness={1} flatShading />
+        </mesh>
+        <mesh position={[0.45, 3.2, 0.3]} castShadow>
+          <sphereGeometry args={[0.7, 6, 5]} />
+          <meshStandardMaterial color="#5a6a30" roughness={1} flatShading />
+        </mesh>
+        <mesh position={[-0.4, 3.25, -0.25]} castShadow>
+          <sphereGeometry args={[0.65, 6, 5]} />
+          <meshStandardMaterial color="#7a8a40" roughness={1} flatShading />
         </mesh>
       </group>
     );
@@ -502,27 +536,34 @@ function FloraPlant({
   if (species === "palm") {
     return (
       <group scale={scale}>
-        <mesh position={[0, 1.6, 0]} castShadow>
-          <cylinderGeometry args={[0.1, 0.16, 3.2, 6]} />
-          <meshStandardMaterial color={SCENE_PALETTE.woodWarm} roughness={0.95} />
+        <mesh position={[0, 1.7, 0]} castShadow>
+          <cylinderGeometry args={[0.09, 0.15, 3.4, 7]} />
+          <meshStandardMaterial color="#8a6a40" roughness={0.92} />
         </mesh>
-        {Array.from({ length: 7 }, (_, i) => {
-          const a = (i / 7) * Math.PI * 2;
+        {/* Trunk ring marks */}
+        {[0.8, 1.5, 2.2].map((y, i) => (
+          <mesh key={i} position={[0, y, 0]}>
+            <torusGeometry args={[0.11 + i * 0.01, 0.015, 4, 8]} />
+            <meshStandardMaterial color="#6a5030" roughness={1} />
+          </mesh>
+        ))}
+        {Array.from({ length: 9 }, (_, i) => {
+          const a = (i / 9) * Math.PI * 2;
           return (
             <mesh
               key={i}
-              position={[Math.cos(a) * 0.35, 3.15, Math.sin(a) * 0.35]}
-              rotation={[0.85, a, 0]}
+              position={[Math.cos(a) * 0.3, 3.25, Math.sin(a) * 0.3]}
+              rotation={[0.95 + (i % 3) * 0.08, a, 0.05]}
               castShadow
             >
-              <boxGeometry args={[0.12, 0.04, 1.4]} />
-              <meshStandardMaterial color={SCENE_PALETTE.grassEdge} roughness={1} />
+              <boxGeometry args={[0.1, 0.035, 1.55]} />
+              <meshStandardMaterial color={i % 2 ? "#2d5a28" : "#3a6b32"} roughness={1} />
             </mesh>
           );
         })}
-        <mesh position={[0, 3.2, 0]}>
-          <sphereGeometry args={[0.2, 6, 5]} />
-          <meshStandardMaterial color={SCENE_PALETTE.grassDry} roughness={1} />
+        <mesh position={[0, 3.3, 0]}>
+          <sphereGeometry args={[0.18, 6, 5]} />
+          <meshStandardMaterial color="#4a6a28" roughness={1} />
         </mesh>
       </group>
     );
@@ -530,21 +571,21 @@ function FloraPlant({
   if (species === "banana") {
     return (
       <group scale={scale}>
-        <mesh position={[0, 0.7, 0]} castShadow>
-          <cylinderGeometry args={[0.12, 0.18, 1.4, 6]} />
-          <meshStandardMaterial color={"#4a6b28"} roughness={1} />
+        <mesh position={[0, 0.75, 0]} castShadow>
+          <cylinderGeometry args={[0.1, 0.16, 1.5, 6]} />
+          <meshStandardMaterial color="#3a5a28" roughness={1} />
         </mesh>
-        {Array.from({ length: 5 }, (_, i) => {
-          const a = (i / 5) * Math.PI * 2;
+        {Array.from({ length: 6 }, (_, i) => {
+          const a = (i / 6) * Math.PI * 2;
           return (
             <mesh
               key={i}
-              position={[Math.cos(a) * 0.25, 1.35, Math.sin(a) * 0.25]}
-              rotation={[0.5, a, 0.15]}
+              position={[Math.cos(a) * 0.28, 1.4, Math.sin(a) * 0.28]}
+              rotation={[0.55, a, 0.1]}
               castShadow
             >
-              <boxGeometry args={[0.35, 0.05, 1.0]} />
-              <meshStandardMaterial color={SCENE_PALETTE.grassEdge} roughness={1} />
+              <boxGeometry args={[0.4, 0.04, 1.15]} />
+              <meshStandardMaterial color={i % 2 ? "#3a6b32" : "#2d5a28"} roughness={1} />
             </mesh>
           );
         })}
@@ -554,13 +595,17 @@ function FloraPlant({
   if (species === "bush") {
     return (
       <group scale={scale}>
-        <mesh position={[0, 0.35, 0]} castShadow>
-          <sphereGeometry args={[0.55, 6, 5]} />
-          <meshStandardMaterial color={SCENE_PALETTE.grassEdge} roughness={1} flatShading />
+        <mesh position={[0, 0.32, 0]} castShadow>
+          <sphereGeometry args={[0.5, 6, 5]} />
+          <meshStandardMaterial color="#3a5a28" roughness={1} flatShading />
         </mesh>
-        <mesh position={[0.25, 0.4, 0.1]} castShadow>
-          <sphereGeometry args={[0.35, 5, 4]} />
-          <meshStandardMaterial color={SCENE_PALETTE.grassDry} roughness={1} flatShading />
+        <mesh position={[0.22, 0.38, 0.12]} castShadow>
+          <sphereGeometry args={[0.32, 5, 4]} />
+          <meshStandardMaterial color="#4a6a30" roughness={1} flatShading />
+        </mesh>
+        <mesh position={[-0.18, 0.28, -0.1]} castShadow>
+          <sphereGeometry args={[0.28, 5, 4]} />
+          <meshStandardMaterial color="#5a7038" roughness={1} flatShading />
         </mesh>
       </group>
     );
@@ -568,35 +613,42 @@ function FloraPlant({
   if (species === "fig") {
     return (
       <group scale={scale}>
-        <mesh position={[0, 1.0, 0]} castShadow>
-          <cylinderGeometry args={[0.14, 0.22, 2.0, 6]} />
-          <meshStandardMaterial color={SCENE_PALETTE.woodDark} roughness={1} />
+        <mesh position={[0, 1.05, 0]} castShadow>
+          <cylinderGeometry args={[0.13, 0.22, 2.1, 7]} />
+          <meshStandardMaterial color="#3d2e20" roughness={0.95} />
         </mesh>
-        <mesh position={[0, 2.2, 0]} castShadow>
-          <sphereGeometry args={[1.35, 7, 6]} />
-          <meshStandardMaterial color={"#1a5c32"} roughness={1} flatShading />
+        <mesh position={[0, 2.25, 0]} castShadow>
+          <sphereGeometry args={[1.25, 8, 6]} />
+          <meshStandardMaterial color="#1a4f2c" roughness={1} flatShading />
         </mesh>
-        <mesh position={[0.5, 2.0, 0.3]} castShadow>
-          <sphereGeometry args={[0.7, 6, 5]} />
-          <meshStandardMaterial color={"#246b38"} roughness={1} flatShading />
+        <mesh position={[0.55, 2.05, 0.35]} castShadow>
+          <sphereGeometry args={[0.72, 6, 5]} />
+          <meshStandardMaterial color="#246b38" roughness={1} flatShading />
+        </mesh>
+        <mesh position={[-0.45, 2.15, -0.3]} castShadow>
+          <sphereGeometry args={[0.6, 6, 5]} />
+          <meshStandardMaterial color="#1e5a30" roughness={1} flatShading />
         </mesh>
       </group>
     );
   }
-  // acacia — flat umbrella canopy
+  // acacia — flat umbrella canopy (classic savannah silhouette)
   return (
     <group scale={scale}>
-      <mesh position={[0, 1.2, 0]} castShadow>
-        <cylinderGeometry args={[0.07, 0.12, 2.4, 5]} />
-        <meshStandardMaterial color={SCENE_PALETTE.woodDark} roughness={1} />
+      <mesh position={[0, 1.25, 0]} castShadow>
+        <cylinderGeometry args={[0.06, 0.11, 2.5, 6]} />
+        <meshStandardMaterial color="#3a2a1c" roughness={0.95} />
       </mesh>
-      <mesh position={[0, 2.35, 0]} rotation={[0.15, 0, 0]} castShadow>
-        <cylinderGeometry args={[0.04, 0.05, 0.8, 4]} />
-        <meshStandardMaterial color={SCENE_PALETTE.woodDark} roughness={1} />
-      </mesh>
-      <mesh position={[0, 2.55, 0]} scale={[1.6, 0.35, 1.6]} castShadow>
-        <sphereGeometry args={[0.85, 7, 5]} />
-        <meshStandardMaterial color={SCENE_PALETTE.grassDry} roughness={1} flatShading />
+      {/* Branching arms */}
+      {[-0.35, 0.3, 0.05].map((ox, i) => (
+        <mesh key={i} position={[ox, 2.4, (i - 1) * 0.15]} rotation={[0.2, i, 0.1 + i * 0.1]} castShadow>
+          <cylinderGeometry args={[0.03, 0.05, 0.9, 4]} />
+          <meshStandardMaterial color="#3a2a1c" roughness={1} />
+        </mesh>
+      ))}
+      <mesh position={[0, 2.6, 0]} scale={[1.75, 0.32, 1.75]} castShadow>
+        <sphereGeometry args={[0.9, 8, 5]} />
+        <meshStandardMaterial color="#6a7a35" roughness={1} flatShading />
       </mesh>
     </group>
   );
@@ -609,9 +661,9 @@ function VillageTreeRing() {
       out.push({ x, z, species, scale });
     };
     // council ring — mostly fig + acacia
-    for (let i = 0; i < 12; i++) {
-      const a = (i / 12) * Math.PI * 2;
-      const d = 5.2 + (i % 3) * 1.1;
+    for (let i = 0; i < 16; i++) {
+      const a = (i / 16) * Math.PI * 2;
+      const d = 5.0 + (i % 4) * 1.15;
       push(Math.cos(a) * d, Math.sin(a) * d - 1.2, i % 3 === 0 ? "fig" : "acacia", 0.9 + (i % 3) * 0.15);
     }
     // baobabs as landmarks
@@ -619,17 +671,26 @@ function VillageTreeRing() {
     push(5, -6, "baobab", 0.95);
     push(14, 12, "baobab", 1.05);
     push(-12, -5, "baobab", 0.9);
-    // palms near water / landing
-    ([[-6.5, -5], [-4, -7], [5.5, 1.5], [7, 3], [6, 0], [4.5, 2.8]] as const).forEach(([x, z], i) =>
-      push(x, z, "palm", 0.85 + (i % 3) * 0.1),
-    );
+    push(9, -9, "baobab", 1.0);
+    push(-15, 8, "baobab", 0.95);
+    // palms near water / landing / river
+    (
+      [
+        [-6.5, -5], [-4, -7], [5.5, 1.5], [7, 3], [6, 0], [4.5, 2.8],
+        [-8, -6.5], [-2, -6], [1, -9], [8, -12], [14, -15], [-12, -10],
+        [-18, -16], [10, -14],
+      ] as const
+    ).forEach(([x, z], i) => push(x, z, "palm", 0.85 + (i % 3) * 0.1));
     // bananas near compounds / small market
-    ([[-3, 5], [-1.5, 6.5], [0.5, 4.5], [-4.5, 4], [1.5, 7], [-2.5, 3]] as const).forEach(([x, z], i) =>
-      push(x, z, "banana", 0.9 + (i % 2) * 0.15),
-    );
+    (
+      [
+        [-3, 5], [-1.5, 6.5], [0.5, 4.5], [-4.5, 4], [1.5, 7], [-2.5, 3],
+        [3, 6], [-5, 6.5], [2, 3.5],
+      ] as const
+    ).forEach(([x, z], i) => push(x, z, "banana", 0.9 + (i % 2) * 0.15));
     // bushes along paths
-    for (let i = 0; i < 22; i++) {
-      const t = i / 21;
+    for (let i = 0; i < 36; i++) {
+      const t = i / 35;
       push(
         1 + t * 15 + ((i % 2) * 2 - 1) * 1.8,
         1.5 + t * 15 + ((i % 3) - 1) * 1.5,
@@ -637,30 +698,37 @@ function VillageTreeRing() {
         0.7 + (i % 4) * 0.12,
       );
     }
-    // acacia / fig scatter residential west
-    for (let i = 0; i < 18; i++) {
+    // acacia / fig scatter residential west + south
+    for (let i = 0; i < 36; i++) {
       const a = seededTree(i) * Math.PI * 2;
-      const d = 7 + seededTree(i + 20) * 11;
+      const d = 6 + seededTree(i + 20) * 14;
       const sp: FloraSpecies = i % 5 === 0 ? "fig" : i % 4 === 0 ? "baobab" : "acacia";
-      push(-5 + Math.cos(a) * d * 0.75, 1 + Math.sin(a) * d * 0.65, sp, 0.85 + seededTree(i + 40) * 0.35);
+      push(-5 + Math.cos(a) * d * 0.8, 1 + Math.sin(a) * d * 0.7, sp, 0.85 + seededTree(i + 40) * 0.35);
     }
     // more palms & bushes creekside
-    for (let i = 0; i < 10; i++) {
-      push(-9 + seededTree(i + 70) * 6, -3 - seededTree(i + 80) * 5, i % 2 ? "palm" : "bush", 0.8 + seededTree(i) * 0.3);
+    for (let i = 0; i < 20; i++) {
+      push(-10 + seededTree(i + 70) * 8, -2 - seededTree(i + 80) * 7, i % 2 ? "palm" : "bush", 0.8 + seededTree(i) * 0.3);
     }
     // market approach trees
-    for (let i = 0; i < 8; i++) {
-      push(15 + (i % 4) * 2.2, 16 + Math.floor(i / 4) * 3, i % 2 ? "acacia" : "fig", 0.95);
+    for (let i = 0; i < 14; i++) {
+      push(14 + (i % 5) * 2.0, 15 + Math.floor(i / 5) * 2.8, i % 2 ? "acacia" : "fig", 0.95);
     }
-    // grove densify — more trees around sacred area & waterfall
-    for (let i = 0; i < 20; i++) {
+    // grove densify — sacred area & waterfall
+    for (let i = 0; i < 32; i++) {
       const a = seededTree(i + 100) * Math.PI * 2;
-      const d = 3 + seededTree(i + 110) * 8;
+      const d = 2.5 + seededTree(i + 110) * 10;
       const sp: FloraSpecies = i % 4 === 0 ? "fig" : i % 3 === 0 ? "palm" : i % 5 === 0 ? "baobab" : "acacia";
       push(10 + Math.cos(a) * d, -10 + Math.sin(a) * d, sp, 0.8 + seededTree(i + 120) * 0.4);
     }
-    for (let i = 0; i < 10; i++) {
-      push(3 + seededTree(i + 130) * 5, -14 + seededTree(i + 140) * 4, i % 2 ? "palm" : "banana", 0.85);
+    for (let i = 0; i < 16; i++) {
+      push(2 + seededTree(i + 130) * 6, -13 + seededTree(i + 140) * 5, i % 2 ? "palm" : "banana", 0.85);
+    }
+    // river corridor trees
+    for (let i = 0; i < 24; i++) {
+      const t = i / 23;
+      const x = -20 + t * 40;
+      const z = -18 + t * 12 + ((i % 2) * 2 - 1) * 3.5;
+      push(x, z, i % 3 === 0 ? "palm" : i % 2 === 0 ? "fig" : "acacia", 0.9 + seededTree(i + 200) * 0.3);
     }
     return out;
   }, []);
@@ -1443,6 +1511,7 @@ function PlayerAvatar({ transport }: { transport: TransportId }) {
   const appearance = useCharacterStore((s) => s.appearance);
   const equipped = useCharacterStore((s) => s.equipped);
   const moveState = useRoamStore((s) => s.moveState);
+  const combatActivity = useRoamStore((s) => s.combatActivity);
   void transport;
   return (
     <StylizedCharacter
@@ -1451,7 +1520,8 @@ function PlayerAvatar({ transport }: { transport: TransportId }) {
       scale={0.88}
       animate
       detail
-      moveState={moveState}
+      moveState={combatActivity ? "idle" : moveState}
+      activity={combatActivity ?? "none"}
     />
   );
 }
@@ -1480,6 +1550,7 @@ function PlayerController({
 }) {
   const keys = useRef<Record<string, boolean>>({});
   const touchViewSeen = useRef(0);
+  const fireWasDown = useRef(false);
   const group = useRef<THREE.Group>(null);
   useEffect(() => {
     playerFocusRef.current = group.current;
@@ -1554,10 +1625,20 @@ function PlayerController({
         }
         targetYaw.current = yawRef.current;
       }
+      // Combat: J / Q = attack, K = hold guard
+      if (e.key.toLowerCase() === "j" || e.key.toLowerCase() === "q") {
+        useRoamStore.getState().triggerAttack();
+      }
+      if (e.key.toLowerCase() === "k") {
+        useRoamStore.getState().setGuarding(true);
+      }
     };
     const up = (e: KeyboardEvent) => {
       keys.current[e.key.toLowerCase()] = false;
       if (e.code === "Space") keys.current["space"] = false;
+      if (e.key.toLowerCase() === "k") {
+        useRoamStore.getState().setGuarding(false);
+      }
     };
     const onLock = () => {
       pointerLocked.current = document.pointerLockElement === gl.domElement;
@@ -1586,17 +1667,40 @@ function PlayerController({
     const onClick = () => {
       if (mode !== "orbit") gl.domElement.requestPointerLock?.();
     };
+    const onMouseDown = (e: MouseEvent) => {
+      if (mode === "orbit") return;
+      if (document.pointerLockElement !== gl.domElement) return;
+      if (e.button === 0) {
+        // Left click = attack
+        useRoamStore.getState().triggerAttack();
+      } else if (e.button === 2) {
+        // Right click hold = guard
+        useRoamStore.getState().setGuarding(true);
+      }
+    };
+    const onMouseUp = (e: MouseEvent) => {
+      if (e.button === 2) useRoamStore.getState().setGuarding(false);
+    };
+    const onContextMenu = (e: Event) => {
+      if (document.pointerLockElement === gl.domElement) e.preventDefault();
+    };
     window.addEventListener("keydown", down);
     window.addEventListener("keyup", up);
     document.addEventListener("pointerlockchange", onLock);
     document.addEventListener("mousemove", onMove);
     gl.domElement.addEventListener("click", onClick);
+    gl.domElement.addEventListener("mousedown", onMouseDown);
+    window.addEventListener("mouseup", onMouseUp);
+    gl.domElement.addEventListener("contextmenu", onContextMenu);
     return () => {
       window.removeEventListener("keydown", down);
       window.removeEventListener("keyup", up);
       document.removeEventListener("pointerlockchange", onLock);
       document.removeEventListener("mousemove", onMove);
       gl.domElement.removeEventListener("click", onClick);
+      gl.domElement.removeEventListener("mousedown", onMouseDown);
+      window.removeEventListener("mouseup", onMouseUp);
+      gl.domElement.removeEventListener("contextmenu", onContextMenu);
       if (document.pointerLockElement === gl.domElement) document.exitPointerLock?.();
     };
   }, [gl, mode]);
@@ -1614,6 +1718,27 @@ function PlayerController({
       }
     }
     if (mode === "orbit" || !group.current) return;
+
+    // Combat input (touch + virtual Attack button + clear expired attacks)
+    {
+      const roam = useRoamStore.getState();
+      if (touchInput.attack) {
+        touchInput.attack = false;
+        roam.triggerAttack();
+      }
+      // VirtualControls "Attack" button (edge-triggered)
+      const fireDown = !!useControlLayoutStore.getState().input.fire;
+      if (fireDown && !fireWasDown.current) roam.triggerAttack();
+      fireWasDown.current = fireDown;
+
+      // Guard is hold-based
+      const wantGuard = !!touchInput.guard;
+      const guarding =
+        roam.combatActivity === "combat_guard" || roam.combatActivity === "combat_block";
+      if (wantGuard && !guarding) roam.setGuarding(true);
+      else if (!wantGuard && guarding && !keys.current["k"]) roam.setGuarding(false);
+      roam.tickCombat();
+    }
 
     // Touch look → targets (smoothed below for FP)
     if (touchLook.dx !== 0 || touchLook.dy !== 0) {
@@ -2044,6 +2169,276 @@ function TrafficFlow() {
         >
           <SimpleVehicle position={[0, 0, 0]} color={v.color} kind={v.kind} />
         </group>
+      ))}
+    </group>
+  );
+}
+
+/** Always-on forest belt near the village so canopy is visible without outer streaming. */
+function LocalForestBelt() {
+  const trees = useMemo(() => {
+    const out: { x: number; z: number; h: number; r: number; lean: number; variant: number }[] = [];
+    const rings: Array<[number, number, number, number]> = [
+      // denser rings: [cx, cz, count, radius]
+      [14, -12, 36, 14],
+      [28, 8, 30, 13],
+      [-16, -14, 28, 12],
+      [8, 22, 26, 11],
+      [-22, 12, 28, 12],
+      [36, 24, 34, 16],
+      [-30, -28, 24, 12],
+      [20, -20, 28, 13],
+      [-8, 28, 22, 11],
+      [42, -6, 26, 14],
+      [0, -22, 20, 10],
+      [-28, 4, 22, 11],
+    ];
+    let id = 0;
+    for (const [cx, cz, count, radius] of rings) {
+      for (let i = 0; i < count; i++) {
+        const a = (i / count) * Math.PI * 2 + id * 0.11;
+        const d = 2.2 + Math.sqrt(((i * 37.1) % 100) / 100) * radius;
+        out.push({
+          x: cx + Math.cos(a) * d,
+          z: cz + Math.sin(a) * d,
+          h: 3.4 + ((i * 13) % 9) * 0.5,
+          r: 0.85 + ((i * 7) % 6) * 0.22,
+          lean: (((i * 11) % 10) - 5) * 0.025,
+          variant: i % 3,
+        });
+        id++;
+      }
+    }
+    return out;
+  }, []);
+
+  return (
+    <group>
+      {trees.map((t, i) => {
+        const canopy =
+          t.variant === 0 ? "#1a5c30" : t.variant === 1 ? "#247038" : "#0f4a24";
+        const canopy2 =
+          t.variant === 0 ? "#0f3d20" : t.variant === 1 ? "#1a5c32" : "#164f28";
+        return (
+          <group key={i} position={[t.x, 0, t.z]} rotation={[t.lean, i * 0.7, 0]}>
+            {/* Tapered trunk with bark tone */}
+            <mesh position={[0, t.h * 0.32, 0]} castShadow>
+              <cylinderGeometry args={[0.08 + t.variant * 0.02, 0.16 + t.variant * 0.04, t.h * 0.64, 6]} />
+              <meshStandardMaterial color="#3a2a1c" roughness={0.95} />
+            </mesh>
+            {/* Multi-lobed canopy for natural silhouette */}
+            <mesh position={[0, t.h * 0.7, 0]} castShadow>
+              <sphereGeometry args={[t.r, 7, 5]} />
+              <meshStandardMaterial color={canopy} roughness={1} flatShading />
+            </mesh>
+            <mesh position={[t.r * 0.3, t.h * 0.82, t.r * 0.15]} castShadow>
+              <sphereGeometry args={[t.r * 0.55, 6, 4]} />
+              <meshStandardMaterial color={canopy2} roughness={1} flatShading />
+            </mesh>
+            <mesh position={[-t.r * 0.22, t.h * 0.78, -t.r * 0.1]} castShadow>
+              <sphereGeometry args={[t.r * 0.48, 5, 4]} />
+              <meshStandardMaterial color={canopy} roughness={1} flatShading />
+            </mesh>
+            {t.variant !== 2 && (
+              <mesh position={[t.r * 0.1, t.h * 0.9, -t.r * 0.25]} castShadow>
+                <sphereGeometry args={[t.r * 0.4, 5, 4]} />
+                <meshStandardMaterial color={canopy2} roughness={1} flatShading />
+              </mesh>
+            )}
+          </group>
+        );
+      })}
+    </group>
+  );
+}
+
+/** Single reed clump with light wind sway */
+function WindyReed({
+  x,
+  z,
+  h,
+  s,
+  phase = 0,
+}: {
+  x: number;
+  z: number;
+  h: number;
+  s: number;
+  phase?: number;
+}) {
+  const ref = useRef<THREE.Group>(null);
+  useFrame(({ clock }) => {
+    if (!ref.current) return;
+    const t = clock.elapsedTime;
+    const gust = 0.55 + 0.45 * Math.sin(t * 0.35);
+    ref.current.rotation.z = Math.sin(t * 2.0 + phase) * 0.22 * gust;
+    ref.current.rotation.x = Math.cos(t * 1.5 + phase * 0.7) * 0.12 * gust;
+  });
+  return (
+    <group ref={ref} position={[x, 0, z]} scale={s}>
+      <mesh position={[0, h * 0.5, 0]}>
+        <cylinderGeometry args={[0.015, 0.025, h, 4]} />
+        <meshStandardMaterial color="#3d6b2e" roughness={1} />
+      </mesh>
+      <mesh position={[0.04, h * 0.45, 0.02]} rotation={[0, 0.4, 0.15]}>
+        <cylinderGeometry args={[0.012, 0.02, h * 0.85, 4]} />
+        <meshStandardMaterial color="#4a7a35" roughness={1} />
+      </mesh>
+      <mesh position={[-0.03, h * 0.4, -0.02]} rotation={[0, -0.3, -0.1]}>
+        <cylinderGeometry args={[0.01, 0.018, h * 0.7, 4]} />
+        <meshStandardMaterial color="#4a7a35" roughness={1} />
+      </mesh>
+    </group>
+  );
+}
+
+/**
+ * Natural winding river — Catmull-Rom channel with banks, shallows, and reed clumps.
+ * Always loaded so the creek is visible without ExpandedWorld.
+ */
+function NaturalRiver() {
+  const points = useMemo(
+    (): [number, number][] => [
+      [-42, -38],
+      [-32, -30],
+      [-24, -22],
+      [-16, -14],
+      [-10, -8],
+      [-6.5, -5.8],
+      [-3.5, -5.0],
+      [1.5, -7.5],
+      [6, -11],
+      [12, -15],
+      [18, -16],
+      [26, -12],
+      [34, -4],
+      [42, 8],
+      [48, 18],
+    ],
+    [],
+  );
+
+  const { waterGeo, bankGeo, shallowPts, reeds } = useMemo(() => {
+    const curve = new THREE.CatmullRomCurve3(
+      points.map(([x, z]) => new THREE.Vector3(x, 0.05, z)),
+      false,
+      "catmullrom",
+      0.4,
+    );
+    const waterGeo = new THREE.TubeGeometry(curve, 96, 1.7, 8, false);
+    const bankGeo = new THREE.TubeGeometry(curve, 64, 2.35, 6, false);
+
+    const shallowPts: { x: number; z: number; r: number }[] = [];
+    const reeds: { x: number; z: number; h: number; s: number }[] = [];
+    for (let i = 0; i < 18; i++) {
+      const t = i / 17;
+      const p = curve.getPointAt(t);
+      const tan = curve.getTangentAt(t);
+      const side = new THREE.Vector3(-tan.z, 0, tan.x).normalize();
+      // shallow pools offset along banks
+      const sideSign = i % 2 === 0 ? 1 : -1;
+      shallowPts.push({
+        x: p.x + side.x * sideSign * (1.6 + (i % 3) * 0.4),
+        z: p.z + side.z * sideSign * (1.6 + (i % 3) * 0.4),
+        r: 1.1 + (i % 4) * 0.25,
+      });
+      for (let j = 0; j < 3; j++) {
+        const o = (j - 1) * 0.55;
+        reeds.push({
+          x: p.x + side.x * sideSign * (2.1 + j * 0.35) + tan.x * o,
+          z: p.z + side.z * sideSign * (2.1 + j * 0.35) + tan.z * o,
+          h: 0.55 + ((i + j) % 4) * 0.12,
+          s: 0.7 + ((i * 3 + j) % 5) * 0.08,
+        });
+      }
+    }
+    return { waterGeo, bankGeo, shallowPts, reeds };
+  }, [points]);
+
+  const waterRef = useRef<THREE.Mesh>(null);
+  useFrame(({ clock }) => {
+    if (!waterRef.current) return;
+    const m = waterRef.current.material as THREE.MeshStandardMaterial;
+    if (m) m.emissiveIntensity = 0.06 + Math.sin(clock.elapsedTime * 0.85) * 0.03;
+  });
+
+  return (
+    <group>
+      {/* Mud / sand banks under the water */}
+      <mesh geometry={bankGeo} receiveShadow>
+        <meshStandardMaterial color="#5c4a32" roughness={1} />
+      </mesh>
+      {/* Main flowing channel */}
+      <mesh ref={waterRef} geometry={waterGeo} receiveShadow position={[0, 0.04, 0]}>
+        <meshStandardMaterial
+          color="#1a5a4e"
+          roughness={0.14}
+          metalness={0.28}
+          emissive="#0a2a28"
+          emissiveIntensity={0.06}
+          transparent
+          opacity={0.92}
+        />
+      </mesh>
+      {/* Shallow edge pools */}
+      {shallowPts.map((s, i) => (
+        <mesh key={`sh-${i}`} rotation={[-Math.PI / 2, 0, 0]} position={[s.x, 0.03, s.z]} receiveShadow>
+          <circleGeometry args={[s.r, 12]} />
+          <meshStandardMaterial
+            color="#3d8f7a"
+            transparent
+            opacity={0.72}
+            roughness={0.35}
+            metalness={0.05}
+          />
+        </mesh>
+      ))}
+      {/* Reed / grass clumps along banks — soft wind sway */}
+      {reeds.map((r, i) => (
+        <WindyReed key={`rd-${i}`} x={r.x} z={r.z} h={r.h} s={r.s} phase={i * 0.7} />
+      ))}
+      {/* Creek pond at the village bend */}
+      <LivingWater type="pond" position={[-5.5, 0, -5.4]} radius={3.6} />
+      <LivingWater type="pond" position={[3.0, 0, -13.5]} radius={2.8} />
+      {/* River mouth / landing */}
+      <LivingWater type="sea" position={[46, 0, 14]} radius={9} />
+    </group>
+  );
+}
+
+/** Insects + small critters right in the village so life is visible at spawn. */
+function VillageInsects() {
+  const pack = useMemo(() => {
+    const beetles: { x: number; z: number; phase: number }[] = [];
+    const butterflies: { x: number; z: number; phase: number }[] = [];
+    const lizards: { x: number; z: number; phase: number; color: string }[] = [];
+    const colors = ["#6b8f3a", "#5a7a30", "#8a9a40", "#4a6a28"];
+    for (let i = 0; i < 10; i++) {
+      const a = (i / 10) * Math.PI * 2;
+      beetles.push({ x: Math.cos(a) * (3 + (i % 3)), z: Math.sin(a) * (3 + (i % 4)) + 1, phase: i * 0.4 });
+      butterflies.push({ x: Math.cos(a + 0.5) * (4 + (i % 3)), z: Math.sin(a + 0.5) * 4 - 1, phase: i * 0.55 });
+    }
+    for (let i = 0; i < 6; i++) {
+      lizards.push({
+        x: -4 + (i % 3) * 3.5,
+        z: 2 + Math.floor(i / 3) * 4,
+        phase: i * 0.8,
+        color: colors[i % colors.length]!,
+      });
+    }
+    return { beetles, butterflies, lizards };
+  }, []);
+
+  return (
+    <group>
+      {pack.beetles.map((c, i) => (
+        <Beetle key={`vb-${i}`} x={c.x} z={c.z} phase={c.phase} />
+      ))}
+      {pack.butterflies.map((c, i) => (
+        <Butterfly key={`vbf-${i}`} x={c.x} z={c.z} phase={c.phase} />
+      ))}
+      {pack.lizards.map((c, i) => (
+        <Lizard key={`vl-${i}`} x={c.x} z={c.z} phase={c.phase} color={c.color} />
       ))}
     </group>
   );
@@ -2501,7 +2896,28 @@ function NpcCrowd() {
     const shapes = ["slim", "average", "curvy", "athletic", "broad"] as const;
     const tops = ["top-ankara", "top-coral", "top-olive", "top-ankara"] as const;
     const bottoms = ["bottom-skirt", "bottom-white-wide", "bottom-skirt", "bottom-cargo"] as const;
-    type Activity = "discuss" | "talk" | "wave" | "idle";
+    type Activity =
+      | "discuss"
+      | "talk"
+      | "wave"
+      | "idle"
+      | "sit"
+      | "sit_bench"
+      | "confident"
+      | "dance"
+      | "dance_kick"
+      | "crouch"
+      | "reach"
+      | "combat_ready"
+      | "combat_lunge"
+      | "combat_staff"
+      | "combat_guard"
+      | "combat_slash"
+      | "combat_kick"
+      | "combat_overhead"
+      | "combat_block"
+      | "combat_dodge"
+      | "combat_combo";
     type NpcSpec = {
       appearance: typeof DEFAULT_APPEARANCE & { gender: "female" | "male"; bodyShape: (typeof shapes)[number]; height: "short" | "average" | "tall"; skin: string; hair: "braids" | "short" | "afro" | "bob" | "bun" | "long"; hairColor: string; displayName: string };
       equipped: { top: string; bottom: string; outer: null; shoes: string; accessory: null; hat: null };
@@ -2560,6 +2976,26 @@ function NpcCrowd() {
     }
     list.push(make(4, -3.2, 3.4, { activity: "talk", cycle: ["talk", "discuss", "idle"], faceToward: [-2.75, 3.4] }));
     list.push(make(5, -2.3, 3.4, { activity: "talk", cycle: ["discuss", "talk", "wave"], faceToward: [-2.75, 3.4] }));
+
+    // Pose-sheet variety — sit, dance, combat
+    list.push(make(40, -6.2, 6.4, { activity: "sit", cycle: ["sit", "sit", "wave"], faceToward: [-5.0, 5.8] }));
+    list.push(make(41, 1.4, 6.8, { activity: "confident", cycle: ["confident", "idle", "wave"], faceToward: [0, 5] }));
+    list.push(make(42, 4.2, -5.2, { activity: "dance", cycle: ["dance", "dance_kick", "wave"] }));
+    list.push(make(43, -9.8, -1.6, { activity: "reach", cycle: ["reach", "talk", "idle"], faceToward: [-8, 0] }));
+    list.push(make(44, 8.6, 1.2, { activity: "crouch", cycle: ["crouch", "idle"], faceToward: [9, 2] }));
+    list.push(make(45, 0.8, -7.4, { activity: "sit_bench", cycle: ["sit_bench", "idle"], faceToward: [0, -6] }));
+    list.push(make(46, 6.4, -6.8, { activity: "dance_kick", cycle: ["dance_kick", "dance"] }));
+    // Combat set (training / mission flavour) — full move list
+    list.push(make(47, 11.2, 5.4, { activity: "combat_ready", cycle: ["combat_ready", "combat_guard", "combat_block"], faceToward: [12, 6] }));
+    list.push(make(48, 12.6, 4.2, { activity: "combat_staff", cycle: ["combat_staff", "combat_ready"], faceToward: [11, 5] }));
+    list.push(make(49, 10.4, 7.0, { activity: "combat_lunge", cycle: ["combat_lunge", "combat_slash"], faceToward: [11.5, 5.5] }));
+    list.push(make(50, 13.0, 6.6, { activity: "combat_guard", cycle: ["combat_guard", "combat_block"], faceToward: [12, 5] }));
+    list.push(make(51, 14.2, 5.0, { activity: "combat_slash", cycle: ["combat_slash", "combat_ready"], faceToward: [13, 5] }));
+    list.push(make(52, 11.8, 8.2, { activity: "combat_kick", cycle: ["combat_kick", "combat_ready"], faceToward: [12, 7] }));
+    list.push(make(53, 13.6, 7.8, { activity: "combat_overhead", cycle: ["combat_overhead", "combat_ready"], faceToward: [12.5, 6.5] }));
+    list.push(make(54, 9.6, 5.8, { activity: "combat_block", cycle: ["combat_block", "combat_guard"], faceToward: [11, 6] }));
+    list.push(make(55, 14.8, 6.8, { activity: "combat_dodge", cycle: ["combat_dodge", "combat_ready"], faceToward: [13.5, 6] }));
+    list.push(make(56, 12.0, 3.4, { activity: "combat_combo", cycle: ["combat_combo", "combat_ready"], faceToward: [12.5, 4.5] }));
 
     // Path walkers — village loops
     list.push(
@@ -3056,13 +3492,24 @@ export function AfroMetaverseScene({
       {/* Multi-biome heritage terrain (Day 2) — single draw call + climate tint */}
       <HeritageTerrain wetness={wetness} dust={dust} />
       {budget.expandedWorld ? <ExpandedWorld wetness={wetness} /> : null}
-      {/* Keep a soft local dust pad under the village for road contrast */}
+      {/* Village ground — laterite yard + soft grass edge blend */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.001, 0]} receiveShadow>
-        <planeGeometry args={[28, 24]} />
-        <meshStandardMaterial color={N.dust} roughness={0.92} transparent opacity={0.55} />
+        <planeGeometry args={[36, 32]} />
+        <meshStandardMaterial color="#8a5a32" roughness={0.96} transparent opacity={0.45} />
+      </mesh>
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.002, 0]} receiveShadow>
+        <circleGeometry args={[14, 24]} />
+        <meshStandardMaterial color="#9a6840" roughness={0.94} transparent opacity={0.5} />
+      </mesh>
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.003, 0]} receiveShadow>
+        <circleGeometry args={[7, 20]} />
+        <meshStandardMaterial color="#a87848" roughness={0.92} transparent opacity={0.4} />
       </mesh>
       <NeonRoads />
-      <LivingWater type="pond" position={[-5.5, 0, -5.4]} radius={3.8} />
+      {/* Natural winding river + creek ponds (always on) */}
+      <NaturalRiver />
+      {/* Dense local forest — always visible around the village */}
+      <LocalForestBelt />
       <BiomeFlora count={budget.floraCount} />
       <VillageTreeRing />
       {/* Always-loaded village dressing, merged once (was re-drawn in every loaded chunk). */}
@@ -3092,64 +3539,34 @@ export function AfroMetaverseScene({
       <VillageHearth position={[17.2, 0, 18.5]} />
       <VillageHearth position={[7.5, 0, 6.0]} />
 
-      {/* Scattered pre-colonial huts — organic village fabric, no ethnic compounds */}
+      {/* Scattered huts — sparse organic fabric, wide yards between dwellings */}
       {(
         [
-          // west–centre residential scatter
-          { p: [-10.5, 0, 2.0] as [number, number, number], r: 0.4, s: 1.0, c: undefined, band: true },
-          { p: [-13.2, 0, -2.4], r: -0.6, s: 0.92, c: SCENE_PALETTE.clayWall, band: true },
-          { p: [-8.0, 0, -4.8], r: 1.1, s: 0.95, c: SCENE_PALETTE.wallTan, band: false },
-          { p: [-6.2, 0, 5.5], r: -1.2, s: 0.9, c: SCENE_PALETTE.wallSand, band: true },
-          { p: [-12.0, 0, 6.8], r: 0.8, s: 0.88, c: SCENE_PALETTE.clayWall, band: false },
-          { p: [-4.2, 0, -6.5], r: 2.0, s: 0.95, c: undefined, band: true },
-          { p: [-15.5, 0, 1.2], r: -0.3, s: 0.85, c: SCENE_PALETTE.wallTan, band: true },
-          { p: [-9.0, 0, 9.2], r: 1.5, s: 0.92, c: SCENE_PALETTE.wallSand, band: false },
-          // south & east scatter
-          { p: [2.5, 0, -8.0], r: 0.5, s: 0.9, c: SCENE_PALETTE.clayWall, band: true },
-          { p: [6.8, 0, -5.5], r: -1.0, s: 1.0, c: undefined, band: true },
-          { p: [11.0, 0, 4.2], r: -0.3, s: 1.0, c: undefined, band: true },
-          { p: [13.5, 0, 0.8], r: 0.9, s: 0.88, c: SCENE_PALETTE.wallSand, band: true },
-          { p: [9.5, 0, -7.5], r: 2.2, s: 1.05, c: undefined, band: true },
-          { p: [14.2, 0, -4.0], r: -1.6, s: 0.9, c: SCENE_PALETTE.wallTan, band: false },
-          { p: [8.0, 0, 8.5], r: 0.2, s: 0.95, c: SCENE_PALETTE.clayWall, band: true },
-          { p: [3.2, 0, 7.0], r: 1.3, s: 0.87, c: undefined, band: false },
-          // northern fringe (still short of market)
-          { p: [-3.5, 0, 10.0], r: 0.2, s: 0.95, c: SCENE_PALETTE.clayWall, band: true },
-          { p: [4.5, 0, 11.0], r: -1.0, s: 0.9, c: undefined, band: true },
-          { p: [1.0, 0, 13.5], r: 0.7, s: 0.88, c: SCENE_PALETTE.wallTan, band: false },
-          { p: [-7.5, 0, 12.0], r: -0.9, s: 0.92, c: SCENE_PALETTE.wallSand, band: true },
-          { p: [10.5, 0, 12.8], r: 1.8, s: 0.9, c: undefined, band: true },
-          // near council / centre
-          { p: [-1.5, 0, 3.5], r: 0.15, s: 0.85, c: SCENE_PALETTE.wallTan, band: true },
-          { p: [2.8, 0, -3.2], r: -0.5, s: 0.9, c: SCENE_PALETTE.clayWall, band: false },
-          // Town Market quarter — separate (~18, 20)
-          { p: [18.0, 0, 19.0], r: 0, s: 1.05, c: undefined, band: true },
-          { p: [20.8, 0, 17.5], r: -0.7, s: 0.9, c: SCENE_PALETTE.wallTan, band: true },
-          { p: [15.5, 0, 21.5], r: 0.9, s: 0.95, c: SCENE_PALETTE.clayWall, band: false },
-          { p: [21.5, 0, 21.0], r: 1.4, s: 0.88, c: undefined, band: true },
-          { p: [16.2, 0, 16.8], r: -1.1, s: 0.92, c: SCENE_PALETTE.wallSand, band: true },
-          { p: [22.5, 0, 19.2], r: 0.4, s: 0.85, c: SCENE_PALETTE.clayWall, band: false },
-          // more scattered dwellings
-          { p: [-11.5, 0, -6.0], r: 0.6, s: 0.9, c: SCENE_PALETTE.wallTan, band: true },
-          { p: [-14.0, 0, 4.0], r: -1.4, s: 0.87, c: undefined, band: false },
-          { p: [-5.5, 0, 8.0], r: 1.0, s: 0.93, c: SCENE_PALETTE.clayWall, band: true },
-          { p: [-2.0, 0, -9.5], r: -0.2, s: 0.88, c: SCENE_PALETTE.wallSand, band: true },
-          { p: [0.5, 0, 5.5], r: 2.1, s: 0.86, c: undefined, band: false },
-          { p: [5.0, 0, 2.0], r: 0.35, s: 0.95, c: SCENE_PALETTE.wallTan, band: true },
-          { p: [7.2, 0, -2.0], r: -0.8, s: 0.9, c: SCENE_PALETTE.clayWall, band: true },
-          { p: [12.0, 0, 7.5], r: 1.6, s: 0.92, c: undefined, band: false },
-          { p: [15.0, 0, 5.0], r: -0.4, s: 0.88, c: SCENE_PALETTE.wallSand, band: true },
-          { p: [16.5, 0, 10.0], r: 0.9, s: 0.9, c: SCENE_PALETTE.wallTan, band: true },
-          { p: [12.8, 0, 14.0], r: -1.3, s: 0.87, c: SCENE_PALETTE.clayWall, band: false },
-          { p: [-0.5, 0, 8.5], r: 0.5, s: 0.91, c: undefined, band: true },
-          { p: [3.5, 0, -1.0], r: 1.7, s: 0.85, c: SCENE_PALETTE.wallTan, band: false },
-          { p: [-16.5, 0, -1.5], r: 0.1, s: 0.9, c: SCENE_PALETTE.clayWall, band: true },
-          { p: [18.5, 0, 14.0], r: -0.6, s: 0.88, c: undefined, band: true },
-          { p: [8.5, 0, 15.0], r: 1.2, s: 0.9, c: SCENE_PALETTE.wallSand, band: false },
-          // small local market edge huts (~ -1, 5)
-          { p: [-2.8, 0, 4.2], r: 0.3, s: 0.9, c: SCENE_PALETTE.wallTan, band: true },
-          { p: [0.8, 0, 6.2], r: -0.9, s: 0.88, c: SCENE_PALETTE.clayWall, band: false },
-          { p: [-1.2, 0, 7.0], r: 1.1, s: 0.92, c: undefined, band: true },
+          // west residential — room to walk between
+          { p: [-14.0, 0, 3.5] as [number, number, number], r: 0.4, s: 1.0, c: undefined, band: true },
+          { p: [-18.0, 0, -3.5], r: -0.6, s: 0.92, c: SCENE_PALETTE.clayWall, band: true },
+          { p: [-11.0, 0, -8.0], r: 1.1, s: 0.95, c: SCENE_PALETTE.wallTan, band: false },
+          { p: [-19.0, 0, 8.0], r: -0.3, s: 0.9, c: SCENE_PALETTE.wallSand, band: true },
+          // south fringe
+          { p: [3.5, 0, -12.0], r: 0.5, s: 0.95, c: SCENE_PALETTE.clayWall, band: true },
+          { p: [10.0, 0, -9.5], r: -1.0, s: 1.0, c: undefined, band: true },
+          { p: [-6.0, 0, -14.0], r: 2.0, s: 0.9, c: SCENE_PALETTE.wallTan, band: true },
+          // east / port approach
+          { p: [16.5, 0, 1.5], r: 0.9, s: 0.95, c: SCENE_PALETTE.wallSand, band: true },
+          { p: [14.0, 0, -7.0], r: 2.2, s: 1.0, c: undefined, band: true },
+          { p: [19.0, 0, 9.0], r: 0.2, s: 0.92, c: SCENE_PALETTE.clayWall, band: false },
+          // north toward market — keep centre open
+          { p: [-6.0, 0, 14.0], r: -0.9, s: 0.95, c: SCENE_PALETTE.wallSand, band: true },
+          { p: [6.0, 0, 15.0], r: -1.0, s: 0.9, c: undefined, band: true },
+          { p: [1.5, 0, 18.0], r: 0.7, s: 0.9, c: SCENE_PALETTE.wallTan, band: false },
+          // Town Market quarter (~18, 20) — only 3 huts, open plaza
+          { p: [17.5, 0, 22.5], r: 0, s: 1.05, c: undefined, band: true },
+          { p: [22.5, 0, 18.0], r: -0.7, s: 0.92, c: SCENE_PALETTE.wallTan, band: true },
+          { p: [21.0, 0, 24.0], r: 1.2, s: 0.9, c: SCENE_PALETTE.clayWall, band: false },
+          // far scatter
+          { p: [-20.0, 0, 0.5], r: 0.1, s: 0.9, c: SCENE_PALETTE.clayWall, band: true },
+          { p: [8.0, 0, 20.0], r: 1.2, s: 0.9, c: SCENE_PALETTE.wallSand, band: false },
+          { p: [20.0, 0, 12.0], r: -0.5, s: 0.9, c: undefined, band: true },
         ] as { p: [number, number, number]; r: number; s: number; c?: string; band: boolean }[]
       ).map((h, i) => (
         <BhungaHut
@@ -3167,7 +3584,7 @@ export function AfroMetaverseScene({
       {/* Day 1 atmospheric life */}
       <DustMotes count={budget.dustMotes} active={dust > 0.25 || wetness < 0.3} />
       <SpiritFireflies count={budget.fireflies} active={dust < 0.5} />
-      <SavannahGrass count={200} windIntensity={0.35 + dust * 0.5} />
+      <SavannahGrass count={560} windIntensity={0.6 + dust * 0.35} />
       <LightningFlash active={wetness > 0.55} />
       <SacredGroveMist position={[10, 0.6, -9]} />
       <SacredGroveMist position={[10, 0.8, -12]} />
@@ -3207,8 +3624,10 @@ export function AfroMetaverseScene({
       <VillageHearth position={[-1.0, 0, 4.5]} />
       <TorchPosts />
       <MissionWorldMarker />
-      {budget.villageAnimals ? <VillageAnimals /> : null}
-      {budget.forestCritters ? <ForestCritters /> : null}
+      {/* Fauna always on — quality only scales density inside the components */}
+      <VillageAnimals />
+      <ForestCritters />
+      <VillageInsects />
       <NpcCrowd />
       {onInteract && <CityHotspots onInteract={onInteract} />}
       {onNearDistrict ? <PlayerController onDistrictChange={onNearDistrict} /> : <PlayerController />}

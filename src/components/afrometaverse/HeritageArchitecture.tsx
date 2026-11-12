@@ -311,7 +311,7 @@ export function BhungaHut({
         <boxGeometry args={[doorW * 1.08, doorH * 1.04, 0.4 * scale]} />
         <meshStandardMaterial color="#1a120c" roughness={1} />
       </mesh>
-      {/* timber leaves */}
+      {/* timber leaves with grain-ish planks */}
       <mesh position={[-doorW * 0.22, plinthH + doorH / 2 + 0.02, r * 0.97]} castShadow>
         <boxGeometry args={[doorW * 0.46, doorH * 0.95, 0.055 * scale]} />
         <meshStandardMaterial color={SCENE_PALETTE.doorWood} roughness={0.88} />
@@ -320,12 +320,20 @@ export function BhungaHut({
         <boxGeometry args={[doorW * 0.46, doorH * 0.95, 0.055 * scale]} />
         <meshStandardMaterial color={SCENE_PALETTE.doorWood} roughness={0.9} />
       </mesh>
+      {/* vertical plank lines */}
+      {[-0.32, -0.12, 0.12, 0.32].map((ox, i) => (
+        <mesh key={`pl-${i}`} position={[ox * doorW, plinthH + doorH / 2, r * 1.0]} castShadow>
+          <boxGeometry args={[0.02 * scale, doorH * 0.9, 0.02 * scale]} />
+          <meshStandardMaterial color={SCENE_PALETTE.woodDark} roughness={0.85} />
+        </mesh>
+      ))}
       {[0.28, 0.55, 0.82].map((t, i) => (
         <mesh key={`bt-${i}`} position={[0, plinthH + doorH * t, r * 1.0]} castShadow>
           <boxGeometry args={[doorW * 0.94, 0.045 * scale, 0.035 * scale]} />
           <meshStandardMaterial color={SCENE_PALETTE.woodDark} roughness={0.85} />
         </mesh>
       ))}
+      {/* frame posts + lintel */}
       <mesh position={[-doorW * 0.54, plinthH + doorH / 2, r * 0.94]} castShadow>
         <boxGeometry args={[0.09 * scale, doorH * 1.06, 0.16 * scale]} />
         <meshStandardMaterial color={SCENE_PALETTE.woodDark} roughness={0.9} />
@@ -338,13 +346,31 @@ export function BhungaHut({
         <boxGeometry args={[doorW * 1.4, 0.14 * scale, 0.2 * scale]} />
         <meshStandardMaterial color={SCENE_PALETTE.woodDark} roughness={0.88} />
       </mesh>
+      {/* latch + hinge pins */}
+      <mesh position={[doorW * 0.08, plinthH + doorH * 0.5, r * 1.03]} castShadow>
+        <boxGeometry args={[0.12 * scale, 0.06 * scale, 0.04 * scale]} />
+        <meshStandardMaterial color="#3a3020" roughness={0.7} metalness={0.25} />
+      </mesh>
+      <mesh position={[doorW * 0.42, plinthH + doorH * 0.25, r * 1.02]} castShadow>
+        <cylinderGeometry args={[0.02 * scale, 0.02 * scale, 0.06 * scale, 6]} />
+        <meshStandardMaterial color="#2a2418" roughness={0.6} metalness={0.3} />
+      </mesh>
+      <mesh position={[doorW * 0.42, plinthH + doorH * 0.75, r * 1.02]} castShadow>
+        <cylinderGeometry args={[0.02 * scale, 0.02 * scale, 0.06 * scale, 6]} />
+        <meshStandardMaterial color="#2a2418" roughness={0.6} metalness={0.3} />
+      </mesh>
       {/* threshold */}
       <mesh position={[0, plinthH * 0.4, r * 1.05]} castShadow receiveShadow>
         <boxGeometry args={[doorW * 1.35, plinthH * 0.5, 0.35 * scale]} />
         <meshStandardMaterial color={SCENE_PALETTE.stone} roughness={1} flatShading />
       </mesh>
+      {/* worn path from door */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.006, r * 1.55]} receiveShadow>
+        <planeGeometry args={[1.1 * scale, 1.4 * scale]} />
+        <meshStandardMaterial color={SCENE_PALETTE.earth} roughness={1} transparent opacity={0.7} />
+      </mesh>
 
-      {/* round windows (reference poster) */}
+      {/* round windows with sill + shutter hint */}
       {[Math.PI * 0.55, -Math.PI * 0.55].map((a, i) => (
         <group key={`win-${i}`} rotation={[0, a, 0]}>
           <mesh position={[0, plinthH + wallH * 0.62, r * 0.99]}>
@@ -354,6 +380,20 @@ export function BhungaHut({
           <mesh position={[0, plinthH + wallH * 0.62, r * 1.02]} rotation={[Math.PI / 2, 0, 0]}>
             <torusGeometry args={[0.2 * scale, 0.025 * scale, 6, 14]} />
             <meshStandardMaterial color={SCENE_PALETTE.woodDark} roughness={0.9} />
+          </mesh>
+          {/* sill */}
+          <mesh position={[0, plinthH + wallH * 0.52, r * 1.05]} castShadow>
+            <boxGeometry args={[0.42 * scale, 0.04 * scale, 0.12 * scale]} />
+            <meshStandardMaterial color={SCENE_PALETTE.woodDark} roughness={0.9} />
+          </mesh>
+          {/* thin cross bars */}
+          <mesh position={[0, plinthH + wallH * 0.62, r * 1.01]}>
+            <boxGeometry args={[0.02 * scale, 0.3 * scale, 0.02 * scale]} />
+            <meshStandardMaterial color={SCENE_PALETTE.woodDark} roughness={0.85} />
+          </mesh>
+          <mesh position={[0, plinthH + wallH * 0.62, r * 1.01]}>
+            <boxGeometry args={[0.3 * scale, 0.02 * scale, 0.02 * scale]} />
+            <meshStandardMaterial color={SCENE_PALETTE.woodDark} roughness={0.85} />
           </mesh>
         </group>
       ))}

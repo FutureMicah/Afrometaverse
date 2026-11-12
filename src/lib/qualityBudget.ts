@@ -26,40 +26,40 @@ export type QualityBudget = {
 
 const BUDGETS: Record<RenderTier, QualityBudget> = {
   low: {
-    floraCount: 28,
-    worldDensity: 0.2,
-    animRadius: 14,
-    cullRadius: 24,
+    floraCount: 40,
+    worldDensity: 0.25,
+    animRadius: 16,
+    cullRadius: 28,
     maxChunkLoads: 1,
     shadows: false,
     characterDetail: false,
     expandedWorld: false,
     streamOuterWorld: false,
     forestCritters: false,
-    villageAnimals: false,
-    animalScale: 0.3,
-    maxNpcs: 12,
+    villageAnimals: true,
+    animalScale: 0.55,
+    maxNpcs: 14,
     dprMax: 1,
-    dustMotes: 18,
-    fireflies: 8,
+    dustMotes: 22,
+    fireflies: 12,
   },
   mid: {
-    floraCount: 70,
-    worldDensity: 0.35,
-    animRadius: 22,
-    cullRadius: 36,
+    floraCount: 90,
+    worldDensity: 0.4,
+    animRadius: 24,
+    cullRadius: 40,
     maxChunkLoads: 1,
     shadows: false,
     characterDetail: true,
     expandedWorld: true,
     streamOuterWorld: false,
-    forestCritters: false,
+    forestCritters: true,
     villageAnimals: true,
-    animalScale: 0.5,
-    maxNpcs: 22,
+    animalScale: 0.7,
+    maxNpcs: 24,
     dprMax: 1,
-    dustMotes: 36,
-    fireflies: 16,
+    dustMotes: 40,
+    fireflies: 18,
   },
   high: {
     floraCount: 110,
@@ -90,23 +90,23 @@ export function qualityBudget(override?: RenderTier): QualityBudget {
   const t = override ?? locked ?? tier;
   const base = { ...BUDGETS[t] };
 
-  // Stage gates override the static flags
-  base.villageAnimals = heavyAllows("animals");
-  base.expandedWorld = heavyAllows("expanded");
-  base.forestCritters = heavyAllows("forest");
+  // Stage gates override the static flags — but village life stays visible
+  base.villageAnimals = true; // always show goats/chickens/etc near spawn
+  base.expandedWorld = heavyAllows("expanded") || base.expandedWorld;
+  base.forestCritters = heavyAllows("forest") || base.forestCritters;
   base.streamOuterWorld = heavyAllows("outer");
   base.shadows = heavyAllows("shadows");
 
-  // Soften counts while still climbing stages
+  // Soften counts while still climbing stages (don't zero out environment)
   const stage = useAdaptiveQuality.getState().stage;
   if (stage === 0) {
-    base.floraCount = Math.min(base.floraCount, 32);
-    base.maxNpcs = Math.min(base.maxNpcs, 12);
-    base.dustMotes = Math.min(base.dustMotes, 16);
-    base.fireflies = Math.min(base.fireflies, 8);
+    base.floraCount = Math.min(base.floraCount, 48);
+    base.maxNpcs = Math.min(base.maxNpcs, 14);
+    base.dustMotes = Math.min(base.dustMotes, 22);
+    base.fireflies = Math.min(base.fireflies, 12);
   } else if (stage === 1) {
-    base.floraCount = Math.round(base.floraCount * 0.7);
-    base.maxNpcs = Math.round(base.maxNpcs * 0.75);
+    base.floraCount = Math.round(base.floraCount * 0.85);
+    base.maxNpcs = Math.round(base.maxNpcs * 0.85);
   }
 
   return base;
