@@ -1,4 +1,6 @@
 import type { Database, Json } from "@/integrations/supabase/types";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import { supabase } from "@/integrations/supabase/client";
 
 type Table<Row, Insert, Update = Partial<Insert>> = {
   Row: Row;
@@ -92,3 +94,7 @@ export type AfroMetaverseDatabase = Omit<Database, "public"> & {
     };
   };
 };
+
+export type CitizenRow = AfroMetaverseDatabase["public"]["Tables"]["citizens"]["Row"];
+
+export const afroMetaverseSupabase = supabase as unknown as SupabaseClient<AfroMetaverseDatabase>;

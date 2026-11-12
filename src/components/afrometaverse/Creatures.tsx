@@ -1103,12 +1103,12 @@ export function Lizard({
         <CritterMat color={color} />
       </mesh>
       {/* legs splayed */}
-      {[
+      {([
         [-0.04, 0.05, 0.5],
         [0.04, 0.05, -0.5],
         [-0.04, -0.05, 0.5],
         [0.04, -0.05, -0.5],
-      ].map(([s, zz, rz], i) => (
+      ] as const).map(([s, zz, rz], i) => (
         <mesh key={i} position={[s, 0.01, zz]} rotation={[0.3, 0, rz]}>
           <capsuleGeometry args={[0.007, 0.035, 3, 4]} />
           <CritterMat color={color} />
@@ -1167,12 +1167,12 @@ export function Gecko({
         <CritterMat color="#b89860" />
       </mesh>
       {/* toe pads */}
-      {[
+      {([
         [-0.035, 0.05],
         [0.035, 0.05],
         [-0.035, -0.04],
         [0.035, -0.04],
-      ].map(([s, zz], i) => (
+      ] as const).map(([s, zz], i) => (
         <mesh key={i} position={[s, 0.005, zz]}>
           <sphereGeometry args={[0.014, 5, 4]} />
           <CritterMat color="#a88858" rough={0.6} />

@@ -115,12 +115,12 @@ export function PawPrint({
         <meshStandardMaterial color="#3a3028" roughness={1} transparent opacity={0.55} depthWrite={false} />
       </mesh>
       {/* Toes */}
-      {[
+      {([
         [-0.035, 0.05],
         [-0.012, 0.06],
         [0.012, 0.06],
         [0.035, 0.05],
-      ].map(([px, pz], i) => (
+      ] as const).map(([px, pz], i) => (
         <mesh key={i} position={[px, pz, 0]}>
           <circleGeometry args={[0.016, 6]} />
           <meshStandardMaterial color="#3a3028" roughness={1} transparent opacity={0.5} depthWrite={false} />

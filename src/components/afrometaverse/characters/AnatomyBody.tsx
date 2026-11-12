@@ -80,8 +80,9 @@ function applySkinTint(
     if (!mesh.isMesh) return;
     mesh.castShadow = castShadow;
     mesh.receiveShadow = receiveShadow;
-    const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
-    mesh.material = mats.map((mat) => {
+    const originalMaterial = mesh.material;
+    const mats = Array.isArray(originalMaterial) ? originalMaterial : [originalMaterial];
+    const clonedMaterials = mats.map((mat) => {
       const m = (mat as THREE.MeshStandardMaterial).clone();
       if (m.color && blend > 0) {
         m.color.lerp(skin, Math.min(1, Math.max(0, blend)));
@@ -91,7 +92,10 @@ function applySkinTint(
       if ("metalness" in m) m.metalness = Math.min(m.metalness ?? 0, 0.08);
       m.needsUpdate = true;
       return m;
-    }) as THREE.Material;
+    });
+    mesh.material = Array.isArray(originalMaterial)
+      ? clonedMaterials
+      : clonedMaterials[0] ?? originalMaterial;
   });
 }
 

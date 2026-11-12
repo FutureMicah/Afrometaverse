@@ -211,12 +211,12 @@ function CurvedBench({
             {/* patterned cushion */}
             <mesh position={[0, 0.66, -0.02]} castShadow>
               <boxGeometry args={[0.4, 0.1, 0.36]} />
-              <meshStandardMaterial color={colors[i % colors.length]} roughness={0.85} />
+              <meshStandardMaterial color={colors[i % colors.length] ?? MUD} roughness={0.85} />
             </mesh>
             {/* pillow */}
             <mesh position={[0.08, 0.78, 0.12]} castShadow rotation={[0.3, 0.2, 0]}>
               <boxGeometry args={[0.22, 0.12, 0.16]} />
-              <meshStandardMaterial color={colors[(i + 2) % colors.length]} roughness={0.8} />
+              <meshStandardMaterial color={colors[(i + 2) % colors.length] ?? MUD} roughness={0.8} />
             </mesh>
           </group>
         );

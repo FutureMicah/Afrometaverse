@@ -470,7 +470,7 @@ function TraditionalMarketStalls({
           </mesh>
           <mesh position={[0, 1.35, 0]} rotation={[0.2, 0, 0]} castShadow>
             <planeGeometry args={[0.95, 0.7]} />
-            <meshStandardMaterial color={s.cloth ?? SCENE_PALETTE.clothWarm} roughness={0.92} side={2} />
+            <meshStandardMaterial color={s.cloth ?? SCENE_PALETTE.matTan} roughness={0.92} side={2} />
           </mesh>
           <mesh position={[0, 0.42, 0]} castShadow receiveShadow>
             <boxGeometry args={[0.85, 0.08, 0.55]} />
