@@ -33,6 +33,8 @@ import { qualityBudget } from "@/lib/qualityBudget";
 import { adaptiveQualityTick, useAdaptiveQuality } from "@/lib/adaptiveQuality";
 import { worldFogEnd } from "@/lib/worldConfig";
 import { StylizedCharacter } from "@/components/afrometaverse/characters/StylizedCharacter";
+import { PhysicsWorld, RagdollDemoLayer } from "@/components/afrometaverse/PhysicsWorld";
+import { RiggedPlayer } from "@/components/afrometaverse/characters/RiggedPlayer";
 import {
   HeritageTerrain,
   BiomeFlora,
@@ -1513,16 +1515,43 @@ function PlayerAvatar({ transport }: { transport: TransportId }) {
   const moveState = useRoamStore((s) => s.moveState);
   const combatActivity = useRoamStore((s) => s.combatActivity);
   void transport;
+
+  // Locomotion on Mixamo skeleton; combat freezes to idle clip + stylized weapon poses
+  const loco: "idle" | "walk" | "run" | "ride" = combatActivity
+    ? "idle"
+    : moveState === "run"
+      ? "run"
+      : moveState === "walk"
+        ? "walk"
+        : moveState === "ride"
+          ? "ride"
+          : "idle";
+
+  const heightScale =
+    appearance.height === "tall" ? 1.05 : appearance.height === "short" ? 0.9 : 1;
+
   return (
-    <StylizedCharacter
-      appearance={appearance}
-      equipped={equipped}
-      scale={0.88}
-      animate
-      detail
-      moveState={combatActivity ? "idle" : moveState}
-      activity={combatActivity ?? "none"}
-    />
+    <group>
+      {/* Primary body: Mixamo Soldier rig with Idle/Walk/Run crossfade */}
+      <RiggedPlayer
+        moveState={loco}
+        scale={0.92 * heightScale}
+        color={appearance.skin}
+      />
+      {/* Combat overlay: procedural poses + weapons only while fighting */}
+      {combatActivity ? (
+        <StylizedCharacter
+          appearance={appearance}
+          equipped={equipped}
+          scale={0.88 * heightScale}
+          animate
+          detail
+          moveState="idle"
+          activity={combatActivity}
+          showWeapons
+        />
+      ) : null}
+    </group>
   );
 }
 
@@ -2894,8 +2923,22 @@ function NpcCrowd() {
   const npcs = useMemo(() => {
     const skins = [SCENE_PALETTE.skinDeep, SCENE_PALETTE.skinMid, SCENE_PALETTE.skinTan, SCENE_PALETTE.skinGold, SCENE_PALETTE.lateriteLight, SCENE_PALETTE.skinBrown];
     const shapes = ["slim", "average", "curvy", "athletic", "broad"] as const;
-    const tops = ["top-ankara", "top-coral", "top-olive", "top-ankara"] as const;
-    const bottoms = ["bottom-skirt", "bottom-white-wide", "bottom-skirt", "bottom-cargo"] as const;
+    const tops = [
+      "top-bead-chest",
+      "top-ankara",
+      "top-leather-armor",
+      "top-bare-wrap",
+      "top-olive",
+      "top-bead-chest",
+    ] as const;
+    const bottoms = [
+      "bottom-wrap-skirt",
+      "bottom-pattern-wrap",
+      "bottom-fringe-kilt",
+      "bottom-skirt",
+      "bottom-wrap-skirt",
+      "bottom-cargo",
+    ] as const;
     type Activity =
       | "discuss"
       | "talk"
@@ -2920,7 +2963,7 @@ function NpcCrowd() {
       | "combat_combo";
     type NpcSpec = {
       appearance: typeof DEFAULT_APPEARANCE & { gender: "female" | "male"; bodyShape: (typeof shapes)[number]; height: "short" | "average" | "tall"; skin: string; hair: "braids" | "short" | "afro" | "bob" | "bun" | "long"; hairColor: string; displayName: string };
-      equipped: { top: string; bottom: string; outer: null; shoes: string; accessory: null; hat: null };
+      equipped: { top: string; bottom: string; outer: string | null; shoes: string; accessory: string | null; hat: string | null };
       x: number;
       z: number;
       phase: number;
@@ -2944,14 +2987,27 @@ function NpcCrowd() {
         hair: (["braids", "short", "afro", "bob", "bun", "long"] as const)[i % 6] ?? "short",
         hairColor: SCENE_PALETTE.ink,
         displayName: `Npc${i}`,
+        faceMark: (
+          [
+            "none",
+            "paint-vertical",
+            "paint-cheek-bars",
+            "brow-scar",
+            "paint-eye-band",
+            "scar-cheek",
+            "freckles",
+            "paint-full-mask",
+            "scar-eye",
+          ] as const
+        )[i % 9] ?? "none",
       },
       equipped: {
-        top: tops[i % tops.length] ?? "top-ankara",
-        bottom: bottoms[i % bottoms.length] ?? "bottom-skirt",
+        top: tops[i % tops.length] ?? "top-bead-chest",
+        bottom: bottoms[i % bottoms.length] ?? "bottom-wrap-skirt",
         outer: null,
-        shoes: "shoes-basic",
-        accessory: null,
-        hat: null,
+        shoes: i % 3 === 0 ? "shoes-warrior-boots" : "shoes-sandals",
+        accessory: i % 4 === 0 ? "acc-bead-collar" : i % 5 === 0 ? "acc-tusk-necklace" : null,
+        hat: i % 6 === 0 ? "hat-feather-band" : i % 7 === 0 ? "hat-warrior-helm" : null,
       },
       x,
       z,
@@ -2985,17 +3041,25 @@ function NpcCrowd() {
     list.push(make(44, 8.6, 1.2, { activity: "crouch", cycle: ["crouch", "idle"], faceToward: [9, 2] }));
     list.push(make(45, 0.8, -7.4, { activity: "sit_bench", cycle: ["sit_bench", "idle"], faceToward: [0, -6] }));
     list.push(make(46, 6.4, -6.8, { activity: "dance_kick", cycle: ["dance_kick", "dance"] }));
-    // Combat set (training / mission flavour) — full move list
-    list.push(make(47, 11.2, 5.4, { activity: "combat_ready", cycle: ["combat_ready", "combat_guard", "combat_block"], faceToward: [12, 6] }));
-    list.push(make(48, 12.6, 4.2, { activity: "combat_staff", cycle: ["combat_staff", "combat_ready"], faceToward: [11, 5] }));
-    list.push(make(49, 10.4, 7.0, { activity: "combat_lunge", cycle: ["combat_lunge", "combat_slash"], faceToward: [11.5, 5.5] }));
-    list.push(make(50, 13.0, 6.6, { activity: "combat_guard", cycle: ["combat_guard", "combat_block"], faceToward: [12, 5] }));
-    list.push(make(51, 14.2, 5.0, { activity: "combat_slash", cycle: ["combat_slash", "combat_ready"], faceToward: [13, 5] }));
-    list.push(make(52, 11.8, 8.2, { activity: "combat_kick", cycle: ["combat_kick", "combat_ready"], faceToward: [12, 7] }));
-    list.push(make(53, 13.6, 7.8, { activity: "combat_overhead", cycle: ["combat_overhead", "combat_ready"], faceToward: [12.5, 6.5] }));
-    list.push(make(54, 9.6, 5.8, { activity: "combat_block", cycle: ["combat_block", "combat_guard"], faceToward: [11, 6] }));
-    list.push(make(55, 14.8, 6.8, { activity: "combat_dodge", cycle: ["combat_dodge", "combat_ready"], faceToward: [13.5, 6] }));
-    list.push(make(56, 12.0, 3.4, { activity: "combat_combo", cycle: ["combat_combo", "combat_ready"], faceToward: [12.5, 4.5] }));
+    // Combat set — warrior kit from concept art
+    const warriorKit = {
+      top: "top-leather-armor",
+      bottom: "bottom-pattern-wrap",
+      outer: null as string | null,
+      shoes: "shoes-warrior-boots",
+      accessory: "acc-tusk-necklace" as string | null,
+      hat: "hat-warrior-helm" as string | null,
+    };
+    list.push(make(47, 11.2, 5.4, { activity: "combat_ready", cycle: ["combat_ready", "combat_guard", "combat_block"], faceToward: [12, 6], equipped: warriorKit, appearance: undefined as never }));
+    list.push(make(48, 12.6, 4.2, { activity: "combat_staff", cycle: ["combat_staff", "combat_ready"], faceToward: [11, 5], equipped: { ...warriorKit, hat: "hat-bead-crown", top: "top-bead-chest" } }));
+    list.push(make(49, 10.4, 7.0, { activity: "combat_lunge", cycle: ["combat_lunge", "combat_slash"], faceToward: [11.5, 5.5], equipped: warriorKit }));
+    list.push(make(50, 13.0, 6.6, { activity: "combat_guard", cycle: ["combat_guard", "combat_block"], faceToward: [12, 5], equipped: warriorKit }));
+    list.push(make(51, 14.2, 5.0, { activity: "combat_slash", cycle: ["combat_slash", "combat_ready"], faceToward: [13, 5], equipped: warriorKit }));
+    list.push(make(52, 11.8, 8.2, { activity: "combat_kick", cycle: ["combat_kick", "combat_ready"], faceToward: [12, 7], equipped: { ...warriorKit, bottom: "bottom-fringe-kilt", top: "top-bare-wrap", hat: "hat-feather-band" } }));
+    list.push(make(53, 13.6, 7.8, { activity: "combat_overhead", cycle: ["combat_overhead", "combat_ready"], faceToward: [12.5, 6.5], equipped: warriorKit }));
+    list.push(make(54, 9.6, 5.8, { activity: "combat_block", cycle: ["combat_block", "combat_guard"], faceToward: [11, 6], equipped: warriorKit }));
+    list.push(make(55, 14.8, 6.8, { activity: "combat_dodge", cycle: ["combat_dodge", "combat_ready"], faceToward: [13.5, 6], equipped: warriorKit }));
+    list.push(make(56, 12.0, 3.4, { activity: "combat_combo", cycle: ["combat_combo", "combat_ready"], faceToward: [12.5, 4.5], equipped: warriorKit }));
 
     // Path walkers — village loops
     list.push(
@@ -3179,18 +3243,20 @@ function NpcCrowd() {
       const L = live.current[i];
       if (!g || !L) return;
 
-      // Far NPCs: freeze locomotion/activity (still visible, cheap)
       const dx = g.position.x - px;
       const dz = g.position.z - pz;
-      if (dx * dx + dz * dz > animR2) {
-        L.moving = false;
-        return;
+      const far = dx * dx + dz * dz > animR2;
+
+      // Cycle standing activities even when far (cheap string write)
+      if (n.cycle && n.cycle.length > 0 && !n.path && !n.roam) {
+        const slot = Math.floor((t * 0.28 + n.phase) % n.cycle.length);
+        L.activity = n.cycle[slot] ?? n.activity;
       }
 
-      // Cycle standing activities every few seconds
-      if (n.cycle && n.cycle.length > 0 && !n.path && !n.roam) {
-        const slot = Math.floor((t * 0.35 + n.phase) % n.cycle.length);
-        L.activity = n.cycle[slot] ?? n.activity;
+      // Far NPCs: keep idle pose anim on the mesh, skip pathing cost
+      if (far) {
+        L.moving = false;
+        return;
       }
 
       if (n.path && n.path.length > 1) {
@@ -3300,12 +3366,13 @@ function NpcCrowd() {
               appearance={n.appearance}
               equipped={n.equipped}
               scale={0.82}
-              animate={nearPlayer || distToPlayer < qualityBudget().animRadius}
-              detail={qualityBudget().characterDetail && distToPlayer < qualityBudget().animRadius}
+              animate
+              detail={qualityBudget().characterDetail && distToPlayer < qualityBudget().animRadius * 1.4}
               moveState={moving && distToPlayer < qualityBudget().animRadius ? "walk" : "idle"}
-              activity={distToPlayer < qualityBudget().animRadius ? activity : "idle"}
+              activity={activity}
               lookAt={lookAt}
               motionPhase={n.phase}
+              showWeapons={typeof activity === "string" && activity.startsWith("combat_")}
             />
           </group>
         );
@@ -3488,6 +3555,10 @@ export function AfroMetaverseScene({
       tabIndex={0}
     >
       <AdaptiveQualityController />
+      {/* Rapier physics + ragdoll demo (press R to spawn) */}
+      <PhysicsWorld>
+        <RagdollDemoLayer />
+      </PhysicsWorld>
       <DayNightSky dust={dust} />
       {/* Multi-biome heritage terrain (Day 2) — single draw call + climate tint */}
       <HeritageTerrain wetness={wetness} dust={dust} />

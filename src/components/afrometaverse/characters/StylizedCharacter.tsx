@@ -6,6 +6,7 @@ import {
   type CharacterAppearance,
   type EquippedLoadout,
 } from "@/stores/characterStore";
+import { CombatProps, propForActivity } from "@/components/afrometaverse/characters/CombatProps";
 
 type Props = {
   appearance: CharacterAppearance;
@@ -48,6 +49,10 @@ type Props = {
   lookAt?: [number, number, number] | null;
   /** Unique phase so crowds don't sync their micro-motions */
   motionPhase?: number;
+  /** Show combat prop weapons when activity is combat_* */
+  showWeapons?: boolean;
+  /** Hide capsule body (when AnatomyBody is used underneath) */
+  hideCapsuleBody?: boolean;
 };
 
 function itemColor(id: string | null | undefined, fallback: string) {
@@ -113,6 +118,8 @@ export function StylizedCharacter({
   activity = "none",
   lookAt = null,
   motionPhase = 0,
+  showWeapons = false,
+  hideCapsuleBody = false,
 }: Props) {
   const root = useRef<THREE.Group>(null);
   const leftLeg = useRef<THREE.Group>(null);
@@ -138,22 +145,23 @@ export function StylizedCharacter({
     });
   }, [appearance.facePhoto]);
 
+  // Game-character proportions (pose-sheet athletic silhouette)
   const heightMul =
-    appearance.height === "short" ? 0.88 : appearance.height === "tall" ? 1.14 : 1;
+    appearance.height === "short" ? 0.9 : appearance.height === "tall" ? 1.12 : 1;
 
   const shape = appearance.bodyShape;
   const hip =
-    (isFemale ? 1.15 : 1.02) *
-    (shape === "curvy" ? 1.32 : shape === "broad" ? 1.2 : shape === "slim" ? 0.84 : shape === "athletic" ? 1.08 : 1);
+    (isFemale ? 1.22 : 1.0) *
+    (shape === "curvy" ? 1.28 : shape === "broad" ? 1.18 : shape === "slim" ? 0.86 : shape === "athletic" ? 1.06 : 1);
   const shoulder =
-    (isFemale ? 0.96 : 1.16) *
-    (shape === "broad" || shape === "athletic" ? 1.22 : shape === "slim" ? 0.86 : 1);
+    (isFemale ? 0.98 : 1.22) *
+    (shape === "broad" || shape === "athletic" ? 1.2 : shape === "slim" ? 0.88 : 1);
   const waist =
-    (isFemale ? 0.86 : 0.96) *
-    (shape === "curvy" ? 0.88 : shape === "slim" ? 0.8 : shape === "broad" ? 1.1 : 1);
+    (isFemale ? 0.78 : 0.9) *
+    (shape === "curvy" ? 0.86 : shape === "slim" ? 0.78 : shape === "broad" ? 1.08 : shape === "athletic" ? 0.92 : 1);
   const chest =
-    (isFemale ? 1.1 : 1.04) *
-    (shape === "curvy" ? 1.16 : shape === "athletic" ? 1.12 : shape === "broad" ? 1.18 : 1);
+    (isFemale ? 1.12 : 1.1) *
+    (shape === "curvy" ? 1.18 : shape === "athletic" ? 1.16 : shape === "broad" ? 1.2 : 1);
 
   const topC = itemColor(equipped.top, "#f8fafc");
   const bottomC = itemColor(equipped.bottom, "#2563eb");
@@ -162,10 +170,30 @@ export function StylizedCharacter({
   const hatC = equipped.hat ? itemColor(equipped.hat, "#166534") : null;
   const acc = CLOTHING_CATALOG.find((c) => c.id === equipped.accessory);
 
-  const isSkirt = equipped.bottom === "bottom-skirt";
-  const isFur = equipped.outer === "outer-pink-fur" || equipped.outer === "outer-coral-coat";
+  const isSkirt =
+    equipped.bottom === "bottom-skirt" ||
+    equipped.bottom === "bottom-wrap-skirt" ||
+    equipped.bottom === "bottom-pattern-wrap";
+  const isWrap =
+    equipped.bottom === "bottom-wrap-skirt" || equipped.bottom === "bottom-pattern-wrap";
+  const isFringeKilt = equipped.bottom === "bottom-fringe-kilt";
+  const isBeadedTop = equipped.top === "top-bead-chest";
+  const isLeatherArmor = equipped.top === "top-leather-armor";
+  const isBareTorso = equipped.top === "top-bare-wrap" || isBeadedTop;
+  const isFur =
+    equipped.outer === "outer-pink-fur" ||
+    equipped.outer === "outer-coral-coat" ||
+    equipped.outer === "outer-fur-shoulder";
+  const isRedCape = equipped.outer === "outer-red-cape";
   const isDenimBottom = equipped.bottom?.includes("jean") || equipped.bottom === "bottom-cargo";
-  const isSoftTop = equipped.top === "top-white-tee" || equipped.top === "top-black-tee";
+  const isSoftTop =
+    equipped.top === "top-white-tee" ||
+    equipped.top === "top-black-tee" ||
+    isBareTorso;
+  const isSandals = equipped.shoes === "shoes-sandals" || equipped.shoes === "shoes-warrior-boots";
+  const isWarriorHelm = equipped.hat === "hat-warrior-helm";
+  const isBeadCrown = equipped.hat === "hat-bead-crown";
+  const isFeatherBand = equipped.hat === "hat-feather-band";
 
   const sleeveW =
     appearance.sleevePreference === "oversized" ? 1.3 : appearance.sleevePreference === "fitted" ? 0.82 : 1;
@@ -731,9 +759,9 @@ export function StylizedCharacter({
     }
 
     const moving = moveState === "walk" || moveState === "run";
-    const pace = moveState === "run" ? 11 : moveState === "walk" ? 7 : 1.4;
-    const swing = moveState === "run" ? 0.85 : moveState === "walk" ? 0.55 : 0.08;
-    const bob = moveState === "run" ? 0.045 : moveState === "walk" ? 0.025 : 0.012;
+    const pace = moveState === "run" ? 10.5 : moveState === "walk" ? 6.5 : 1.4;
+    const swing = moveState === "run" ? 0.72 : moveState === "walk" ? 0.48 : 0.08;
+    const bob = moveState === "run" ? 0.04 : moveState === "walk" ? 0.022 : 0.01;
 
     // Weight shift + breath when standing still
     const weight = !moving ? Math.sin(t * 0.55) * 0.018 : 0;
@@ -753,11 +781,28 @@ export function StylizedCharacter({
     let armBy = 0;
 
     if (!moving) {
-      // Soft idle arm hang with micro motion
-      armA = Math.sin(t * 0.7) * 0.06 - 0.08;
-      armB = Math.sin(t * 0.65 + 1.2) * 0.06 - 0.08;
-      legA = Math.sin(t * 0.45) * 0.04;
-      legB = Math.sin(t * 0.45 + Math.PI) * 0.03;
+      // Living idle: breath, weight shift, micro gestures (readable on NPCs)
+      const breath = Math.sin(t * 1.35);
+      const shift = Math.sin(t * 0.42 + phase.current);
+      const fidget = Math.sin(t * 0.95 + 1.7);
+      // Arms hang with occasional soft raise / settle
+      armA = -0.14 + breath * 0.04 + fidget * 0.06;
+      armB = -0.14 + breath * 0.035 + Math.sin(t * 0.8 + 2.1) * 0.07;
+      armAz = -0.22 + shift * 0.05;
+      armBz = 0.22 - shift * 0.05;
+      armAy = fidget * 0.08;
+      armBy = -fidget * 0.06;
+      // Legs: soft knee ease, weight on alternating side
+      legA = 0.04 + shift * 0.06;
+      legB = -0.02 - shift * 0.05;
+      // Stronger vertical breath + lean so idle is visible from distance
+      root.current.position.y = 0.012 + breath * 0.014 + Math.abs(shift) * 0.006;
+      root.current.rotation.z = postureLean * 0.28 + shift * 0.035;
+      root.current.rotation.y = postureLean + shift * 0.04;
+    } else {
+      // Walk/run: keep a little outward arm carry so limbs don't clip torso
+      armAz = -0.12;
+      armBz = 0.12;
     }
 
     // Discussion / talk / wave overlay
@@ -802,13 +847,13 @@ export function StylizedCharacter({
         ? Math.sin(t * pace) * 0.06
         : social === "discuss" || social === "talk"
           ? Math.sin(t * 1.2) * 0.05
-          : Math.sin(t * 0.5) * 0.02;
+          : Math.sin(t * 0.55) * 0.045;
       torso.current.rotation.x =
         moveState === "run"
           ? 0.12
           : social === "discuss" || social === "talk"
             ? 0.04 + Math.sin(t * 2.1) * 0.025
-            : Math.sin(t * 1.5) * 0.015;
+            : 0.02 + Math.sin(t * 1.35) * 0.028;
     }
 
     // ——— Head: idle scan, talk nods, look-at player ———
@@ -840,9 +885,9 @@ export function StylizedCharacter({
         }
       }
 
-      // Idle / talk micro motion on top of look-at
-      let idleYaw = Math.sin(t * 0.42) * 0.08 + Math.sin(t * 0.17) * 0.04;
-      let idlePitch = Math.sin(t * 0.55) * 0.04;
+      // Idle / talk micro motion on top of look-at (stronger so NPCs feel alive)
+      let idleYaw = Math.sin(t * 0.38) * 0.14 + Math.sin(t * 0.15) * 0.07;
+      let idlePitch = Math.sin(t * 0.5) * 0.06 + Math.sin(t * 0.9) * 0.02;
       if (social === "talk" || social === "discuss") {
         // Nod while speaking + slight side turns
         idlePitch = Math.sin(t * 3.2) * 0.09 + Math.sin(t * 1.1) * 0.03;
@@ -884,16 +929,62 @@ export function StylizedCharacter({
       position={[((appearance.detailSeed % 7) - 3) * 0.002, 0, 0]}
     >
       {/* ——— LOWER BODY ——— */}
-      {isSkirt ? (
+      {isSkirt || isWrap || isFringeKilt ? (
         <group>
-          <mesh position={[0, 0.42, 0]} castShadow>
-            <cylinderGeometry args={[0.15 * hip, 0.34 * hip, 0.52, 20]} />
-            <ClothMat color={bottomC} denim />
+          {/* Hip wrap / kilt — game-character silhouette */}
+          <mesh position={[0, 0.72, 0]} castShadow>
+            <sphereGeometry args={[0.22 * hip, 20, 16]} />
+            <SkinMat color={appearance.skin} />
           </mesh>
-          <mesh position={[0, 0.18, 0]}>
-            <cylinderGeometry args={[0.34 * hip, 0.36 * hip, 0.04, 20]} />
-            <ClothMat color={bottomC} denim />
+          <mesh position={[0, 0.48, 0]} castShadow>
+            <cylinderGeometry args={[0.16 * hip, 0.36 * hip, 0.55, 18]} />
+            <ClothMat color={bottomC} soft />
           </mesh>
+          {/* Front drape panel */}
+          <mesh position={[0.06, 0.38, 0.14]} rotation={[0.15, 0.2, 0.08]} castShadow>
+            <boxGeometry args={[0.22 * hip, 0.55, 0.04]} />
+            <ClothMat color={bottomC} soft />
+          </mesh>
+          <mesh position={[-0.05, 0.32, 0.12]} rotation={[0.1, -0.15, -0.05]} castShadow>
+            <boxGeometry args={[0.18 * hip, 0.48, 0.03]} />
+            <ClothMat color={bottomC} soft />
+          </mesh>
+          {/* Tie cord */}
+          <mesh position={[0.12, 0.78, 0.16]} castShadow>
+            <torusGeometry args={[0.04, 0.012, 6, 12]} />
+            <meshStandardMaterial color="#5c4030" roughness={0.85} />
+          </mesh>
+          {isFringeKilt &&
+            Array.from({ length: 10 }).map((_, i) => {
+              const a = -0.5 + (i / 9) * 1.0;
+              return (
+                <mesh key={`fr-${i}`} position={[a * 0.28 * hip, 0.28, 0.16]} castShadow>
+                  <boxGeometry args={[0.025, 0.35 + (i % 3) * 0.04, 0.02]} />
+                  <ClothMat color={bottomC} />
+                </mesh>
+              );
+            })}
+          {/* Bare lower legs under wrap */}
+          <group ref={leftLeg} position={[-0.12 * hip, 0.55, 0]}>
+            <mesh position={[0, -0.28, 0]} castShadow>
+              <capsuleGeometry args={[0.09 * hip, 0.35, 10, 16]} />
+              <SkinMat color={appearance.skin} />
+            </mesh>
+            <mesh position={[0, -0.52, 0.02]} castShadow>
+              <sphereGeometry args={[0.07 * hip, 12, 10]} />
+              <SkinMat color={appearance.skin} />
+            </mesh>
+          </group>
+          <group ref={rightLeg} position={[0.12 * hip, 0.55, 0]}>
+            <mesh position={[0, -0.28, 0]} castShadow>
+              <capsuleGeometry args={[0.09 * hip, 0.35, 10, 16]} />
+              <SkinMat color={appearance.skin} />
+            </mesh>
+            <mesh position={[0, -0.52, 0.02]} castShadow>
+              <sphereGeometry args={[0.07 * hip, 12, 10]} />
+              <SkinMat color={appearance.skin} />
+            </mesh>
+          </group>
         </group>
       ) : (
         <group>
@@ -916,62 +1007,59 @@ export function StylizedCharacter({
             <boxGeometry args={[0.012, 0.28, 0.01]} />
             <meshStandardMaterial color="#000000" transparent opacity={0.18} />
           </mesh>
-          <group ref={leftLeg} position={[-0.12 * hip, 0.78, 0]}>
-            <mesh position={[0, -0.23, 0]} castShadow>
-              <capsuleGeometry args={[0.13 * hip, 0.26, 14, 28]} />
+          <group ref={leftLeg} position={[-0.14 * hip, 0.76, 0]}>
+            <mesh position={[0, -0.22, 0]} castShadow>
+              <capsuleGeometry args={[0.12 * hip, 0.28, 12, 24]} />
               <ClothMat color={bottomC} denim={isDenimBottom} />
             </mesh>
-            {/* outer seam */}
-            <mesh position={[-0.12 * hip, -0.28, 0]} rotation={[0, 0, 0.05]}>
-              <boxGeometry args={[0.01, 0.45, 0.01]} />
-              <meshStandardMaterial color="#000000" transparent opacity={0.15} />
+            <mesh position={[-0.1 * hip, -0.26, 0]} rotation={[0, 0, 0.04]}>
+              <boxGeometry args={[0.01, 0.42, 0.01]} />
+              <meshStandardMaterial color="#000000" transparent opacity={0.12} />
             </mesh>
-            {/* pocket flap */}
-            <mesh position={[-0.06, -0.08, 0.1]} castShadow>
-              <boxGeometry args={[0.1, 0.08, 0.02]} />
+            <mesh position={[-0.05, -0.08, 0.09]} castShadow>
+              <boxGeometry args={[0.09, 0.07, 0.018]} />
               <ClothMat color={bottomC} denim={isDenimBottom} />
             </mesh>
-            <mesh position={[0, -0.42, 0.02]} castShadow>
-              <sphereGeometry args={[0.105 * hip, 20, 18]} />
+            <mesh position={[0, -0.4, 0.015]} castShadow>
+              <sphereGeometry args={[0.095 * hip, 16, 14]} />
               <ClothMat color={bottomC} denim={isDenimBottom} />
             </mesh>
-            <mesh position={[0.01, -0.6, 0.03]} castShadow>
-              <capsuleGeometry args={[0.095 * hip, 0.2, 14, 26]} />
+            <mesh position={[0.01, -0.58, 0.025]} castShadow>
+              <capsuleGeometry args={[0.088 * hip, 0.22, 12, 22]} />
               <ClothMat color={bottomC} denim={isDenimBottom} />
             </mesh>
-            {/* ankle cuff */}
-            <mesh position={[0.01, -0.72, 0.04]}>
-              <torusGeometry args={[0.08 * hip, 0.015, 8, 16]} />
+            <mesh position={[0.01, -0.72, 0.035]}>
+              <torusGeometry args={[0.075 * hip, 0.012, 8, 14]} />
               <ClothMat color={bottomC} denim={isDenimBottom} />
             </mesh>
-            <mesh position={[0.01, -0.7, 0.04]} castShadow>
-              <sphereGeometry args={[0.072 * hip, 16, 14]} />
+            <mesh position={[0.01, -0.7, 0.035]} castShadow>
+              <sphereGeometry args={[0.065 * hip, 14, 12]} />
               <ClothMat color={bottomC} denim={isDenimBottom} />
             </mesh>
           </group>
-          <group ref={rightLeg} position={[0.12 * hip, 0.78, 0]}>
-            <mesh position={[0, -0.23, 0]} castShadow>
-              <capsuleGeometry args={[0.13 * hip, 0.26, 14, 28]} />
+          <group ref={rightLeg} position={[0.14 * hip, 0.76, 0]}>
+            <mesh position={[0, -0.22, 0]} castShadow>
+              <capsuleGeometry args={[0.12 * hip, 0.28, 12, 24]} />
               <ClothMat color={bottomC} denim={isDenimBottom} />
             </mesh>
-            <mesh position={[0.12 * hip, -0.28, 0]} rotation={[0, 0, -0.05]}>
-              <boxGeometry args={[0.01, 0.45, 0.01]} />
-              <meshStandardMaterial color="#000000" transparent opacity={0.15} />
+            <mesh position={[0.1 * hip, -0.26, 0]} rotation={[0, 0, -0.04]}>
+              <boxGeometry args={[0.01, 0.42, 0.01]} />
+              <meshStandardMaterial color="#000000" transparent opacity={0.12} />
             </mesh>
-            <mesh position={[0.06, -0.08, 0.1]} castShadow>
-              <boxGeometry args={[0.1, 0.08, 0.02]} />
+            <mesh position={[0.05, -0.08, 0.09]} castShadow>
+              <boxGeometry args={[0.09, 0.07, 0.018]} />
               <ClothMat color={bottomC} denim={isDenimBottom} />
             </mesh>
-            <mesh position={[0, -0.42, 0.02]} castShadow>
-              <sphereGeometry args={[0.105 * hip, 20, 18]} />
+            <mesh position={[0, -0.4, 0.015]} castShadow>
+              <sphereGeometry args={[0.095 * hip, 16, 14]} />
               <ClothMat color={bottomC} denim={isDenimBottom} />
             </mesh>
-            <mesh position={[-0.01, -0.6, 0.03]} castShadow>
-              <capsuleGeometry args={[0.095 * hip, 0.2, 14, 26]} />
+            <mesh position={[-0.01, -0.58, 0.025]} castShadow>
+              <capsuleGeometry args={[0.088 * hip, 0.22, 12, 22]} />
               <ClothMat color={bottomC} denim={isDenimBottom} />
             </mesh>
-            <mesh position={[-0.01, -0.72, 0.04]}>
-              <torusGeometry args={[0.08 * hip, 0.015, 8, 16]} />
+            <mesh position={[-0.01, -0.72, 0.035]}>
+              <torusGeometry args={[0.075 * hip, 0.012, 8, 14]} />
               <ClothMat color={bottomC} denim={isDenimBottom} />
             </mesh>
             <mesh position={[-0.01, -0.7, 0.04]} castShadow>
@@ -1062,32 +1150,87 @@ export function StylizedCharacter({
 
       {/* ——— TORSO ——— */}
       <group ref={torso}>
+      {/* Core body — skin when bare/beaded/armor base */}
       <mesh position={[0, 1.05, 0]} castShadow>
-        <capsuleGeometry args={[0.27 * waist, 0.4, 16, 36]} />
-        <ClothMat color={topC} soft={isSoftTop} />
+        <capsuleGeometry args={[0.26 * waist, 0.42, 14, 28]} />
+        {isBareTorso || isLeatherArmor ? (
+          <SkinMat color={appearance.skin} />
+        ) : (
+          <ClothMat color={topC} soft={isSoftTop} />
+        )}
       </mesh>
-      <mesh position={[0, 1.18, 0.06]} castShadow>
-        <sphereGeometry args={[0.24 * chest, 32, 28]} />
-        <ClothMat color={topC} soft={isSoftTop} />
+      <mesh position={[0, 1.2, 0.05]} castShadow>
+        <sphereGeometry args={[0.23 * chest, 28, 24]} />
+        {isBareTorso || isLeatherArmor ? (
+          <SkinMat color={appearance.skin} />
+        ) : (
+          <ClothMat color={topC} soft={isSoftTop} />
+        )}
       </mesh>
       {/* Shoulders */}
       <mesh position={[-0.2 * shoulder, 1.32, 0]} castShadow>
-        <sphereGeometry args={[0.14 * shoulder, 28, 22]} />
-        <ClothMat color={outerC ?? topC} soft={!outerC} fur={isFur} />
+        <sphereGeometry args={[0.13 * shoulder, 22, 18]} />
+        {isBareTorso ? (
+          <SkinMat color={appearance.skin} />
+        ) : (
+          <ClothMat color={outerC ?? topC} soft={!outerC} fur={isFur} />
+        )}
       </mesh>
       <mesh position={[0.2 * shoulder, 1.32, 0]} castShadow>
-        <sphereGeometry args={[0.14 * shoulder, 28, 22]} />
-        <ClothMat color={outerC ?? topC} soft={!outerC} fur={isFur} />
+        <sphereGeometry args={[0.13 * shoulder, 22, 18]} />
+        {isBareTorso ? (
+          <SkinMat color={appearance.skin} />
+        ) : (
+          <ClothMat color={outerC ?? topC} soft={!outerC} fur={isFur} />
+        )}
       </mesh>
-      <mesh position={[0, 1.34, 0]}>
-        <boxGeometry args={[0.58 * shoulder, 0.1, 0.26]} />
-        <ClothMat color={outerC ?? topC} soft={!outerC} fur={isFur} />
-      </mesh>
-      {/* Crew neck */}
-      <mesh position={[0, 1.38, 0.1]}>
-        <torusGeometry args={[0.095, 0.03, 10, 24]} />
-        <ClothMat color={topC} soft />
-      </mesh>
+      {!isBareTorso && !isLeatherArmor && (
+        <mesh position={[0, 1.34, 0]}>
+          <boxGeometry args={[0.58 * shoulder, 0.1, 0.26]} />
+          <ClothMat color={outerC ?? topC} soft={!outerC} fur={isFur} />
+        </mesh>
+      )}
+      {/* Beaded chest layers */}
+      {isBeadedTop &&
+        [1.28, 1.2, 1.12, 1.04].map((y, i) => (
+          <mesh key={`bead-${i}`} position={[0, y, 0.18]} castShadow>
+            <torusGeometry args={[0.12 + i * 0.025, 0.022, 8, 20]} />
+            <meshStandardMaterial
+              color={i % 2 === 0 ? "#e8b923" : i % 3 === 0 ? "#c41e3a" : "#2563eb"}
+              roughness={0.35}
+              metalness={0.25}
+            />
+          </mesh>
+        ))}
+      {/* Leather armor chest plate */}
+      {isLeatherArmor && (
+        <group>
+          <mesh position={[0, 1.18, 0.08]} castShadow>
+            <boxGeometry args={[0.48 * shoulder, 0.42, 0.22]} />
+            <meshStandardMaterial color="#8b1a1a" roughness={0.65} />
+          </mesh>
+          <mesh position={[0, 1.18, 0.2]} castShadow>
+            <boxGeometry args={[0.36 * shoulder, 0.28, 0.04]} />
+            <meshStandardMaterial color="#6b1515" roughness={0.55} metalness={0.1} />
+          </mesh>
+          {/* brass studs */}
+          {[-0.12, 0, 0.12].map((x, i) =>
+            [1.28, 1.18, 1.08].map((y, j) => (
+              <mesh key={`st-${i}-${j}`} position={[x * shoulder, y, 0.24]}>
+                <sphereGeometry args={[0.018, 8, 8]} />
+                <meshStandardMaterial color="#c9a227" metalness={0.85} roughness={0.25} />
+              </mesh>
+            )),
+          )}
+        </group>
+      )}
+      {/* Crew neck only on cloth tops */}
+      {!isBareTorso && !isLeatherArmor && (
+        <mesh position={[0, 1.38, 0.1]}>
+          <torusGeometry args={[0.095, 0.03, 10, 24]} />
+          <ClothMat color={topC} soft />
+        </mesh>
+      )}
       {/* collarbone hints */}
       <mesh position={[-0.1 * shoulder, 1.36, 0.12]} rotation={[0.2, 0, 0.35]} castShadow>
         <capsuleGeometry args={[0.025, 0.1, 6, 12]} />
@@ -1208,116 +1351,114 @@ export function StylizedCharacter({
         </group>
       )}
 
-      {/* ——— ARMS (animated) + detailed hands ——— */}
-      <group ref={leftArm} position={[0, 1.32, 0]}>
+      {/* ——— ARMS — pivot at shoulder so swing is natural ——— */}
+      <group ref={leftArm} position={[-0.34 * shoulder, 1.34, 0]}>
+        {/* upper arm hangs from shoulder joint */}
         <mesh
-          position={[-0.4 * shoulder, -0.27, 0]}
-          rotation={[0.15, 0, -0.55]}
+          position={[-0.04, -0.2, 0]}
+          rotation={[0.12, 0, -0.35]}
           scale={[sleeveW, 1, sleeveW]}
           castShadow
         >
-          <capsuleGeometry args={[0.095, 0.36, 14, 28]} />
+          <capsuleGeometry args={[0.09, 0.32, 12, 24]} />
           <ClothMat color={outerC ?? topC} soft={!outerC} fur={isFur} />
         </mesh>
-        {/* elbow joint */}
-        <mesh position={[-0.48 * shoulder, -0.48, 0.03]} castShadow>
-          <sphereGeometry args={[0.085 * sleeveW, 16, 14]} />
+        <mesh position={[-0.1, -0.4, 0.02]} castShadow>
+          <sphereGeometry args={[0.08 * sleeveW, 14, 12]} />
           <ClothMat color={outerC ?? topC} soft={!outerC} fur={isFur} />
         </mesh>
         <mesh
-          position={[-0.52 * shoulder, -0.6, 0.06]}
-          rotation={[0.35, 0, -0.35]}
+          position={[-0.14, -0.55, 0.05]}
+          rotation={[0.3, 0, -0.25]}
           scale={[sleeveW, 1, sleeveW]}
           castShadow
         >
-          <capsuleGeometry args={[0.08, 0.22, 14, 26]} />
+          <capsuleGeometry args={[0.075, 0.2, 12, 22]} />
           <ClothMat color={outerC ?? topC} soft={!outerC} fur={isFur} />
         </mesh>
-        {/* cuff ring */}
-        <mesh position={[-0.54 * shoulder, -0.72, 0.09]} rotation={[0.35, 0, -0.35]}>
-          <torusGeometry args={[0.085, 0.012, 8, 16]} />
+        <mesh position={[-0.16, -0.68, 0.08]} rotation={[0.3, 0, -0.25]}>
+          <torusGeometry args={[0.078, 0.012, 8, 14]} />
           <ClothMat color={outerC ?? topC} soft />
         </mesh>
-        {/* hand + fingers */}
-        <group position={[-0.55 * shoulder, -0.78, 0.12]} rotation={[0.2, 0.1, -0.4]}>
+        <group position={[-0.17, -0.74, 0.1]} rotation={[0.15, 0.08, -0.3]}>
           <mesh castShadow>
-            <sphereGeometry args={[0.075, 16, 14]} />
+            <sphereGeometry args={[0.068, 14, 12]} />
             <SkinMat color={appearance.skin} />
           </mesh>
-          <mesh position={[0, -0.02, 0.06]} castShadow>
-            <boxGeometry args={[0.09, 0.04, 0.1]} />
+          <mesh position={[0, -0.015, 0.05]} castShadow>
+            <boxGeometry args={[0.08, 0.035, 0.09]} />
             <SkinMat color={appearance.skin} />
           </mesh>
-          {[-0.035, -0.012, 0.012, 0.035].map((x, i) => (
-            <group key={i} position={[x, -0.02, 0.1]} rotation={[0.3 + i * 0.04, 0, 0]}>
-              <mesh position={[0, 0, 0.03]} castShadow>
-                <capsuleGeometry args={[0.012, 0.028, 6, 10]} />
+          {[-0.03, -0.01, 0.01, 0.03].map((x, i) => (
+            <group key={i} position={[x, -0.015, 0.09]} rotation={[0.28 + i * 0.03, 0, 0]}>
+              <mesh position={[0, 0, 0.025]} castShadow>
+                <capsuleGeometry args={[0.011, 0.024, 6, 8]} />
                 <SkinMat color={appearance.skin} />
               </mesh>
-              <mesh position={[0, 0, 0.055]} castShadow>
-                <sphereGeometry args={[0.013, 8, 8]} />
+              <mesh position={[0, 0, 0.05]} castShadow>
+                <sphereGeometry args={[0.012, 8, 8]} />
                 <SkinMat color={appearance.skin} />
               </mesh>
-              <mesh position={[0, 0, 0.08]} castShadow>
-                <capsuleGeometry args={[0.011, 0.022 - i * 0.002, 6, 10]} />
+              <mesh position={[0, 0, 0.07]} castShadow>
+                <capsuleGeometry args={[0.01, 0.02 - i * 0.002, 6, 8]} />
                 <SkinMat color={appearance.skin} />
               </mesh>
             </group>
           ))}
-          <mesh position={[-0.055, 0.01, 0.04]} rotation={[0.2, 0, 0.9]} castShadow>
-            <capsuleGeometry args={[0.014, 0.04, 6, 10]} />
+          <mesh position={[-0.05, 0.01, 0.035]} rotation={[0.2, 0, 0.85]} castShadow>
+            <capsuleGeometry args={[0.013, 0.035, 6, 8]} />
             <SkinMat color={appearance.skin} />
           </mesh>
         </group>
       </group>
-      <group ref={rightArm} position={[0, 1.32, 0]}>
+      <group ref={rightArm} position={[0.34 * shoulder, 1.34, 0]}>
         <mesh
-          position={[0.4 * shoulder, -0.27, 0]}
-          rotation={[0.15, 0, 0.55]}
+          position={[0.04, -0.2, 0]}
+          rotation={[0.12, 0, 0.35]}
           scale={[sleeveW, 1, sleeveW]}
           castShadow
         >
-          <capsuleGeometry args={[0.095, 0.36, 14, 28]} />
+          <capsuleGeometry args={[0.09, 0.32, 12, 24]} />
           <ClothMat color={outerC ?? topC} soft={!outerC} fur={isFur} />
         </mesh>
-        <mesh position={[0.48 * shoulder, -0.48, 0.03]} castShadow>
-          <sphereGeometry args={[0.085 * sleeveW, 16, 14]} />
+        <mesh position={[0.1, -0.4, 0.02]} castShadow>
+          <sphereGeometry args={[0.08 * sleeveW, 14, 12]} />
           <ClothMat color={outerC ?? topC} soft={!outerC} fur={isFur} />
         </mesh>
         <mesh
-          position={[0.52 * shoulder, -0.6, 0.06]}
-          rotation={[0.35, 0, 0.35]}
+          position={[0.14, -0.55, 0.05]}
+          rotation={[0.3, 0, 0.25]}
           scale={[sleeveW, 1, sleeveW]}
           castShadow
         >
-          <capsuleGeometry args={[0.08, 0.22, 14, 26]} />
+          <capsuleGeometry args={[0.075, 0.2, 12, 22]} />
           <ClothMat color={outerC ?? topC} soft={!outerC} fur={isFur} />
         </mesh>
-        <mesh position={[0.54 * shoulder, -0.72, 0.09]} rotation={[0.35, 0, 0.35]}>
-          <torusGeometry args={[0.085, 0.012, 8, 16]} />
+        <mesh position={[0.16, -0.68, 0.08]} rotation={[0.3, 0, 0.25]}>
+          <torusGeometry args={[0.078, 0.012, 8, 14]} />
           <ClothMat color={outerC ?? topC} soft />
         </mesh>
-        <group position={[0.55 * shoulder, -0.78, 0.12]} rotation={[0.2, -0.1, 0.4]}>
+        <group position={[0.17, -0.74, 0.1]} rotation={[0.15, -0.08, 0.3]}>
           <mesh castShadow>
-            <sphereGeometry args={[0.075, 16, 14]} />
+            <sphereGeometry args={[0.068, 14, 12]} />
             <SkinMat color={appearance.skin} />
           </mesh>
-          <mesh position={[0, -0.02, 0.06]} castShadow>
-            <boxGeometry args={[0.09, 0.04, 0.1]} />
+          <mesh position={[0, -0.015, 0.05]} castShadow>
+            <boxGeometry args={[0.08, 0.035, 0.09]} />
             <SkinMat color={appearance.skin} />
           </mesh>
-          {[-0.035, -0.012, 0.012, 0.035].map((x, i) => (
-            <group key={i} position={[x, -0.02, 0.1]} rotation={[0.3 + i * 0.04, 0, 0]}>
-              <mesh position={[0, 0, 0.03]} castShadow>
-                <capsuleGeometry args={[0.012, 0.028, 6, 10]} />
+          {[-0.03, -0.01, 0.01, 0.03].map((x, i) => (
+            <group key={i} position={[x, -0.015, 0.09]} rotation={[0.28 + i * 0.03, 0, 0]}>
+              <mesh position={[0, 0, 0.025]} castShadow>
+                <capsuleGeometry args={[0.011, 0.024, 6, 8]} />
                 <SkinMat color={appearance.skin} />
               </mesh>
-              <mesh position={[0, 0, 0.055]} castShadow>
-                <sphereGeometry args={[0.013, 8, 8]} />
+              <mesh position={[0, 0, 0.05]} castShadow>
+                <sphereGeometry args={[0.012, 8, 8]} />
                 <SkinMat color={appearance.skin} />
               </mesh>
-              <mesh position={[0, 0, 0.08]} castShadow>
-                <capsuleGeometry args={[0.011, 0.022 - i * 0.002, 6, 10]} />
+              <mesh position={[0, 0, 0.07]} castShadow>
+                <capsuleGeometry args={[0.01, 0.02 - i * 0.002, 6, 8]} />
                 <SkinMat color={appearance.skin} />
               </mesh>
             </group>
@@ -1326,8 +1467,25 @@ export function StylizedCharacter({
             <capsuleGeometry args={[0.014, 0.04, 6, 10]} />
             <SkinMat color={appearance.skin} />
           </mesh>
+          {/* Combat weapons parented to right hand */}
+          {showWeapons && (
+            <group position={[0.05, -0.02, 0.12]}>
+              <CombatProps
+                kind={propForActivity(activity).right}
+                side="right"
+                active={(activity ?? "none").startsWith("combat_")}
+              />
+            </group>
+          )}
         </group>
       </group>
+
+      {/* Left-hand shield when guarding */}
+      {showWeapons && propForActivity(activity).left === "shield" && (
+        <group position={[-0.34 * shoulder, 1.2, 0.15]}>
+          <CombatProps kind="shield" side="left" active />
+        </group>
+      )}
 
       {/* ——— NECK + HEAD (pivots at neck for look-at / talk) ——— */}
       <group ref={head} position={[0, 1.44, 0]}>
@@ -1561,6 +1719,72 @@ export function StylizedCharacter({
           </mesh>
         ))}
 
+      {/* ——— War paint / ritual marks (concept head sheet) ——— */}
+      {appearance.faceMark === "paint-vertical" && (
+        <group>
+          <mesh position={[0, 1.62, 0.24]}>
+            <boxGeometry args={[0.035, 0.28, 0.01]} />
+            <meshStandardMaterial color="#0e4d6b" transparent opacity={0.85} depthWrite={false} />
+          </mesh>
+          <mesh position={[0, 1.48, 0.25]}>
+            <boxGeometry args={[0.028, 0.08, 0.01]} />
+            <meshStandardMaterial color="#0e4d6b" transparent opacity={0.85} depthWrite={false} />
+          </mesh>
+        </group>
+      )}
+      {appearance.faceMark === "paint-cheek-bars" && (
+        <group>
+          {[-1, 1].map((side) => (
+            <group key={side}>
+              <mesh position={[side * 0.14, 1.55, 0.22]} rotation={[0, 0, side * 0.15]}>
+                <boxGeometry args={[0.08, 0.022, 0.01]} />
+                <meshStandardMaterial color="#0e4d6b" transparent opacity={0.9} depthWrite={false} />
+              </mesh>
+              <mesh position={[side * 0.14, 1.52, 0.22]} rotation={[0, 0, side * 0.15]}>
+                <boxGeometry args={[0.07, 0.018, 0.01]} />
+                <meshStandardMaterial color="#0e4d6b" transparent opacity={0.85} depthWrite={false} />
+              </mesh>
+            </group>
+          ))}
+        </group>
+      )}
+      {appearance.faceMark === "paint-eye-band" && (
+        <group>
+          <mesh position={[0, 1.64, 0.23]}>
+            <boxGeometry args={[0.36, 0.04, 0.012]} />
+            <meshStandardMaterial color="#0a3a52" transparent opacity={0.88} depthWrite={false} />
+          </mesh>
+          <mesh position={[0, 1.5, 0.24]}>
+            <boxGeometry args={[0.06, 0.12, 0.01]} />
+            <meshStandardMaterial color="#0a3a52" transparent opacity={0.8} depthWrite={false} />
+          </mesh>
+        </group>
+      )}
+      {appearance.faceMark === "paint-full-mask" && (
+        <group>
+          <mesh position={[0, 1.6, 0.22]}>
+            <sphereGeometry args={[0.2, 16, 12]} />
+            <meshStandardMaterial color="#0e4d6b" transparent opacity={0.55} depthWrite={false} />
+          </mesh>
+          <mesh position={[0, 1.62, 0.26]}>
+            <boxGeometry args={[0.04, 0.32, 0.012]} />
+            <meshStandardMaterial color="#082a3a" transparent opacity={0.9} depthWrite={false} />
+          </mesh>
+        </group>
+      )}
+      {appearance.faceMark === "scar-cheek" && (
+        <mesh position={[0.13, 1.54, 0.22]} rotation={[0, 0, 0.4]}>
+          <boxGeometry args={[0.01, 0.1, 0.008]} />
+          <meshStandardMaterial color="#4a2c1a" transparent opacity={0.75} />
+        </mesh>
+      )}
+      {appearance.faceMark === "scar-eye" && (
+        <mesh position={[-0.1, 1.66, 0.22]} rotation={[0, 0, -0.55]}>
+          <boxGeometry args={[0.009, 0.09, 0.008]} />
+          <meshStandardMaterial color="#3d2418" transparent opacity={0.8} />
+        </mesh>
+      )}
+
       {appearance.leftEarPiercing && (
         <mesh position={[-0.26, 1.52, 0.02]}>
           <sphereGeometry args={[0.017, 10, 10]} />
@@ -1585,21 +1809,73 @@ export function StylizedCharacter({
       {/* Hat */}
       {hatC && (
         <group position={[0, 1.82, 0]}>
-          <mesh castShadow>
-            <cylinderGeometry args={[0.29, 0.31, 0.26, 20]} />
-            <ClothMat color={hatC} soft />
-          </mesh>
-          {equipped.hat === "hat-wide" && (
-            <mesh position={[0, -0.07, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-              <ringGeometry args={[0.31, 0.55, 32]} />
-              <meshStandardMaterial color={hatC} side={2} roughness={0.85} />
-            </mesh>
-          )}
-          {equipped.hat === "hat-cap" && (
-            <mesh position={[0, -0.04, 0.26]} rotation={[0.5, 0, 0]} castShadow>
-              <boxGeometry args={[0.26, 0.045, 0.18]} />
-              <ClothMat color={hatC} soft />
-            </mesh>
+          {isWarriorHelm ? (
+            <group>
+              <mesh castShadow>
+                <sphereGeometry args={[0.28, 16, 12]} />
+                <meshStandardMaterial color={hatC} roughness={0.55} metalness={0.15} />
+              </mesh>
+              <mesh position={[0, 0.12, 0]} castShadow>
+                <cylinderGeometry args={[0.08, 0.12, 0.12, 10]} />
+                <meshStandardMaterial color="#c9a227" metalness={0.7} roughness={0.3} />
+              </mesh>
+              {Array.from({ length: 8 }).map((_, i) => {
+                const a = (i / 8) * Math.PI * 2;
+                return (
+                  <mesh key={i} position={[Math.cos(a) * 0.26, 0, Math.sin(a) * 0.26]}>
+                    <sphereGeometry args={[0.02, 6, 6]} />
+                    <meshStandardMaterial color="#c9a227" metalness={0.8} roughness={0.25} />
+                  </mesh>
+                );
+              })}
+            </group>
+          ) : isBeadCrown ? (
+            <group>
+              <mesh castShadow>
+                <coneGeometry args={[0.22, 0.55, 12]} />
+                <meshStandardMaterial color={hatC} roughness={0.45} />
+              </mesh>
+              {[0.1, 0.22, 0.34].map((y, i) => (
+                <mesh key={i} position={[0, y - 0.15, 0]}>
+                  <torusGeometry args={[0.18 - i * 0.02, 0.02, 6, 14]} />
+                  <meshStandardMaterial color={i % 2 ? "#fbbf24" : "#dc2626"} metalness={0.3} roughness={0.4} />
+                </mesh>
+              ))}
+            </group>
+          ) : isFeatherBand ? (
+            <group>
+              <mesh rotation={[Math.PI / 2, 0, 0]} castShadow>
+                <torusGeometry args={[0.22, 0.025, 8, 20]} />
+                <meshStandardMaterial color="#e7e5e4" roughness={0.7} />
+              </mesh>
+              <mesh position={[0.18, 0.25, -0.05]} rotation={[0.3, 0.4, 0.5]} castShadow>
+                <boxGeometry args={[0.04, 0.35, 0.01]} />
+                <meshStandardMaterial color="#d6d3d1" roughness={0.8} />
+              </mesh>
+              <mesh position={[0.18, 0.35, -0.05]} rotation={[0.3, 0.4, 0.5]}>
+                <boxGeometry args={[0.08, 0.12, 0.008]} />
+                <meshStandardMaterial color="#a8a29e" roughness={0.85} />
+              </mesh>
+            </group>
+          ) : (
+            <group>
+              <mesh castShadow>
+                <cylinderGeometry args={[0.29, 0.31, 0.26, 20]} />
+                <ClothMat color={hatC} soft />
+              </mesh>
+              {equipped.hat === "hat-wide" && (
+                <mesh position={[0, -0.07, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+                  <ringGeometry args={[0.31, 0.55, 32]} />
+                  <meshStandardMaterial color={hatC} side={2} roughness={0.85} />
+                </mesh>
+              )}
+              {equipped.hat === "hat-cap" && (
+                <mesh position={[0, -0.04, 0.26]} rotation={[0.5, 0, 0]} castShadow>
+                  <boxGeometry args={[0.26, 0.045, 0.18]} />
+                  <ClothMat color={hatC} soft />
+                </mesh>
+              )}
+            </group>
           )}
         </group>
       )}

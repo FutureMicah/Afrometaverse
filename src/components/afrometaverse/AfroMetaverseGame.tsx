@@ -1436,7 +1436,7 @@ export function AfroMetaverseGame() {
                 </div>
                 <div className="am-character-row">
                   <span className="am-gear-label">Mark</span>
-                  {(["none", "cheek-mole", "brow-scar", "chin-dimple", "temple-birthmark", "freckles"] as FaceMark[]).map((f) => (
+                  {(["none", "cheek-mole", "brow-scar", "chin-dimple", "temple-birthmark", "freckles", "paint-vertical", "paint-cheek-bars", "paint-eye-band", "paint-full-mask", "scar-cheek", "scar-eye"] as FaceMark[]).map((f) => (
                     <button key={f} type="button" className={`am-chip am-transport-chip ${appearance.faceMark === f ? "am-transport-active" : ""}`} onClick={() => setFaceMark(f)}>{f}</button>
                   ))}
                 </div>

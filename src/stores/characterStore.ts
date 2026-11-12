@@ -319,6 +319,163 @@ export const CLOTHING_CATALOG: ClothingItem[] = [
     gender: "any",
     blurb: "Keep them clean on laterite.",
   },
+
+  // ——— Heritage / warrior sets (village + combat look) ———
+  {
+    id: "top-bead-chest",
+    name: "Beaded chestpiece",
+    slot: "top",
+    price: 420,
+    minLevel: 2,
+    color: "#e8b923",
+    color2: "#c41e3a",
+    gender: "any",
+    blurb: "Layered trade beads and gold — river market pride.",
+  },
+  {
+    id: "top-leather-armor",
+    name: "Crimson leather armor",
+    slot: "top",
+    price: 580,
+    minLevel: 3,
+    color: "#8b1a1a",
+    color2: "#c9a227",
+    gender: "any",
+    blurb: "Quilted hide plates and brass studs for the guard.",
+  },
+  {
+    id: "top-bare-wrap",
+    name: "Ceremonial bare torso",
+    slot: "top",
+    price: 120,
+    minLevel: 1,
+    color: "#5c3317",
+    gender: "any",
+    blurb: "Skin-forward look for rites and training grounds.",
+  },
+  {
+    id: "bottom-wrap-skirt",
+    name: "Ivory wrap skirt",
+    slot: "bottom",
+    price: 260,
+    minLevel: 1,
+    color: "#f5f0e6",
+    gender: "any",
+    blurb: "Cloth wrap tied at the hip — village classic.",
+  },
+  {
+    id: "bottom-pattern-wrap",
+    name: "Patterned warrior wrap",
+    slot: "bottom",
+    price: 310,
+    minLevel: 2,
+    color: "#d4c4a8",
+    color2: "#3d2914",
+    gender: "any",
+    blurb: "Woven geometric cloth for combat and ceremony.",
+  },
+  {
+    id: "bottom-fringe-kilt",
+    name: "Leather fringe kilt",
+    slot: "bottom",
+    price: 340,
+    minLevel: 3,
+    color: "#6b4423",
+    gender: "any",
+    blurb: "Cut leather strips — hunter and spirit-child style.",
+  },
+  {
+    id: "outer-red-cape",
+    name: "Scarlet ritual cape",
+    slot: "outer",
+    price: 480,
+    minLevel: 3,
+    color: "#b91c1c",
+    gender: "any",
+    blurb: "Heavy drape for elders and spirit keepers.",
+  },
+  {
+    id: "outer-fur-shoulder",
+    name: "Fur shoulder mantle",
+    slot: "outer",
+    price: 390,
+    minLevel: 2,
+    color: "#e7e5e4",
+    gender: "any",
+    blurb: "Soft hide across the shoulders — Téloko-style.",
+  },
+  {
+    id: "hat-warrior-helm",
+    name: "Studded warrior helm",
+    slot: "hat",
+    price: 450,
+    minLevel: 3,
+    color: "#7f1d1d",
+    gender: "any",
+    blurb: "Hard leather dome with brass studs.",
+  },
+  {
+    id: "hat-bead-crown",
+    name: "Beaded crown",
+    slot: "hat",
+    price: 360,
+    minLevel: 2,
+    color: "#dc2626",
+    color2: "#fbbf24",
+    gender: "any",
+    blurb: "High bead cone for rites in the rain forest.",
+  },
+  {
+    id: "hat-feather-band",
+    name: "Feather headband",
+    slot: "hat",
+    price: 180,
+    minLevel: 1,
+    color: "#f5f5f4",
+    gender: "any",
+    blurb: "Cloth band and a single plume.",
+  },
+  {
+    id: "acc-bead-collar",
+    name: "Layered bead collar",
+    slot: "accessory",
+    price: 280,
+    minLevel: 2,
+    color: "#eab308",
+    color2: "#ef4444",
+    gender: "any",
+    blurb: "Stacked chokers in market colours.",
+  },
+  {
+    id: "acc-tusk-necklace",
+    name: "Tusk collar",
+    slot: "accessory",
+    price: 400,
+    minLevel: 3,
+    color: "#fef3c7",
+    gender: "any",
+    blurb: "Ivory points around the neck — guard of the yard.",
+  },
+  {
+    id: "shoes-sandals",
+    name: "Leather sandals",
+    slot: "shoes",
+    price: 140,
+    minLevel: 1,
+    color: "#78716c",
+    gender: "any",
+    blurb: "Strapped soles for laterite paths.",
+  },
+  {
+    id: "shoes-warrior-boots",
+    name: "Studded greaves",
+    slot: "shoes",
+    price: 320,
+    minLevel: 3,
+    color: "#7f1d1d",
+    gender: "any",
+    blurb: "Quilted red leather up the shin.",
+  },
 ];
 
 
@@ -582,7 +739,14 @@ export type FaceMark =
   | "brow-scar"
   | "chin-dimple"
   | "temple-birthmark"
-  | "freckles";
+  | "freckles"
+  /** War-paint / ritual marks from concept head sheet */
+  | "paint-vertical"
+  | "paint-cheek-bars"
+  | "paint-full-mask"
+  | "paint-eye-band"
+  | "scar-cheek"
+  | "scar-eye";
 export type Posture = "upright" | "relaxed" | "confident" | "shy";
 
 export type CharacterAppearance = {
@@ -818,7 +982,10 @@ export const useCharacterStore = create<CharacterState>((set, get) => ({
     const eyes: EyeShape[] = ["almond", "round", "hooded", "wide"];
     const noses: NoseShape[] = ["soft", "strong", "wide", "narrow"];
     const lips: LipShape[] = ["full", "medium", "thin"];
-    const marks: FaceMark[] = ["none", "cheek-mole", "brow-scar", "chin-dimple", "temple-birthmark", "freckles"];
+    const marks: FaceMark[] = [
+      "none", "cheek-mole", "brow-scar", "chin-dimple", "temple-birthmark", "freckles",
+      "paint-vertical", "paint-cheek-bars", "paint-eye-band", "scar-cheek", "scar-eye", "paint-full-mask",
+    ];
     const postures: Posture[] = ["upright", "relaxed", "confident", "shy"];
     const a = get().appearance;
     set({
@@ -828,7 +995,7 @@ export const useCharacterStore = create<CharacterState>((set, get) => ({
         eyeShape: eyes[seed % 4] ?? "almond",
         noseShape: noses[seed % 4] ?? "soft",
         lipShape: lips[seed % 3] ?? "medium",
-        faceMark: marks[seed % 6] ?? "none",
+        faceMark: marks[seed % marks.length] ?? "none",
         browStrength: 0.4 + (seed % 6) * 0.1,
         leftEarPiercing: seed % 2 === 0,
         rightEarPiercing: seed % 3 !== 0,
