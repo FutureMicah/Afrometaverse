@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { generateResponse } from "@lovable.dev/ai-gateway";
 import { z } from "zod";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 const dialogueInput = z.object({
   action: z.string().trim().min(1).max(320),
@@ -26,6 +27,7 @@ const dialogueResponse = z.object({
 });
 
 export const generateNpcDialogue = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => dialogueInput.parse(input))
   .handler(async ({ data }) => {
     try {

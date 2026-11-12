@@ -20,3 +20,5 @@
   hardcode hex colors or Tailwind color utilities inside the game component.
 - The game must keep its honesty disclaimers visible: City Coins have no
   real-world value, and the civic vote is not connected to real elections.
+- AI inference belongs in validated `*.functions.ts` server functions; clients
+  call them through `useServerFn` so prompts and model calls stay server-side.
