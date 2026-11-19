@@ -1,7 +1,14 @@
 import { describe, expect, it } from "vitest";
 import { seasonForDay, weatherForDay, dayOfYear, SEASON_YEAR_DAYS } from "@/lib/seasons";
 import { advanceHour, timeKeyForHour, nightStrength, sunSignal } from "@/lib/worldClock";
-import { ChunkStreamer, CHUNK_SIZE, fogEndMeters, renderRadiusFor, chunkOf, chunkKey } from "@/lib/chunkStreaming";
+import {
+  ChunkStreamer,
+  CHUNK_SIZE,
+  fogEndMeters,
+  renderRadiusFor,
+  chunkOf,
+  chunkKey,
+} from "@/lib/chunkStreaming";
 import { groupByChunk, itemsInChunk, chunksContaining, chunkOrigin } from "@/lib/chunkAssign";
 import { detectRenderTier } from "@/lib/renderTier";
 import { atmosphereAt, NIGHT_AMBIENT_FLOOR } from "@/lib/atmosphere";
@@ -89,11 +96,11 @@ describe("chunk streaming (spec 10.3)", () => {
     expect(chunkOf(64, -1)).toEqual({ cx: 1, cz: -1 });
   });
 
-  it("picks the render tier from device hints", () => {
-    expect(detectRenderTier({ hardwareConcurrency: 8, deviceMemory: 8 })).toBe("high");
-    expect(detectRenderTier({ hardwareConcurrency: 4, deviceMemory: 4 })).toBe("high");
+  it("uses conservative render tiers from device hints", () => {
+    expect(detectRenderTier({ hardwareConcurrency: 8, deviceMemory: 8 })).toBe("mid");
+    expect(detectRenderTier({ hardwareConcurrency: 4, deviceMemory: 4 })).toBe("low");
     expect(detectRenderTier({ mobile: true, hardwareConcurrency: 4, deviceMemory: 4 })).toBe("low");
-    expect(detectRenderTier({ mobile: true, hardwareConcurrency: 8, deviceMemory: 8 })).toBe("high");
+    expect(detectRenderTier({ mobile: true, hardwareConcurrency: 8, deviceMemory: 8 })).toBe("low");
   });
 });
 

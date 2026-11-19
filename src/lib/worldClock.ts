@@ -3,13 +3,17 @@
  * Pure functions only, so the stores and the renderer share the same rules.
  */
 
-export const DEFAULT_DAY_MINUTES = 16;
+export const DEFAULT_DAY_MINUTES = 24;
 export const DEFAULT_START_HOUR = 7;
 
 export type TimeOfDayKey = "morning" | "afternoon" | "evening" | "night";
 
 /** Advance an in-game hour (0 to 24) by real seconds elapsed. */
-export function advanceHour(hour: number, realSeconds: number, dayMinutes = DEFAULT_DAY_MINUTES): number {
+export function advanceHour(
+  hour: number,
+  realSeconds: number,
+  dayMinutes = DEFAULT_DAY_MINUTES,
+): number {
   if (!(dayMinutes > 0) || !Number.isFinite(realSeconds)) return hour;
   const hoursPerSecond = 24 / (dayMinutes * 60);
   const next = (hour + realSeconds * hoursPerSecond) % 24;

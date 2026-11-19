@@ -7,16 +7,11 @@
  */
 
 import type { RenderTier } from "./renderTier";
-import {
-  WORLD_BOUNDS,
-  WORLD_CHUNK_SIZE,
-  WORLD_RENDER_RADIUS,
-  worldFogEnd,
-} from "./worldConfig";
+import { WORLD_BOUNDS, WORLD_CHUNK_SIZE, WORLD_RENDER_RADIUS, worldFogEnd } from "./worldConfig";
 
 /** Default remains 64 for village-scale systems that still use it. */
 export const CHUNK_SIZE = 64;
-export const UNLOAD_GRACE_SECONDS = 12;
+export const UNLOAD_GRACE_SECONDS = 10;
 export const MAX_CHUNK_LOADS_PER_UPDATE = 2;
 
 /** Legacy radii (village-scale). Prefer WORLD_RENDER_RADIUS for the large map. */
@@ -72,12 +67,7 @@ export function chunkIntersectsBounds(
 ): boolean {
   const x0 = c.cx * size;
   const z0 = c.cz * size;
-  return (
-    x0 < bounds.maxX &&
-    x0 + size > bounds.minX &&
-    z0 < bounds.maxZ &&
-    z0 + size > bounds.minZ
-  );
+  return x0 < bounds.maxX && x0 + size > bounds.minX && z0 < bounds.maxZ && z0 + size > bounds.minZ;
 }
 
 export interface ChunkStreamerOptions {
@@ -111,8 +101,7 @@ export class ChunkStreamer {
     this.tier = opts.tier;
     this.chunkSize = opts.chunkSize ?? CHUNK_SIZE;
     this.bounds =
-      opts.bounds ??
-      (this.chunkSize >= WORLD_CHUNK_SIZE ? { ...WORLD_BOUNDS } : undefined);
+      opts.bounds ?? (this.chunkSize >= WORLD_CHUNK_SIZE ? { ...WORLD_BOUNDS } : undefined);
     this.graceSeconds = opts.graceSeconds ?? UNLOAD_GRACE_SECONDS;
     this.renderR =
       opts.renderRadius ??

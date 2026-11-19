@@ -15,7 +15,7 @@ type DialogueResult = {
   speaker: string;
   mood: string;
   reply: string;
-  reputationHint: string | undefined;
+  reputationHint?: string | undefined;
 };
 
 type Props = {
@@ -63,9 +63,7 @@ export function SceneActionChat({
   const [action, setAction] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [history, setHistory] = useState<
-    { action: string; result: DialogueResult }[]
-  >([]);
+  const [history, setHistory] = useState<{ action: string; result: DialogueResult }[]>([]);
 
   const position = useRoamStore((s) => s.position);
   const nearDistrictId = useRoamStore((s) => s.nearDistrictId);
@@ -91,8 +89,7 @@ export function SceneActionChat({
     return row?.name ?? interiorId;
   }, [interiorId]);
 
-  const weatherLabel =
-    rain > 0.4 ? "rain" : dust > 0.45 ? "dusty harmattan air" : "clear skies";
+  const weatherLabel = rain > 0.4 ? "rain" : dust > 0.45 ? "dusty harmattan air" : "clear skies";
 
   const submit = useCallback(async () => {
     const text = action.trim();
@@ -136,6 +133,7 @@ export function SceneActionChat({
     }
   }, [
     action,
+    generateDialogue,
     isAuthenticated,
     onNeedAuth,
     onToast,
@@ -175,7 +173,12 @@ export function SceneActionChat({
                 {wantedLevel > 0 ? ` · Wanted ${wantedLevel}` : ""}
               </small>
             </div>
-            <button type="button" className="am-scene-chat-close" onClick={() => setOpen(false)} aria-label="Close">
+            <button
+              type="button"
+              className="am-scene-chat-close"
+              onClick={() => setOpen(false)}
+              aria-label="Close"
+            >
               <X size={16} />
             </button>
           </header>
@@ -196,7 +199,11 @@ export function SceneActionChat({
               maxLength={320}
               disabled={loading}
             />
-            <button type="button" onClick={() => void submit()} disabled={loading || !action.trim()}>
+            <button
+              type="button"
+              onClick={() => void submit()}
+              disabled={loading || !action.trim()}
+            >
               {loading ? <Loader2 size={16} className="am-spin" /> : <Send size={16} />}
             </button>
           </div>

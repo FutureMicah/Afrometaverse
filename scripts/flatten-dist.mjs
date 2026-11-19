@@ -2,8 +2,9 @@
 // dist/client/* -> dist/*, _shell.html -> index.html, and dist/server is removed (no server bundle).
 import { cpSync, existsSync, renameSync, rmSync, readdirSync } from "node:fs";
 import { join } from "node:path";
+import { fileURLToPath } from "node:url";
 
-const root = new URL("..", import.meta.url).pathname;
+const root = fileURLToPath(new URL("..", import.meta.url));
 const dist = join(root, "dist");
 const client = join(dist, "client");
 const server = join(dist, "server");
@@ -29,4 +30,6 @@ if (!existsSync(join(dist, "index.html"))) {
   process.exit(1);
 }
 
-console.log(`flatten-dist: dist/index.html + ${readdirSync(join(dist, "assets")).length} asset files (server bundle removed: ${!existsSync(server)})`);
+console.log(
+  `flatten-dist: dist/index.html + ${readdirSync(join(dist, "assets")).length} asset files (server bundle removed: ${!existsSync(server)})`,
+);
