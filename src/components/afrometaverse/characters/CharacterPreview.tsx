@@ -7,6 +7,7 @@ import {
   type EquippedLoadout,
 } from "@/stores/characterStore";
 import { StylizedCharacter } from "./StylizedCharacter";
+import { FaceStudio } from "./FaceStudio";
 
 type Props = {
   appearance?: CharacterAppearance;
@@ -20,11 +21,12 @@ type Props = {
 export function CharacterPreview({ appearance, equipped, height = 340 }: Props) {
   const storeAppearance = useCharacterStore((s) => s.appearance);
   const storeEquipped = useCharacterStore((s) => s.equipped);
+  // StylizedCharacter accepts nullish and falls back to defaults
   const a = appearance ?? storeAppearance;
   const e = equipped ?? storeEquipped;
 
   return (
-    <div className="am-char-preview" style={{ height }}>
+    <div className="am-char-preview" style={{ height, display: "flex", flexDirection: "column" }}>
       <Canvas
         shadows
         camera={{ position: [0, 1.35, 3.1], fov: 32 }}
@@ -96,6 +98,7 @@ export function CharacterPreview({ appearance, equipped, height = 340 }: Props) 
         />
       </Canvas>
       <div className="am-char-preview-hint">Drag 360° · scroll zoom · max detail mesh</div>
+      <FaceStudio />
     </div>
   );
 }

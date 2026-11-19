@@ -1,5 +1,4 @@
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { DEFAULT_APPEARANCE } from "../../stores/characterStore";
 import { OrbitControls } from "@react-three/drei";
 import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
@@ -20,7 +19,7 @@ import { worldModifiers } from "@/lib/timeEffects";
 import { FirstPersonLimbs } from "@/components/afrometaverse/FirstPersonLimbs";
 import { MissionWorldMarker } from "@/components/afrometaverse/MissionWorldMarker";
 
-import { useCharacterStore } from "@/stores/characterStore";
+import { DEFAULT_APPEARANCE, useCharacterStore } from "@/stores/characterStore";
 import { DayNightSky } from "@/components/afrometaverse/DayNightSky";
 import { ChunkedWorld } from "@/components/afrometaverse/ChunkedWorld";
 import { ChunkVillageProps, StaticVillageProps } from "@/components/afrometaverse/VillageProps";
@@ -34,7 +33,6 @@ import { adaptiveQualityTick, useAdaptiveQuality } from "@/lib/adaptiveQuality";
 import { worldFogEnd } from "@/lib/worldConfig";
 import { StylizedCharacter } from "@/components/afrometaverse/characters/StylizedCharacter";
 import { PhysicsWorld, RagdollDemoLayer } from "@/components/afrometaverse/PhysicsWorld";
-import { RiggedPlayer } from "@/components/afrometaverse/characters/RiggedPlayer";
 import {
   HeritageTerrain,
   BiomeFlora,
@@ -1510,7 +1508,7 @@ function SimpleVehicle({
 }
 
 function PlayerAvatar({ transport }: { transport: TransportId }) {
-  const appearance = useCharacterStore((s) => s.appearance);
+  const appearance = useCharacterStore((s) => s.appearance) ?? DEFAULT_APPEARANCE;
   const equipped = useCharacterStore((s) => s.equipped);
   const moveState = useRoamStore((s) => s.moveState);
   const combatActivity = useRoamStore((s) => s.combatActivity);
@@ -1532,25 +1530,17 @@ function PlayerAvatar({ transport }: { transport: TransportId }) {
 
   return (
     <group>
-      {/* Primary body: Mixamo Soldier rig with Idle/Walk/Run crossfade */}
-      <RiggedPlayer
-        moveState={loco}
-        scale={0.92 * heightScale}
-        color={appearance.skin}
+      {/* Mask Bearer / stylized body — full detail from concept art */}
+      <StylizedCharacter
+        appearance={appearance}
+        equipped={equipped}
+        scale={0.95 * heightScale}
+        animate
+        detail
+        moveState={loco === "ride" ? "ride" : combatActivity ? "idle" : loco}
+        activity={combatActivity ?? "none"}
+        showWeapons
       />
-      {/* Combat overlay: procedural poses + weapons only while fighting */}
-      {combatActivity ? (
-        <StylizedCharacter
-          appearance={appearance}
-          equipped={equipped}
-          scale={0.88 * heightScale}
-          animate
-          detail
-          moveState="idle"
-          activity={combatActivity}
-          showWeapons
-        />
-      ) : null}
     </group>
   );
 }
@@ -2977,8 +2967,10 @@ function NpcCrowd() {
       cycle?: Activity[];
       faceToward: [number, number] | null;
     };
-    const make = (i: number, x: number, z: number, opts: Partial<NpcSpec> = {}): NpcSpec => ({
-      appearance: {
+    const make = (i: number, x: number, z: number, opts: Partial<NpcSpec> = {}): NpcSpec => {
+      // Pull appearance/equipped out so `...opts` cannot wipe them with undefined
+      const { appearance: appearanceOpt, equipped: equippedOpt, ...rest } = opts;
+      const baseAppearance: NpcSpec["appearance"] = {
         ...DEFAULT_APPEARANCE,
         gender: (i % 2 === 0 ? "female" : "male") as "female" | "male",
         bodyShape: shapes[i % shapes.length] ?? "average",
@@ -3000,24 +2992,28 @@ function NpcCrowd() {
             "scar-eye",
           ] as const
         )[i % 9] ?? "none",
-      },
-      equipped: {
+      };
+      const baseEquipped: NpcSpec["equipped"] = {
         top: tops[i % tops.length] ?? "top-bead-chest",
         bottom: bottoms[i % bottoms.length] ?? "bottom-wrap-skirt",
         outer: null,
         shoes: i % 3 === 0 ? "shoes-warrior-boots" : "shoes-sandals",
         accessory: i % 4 === 0 ? "acc-bead-collar" : i % 5 === 0 ? "acc-tusk-necklace" : null,
         hat: i % 6 === 0 ? "hat-feather-band" : i % 7 === 0 ? "hat-warrior-helm" : null,
-      },
-      x,
-      z,
-      phase: i * 0.85,
-      roam: false,
-      walkSpeed: 0.55 + (i % 5) * 0.08,
-      activity: "idle",
-      faceToward: null,
-      ...opts,
-    });
+      };
+      return {
+        appearance: appearanceOpt ? { ...baseAppearance, ...appearanceOpt } : baseAppearance,
+        equipped: equippedOpt ? { ...baseEquipped, ...equippedOpt } : baseEquipped,
+        x,
+        z,
+        phase: i * 0.85,
+        roam: false,
+        walkSpeed: 0.55 + (i % 5) * 0.08,
+        activity: "idle",
+        faceToward: null,
+        ...rest,
+      };
+    };
 
     const list: NpcSpec[] = [];
     // Town talk circle — cycle gestures
@@ -3050,7 +3046,7 @@ function NpcCrowd() {
       accessory: "acc-tusk-necklace" as string | null,
       hat: "hat-warrior-helm" as string | null,
     };
-    list.push(make(47, 11.2, 5.4, { activity: "combat_ready", cycle: ["combat_ready", "combat_guard", "combat_block"], faceToward: [12, 6], equipped: warriorKit, appearance: undefined as never }));
+    list.push(make(47, 11.2, 5.4, { activity: "combat_ready", cycle: ["combat_ready", "combat_guard", "combat_block"], faceToward: [12, 6], equipped: warriorKit }));
     list.push(make(48, 12.6, 4.2, { activity: "combat_staff", cycle: ["combat_staff", "combat_ready"], faceToward: [11, 5], equipped: { ...warriorKit, hat: "hat-bead-crown", top: "top-bead-chest" } }));
     list.push(make(49, 10.4, 7.0, { activity: "combat_lunge", cycle: ["combat_lunge", "combat_slash"], faceToward: [11.5, 5.5], equipped: warriorKit }));
     list.push(make(50, 13.0, 6.6, { activity: "combat_guard", cycle: ["combat_guard", "combat_block"], faceToward: [12, 5], equipped: warriorKit }));
@@ -3363,7 +3359,7 @@ function NpcCrowd() {
             position={[n.x, 0, n.z]}
           >
             <StylizedCharacter
-              appearance={n.appearance}
+              appearance={n.appearance ?? DEFAULT_APPEARANCE}
               equipped={n.equipped}
               scale={0.82}
               animate

@@ -1343,7 +1343,7 @@ export function AfroMetaverseGame() {
                     <button
                       key={g}
                       type="button"
-                      className={`am-chip am-transport-chip ${appearance.gender === g ? "am-transport-active" : ""}`}
+                      className={`am-chip am-transport-chip ${appearance?.gender === g ? "am-transport-active" : ""}`}
                       onClick={() => setGender(g)}
                     >
                       {g === "female" ? "Female" : "Male"}
@@ -1356,7 +1356,7 @@ export function AfroMetaverseGame() {
                     <button
                       key={s}
                       type="button"
-                      className={`am-chip am-transport-chip ${appearance.bodyShape === s ? "am-transport-active" : ""}`}
+                      className={`am-chip am-transport-chip ${appearance?.bodyShape === s ? "am-transport-active" : ""}`}
                       onClick={() => setBodyShape(s)}
                     >
                       {BODY_SHAPE_LABEL[s]}

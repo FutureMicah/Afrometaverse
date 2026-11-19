@@ -5,7 +5,7 @@ import { CLOTHING_PALETTE } from "@/lib/clothingPalette";
 export type Gender = "female" | "male";
 export type BodyShape = "slim" | "average" | "curvy" | "athletic" | "broad";
 export type HeightId = "short" | "average" | "tall";
-export type HairStyle = "short" | "afro" | "braids" | "bob" | "bun" | "long" | "bald";
+export type HairStyle = "short" | "afro" | "braids" | "bob" | "bun" | "long" | "bald" | "locs";
 
 export type ClothingSlot = "top" | "bottom" | "outer" | "shoes" | "accessory" | "hat";
 
@@ -435,6 +435,60 @@ export const CLOTHING_CATALOG: ClothingItem[] = [
     gender: "any",
     blurb: "Cloth band and a single plume.",
   },
+
+  {
+    id: "top-mask-bearer",
+    name: "Mask Bearer chest",
+    slot: "top",
+    price: 0,
+    minLevel: 1,
+    color: "#c9a227",
+    color2: "#c41e3a",
+    gender: "any",
+    blurb: "Bare torso with layered beads, gold plates, and ritual straps.",
+  },
+  {
+    id: "outer-gold-pauldron",
+    name: "Gold face pauldrons",
+    slot: "outer",
+    price: 520,
+    minLevel: 3,
+    color: "#c9a227",
+    color2: "#f5f0e6",
+    gender: "any",
+    blurb: "Brass face-plates over white fur — spirit guardian shoulders.",
+  },
+  {
+    id: "hat-red-band",
+    name: "Red ritual headband",
+    slot: "hat",
+    price: 80,
+    minLevel: 1,
+    color: "#b91c1c",
+    gender: "any",
+    blurb: "Simple red band across the brow.",
+  },
+  {
+    id: "shoes-fur-greaves",
+    name: "Fur-trim greaves",
+    slot: "shoes",
+    price: 280,
+    minLevel: 2,
+    color: "#5c3317",
+    color2: "#e7e5e4",
+    gender: "any",
+    blurb: "Leather shin wraps with white fur cuffs and gold knee faces.",
+  },
+  {
+    id: "acc-mask-shield",
+    name: "Ancestor mask shield",
+    slot: "accessory",
+    price: 600,
+    minLevel: 3,
+    color: "#8b6914",
+    gender: "any",
+    blurb: "Heavy bronze face-shield of the lineage.",
+  },
   {
     id: "acc-bead-collar",
     name: "Layered bead collar",
@@ -745,6 +799,7 @@ export type FaceMark =
   | "paint-cheek-bars"
   | "paint-full-mask"
   | "paint-eye-band"
+  | "paint-ritual-dots"
   | "scar-cheek"
   | "scar-eye";
 export type Posture = "upright" | "relaxed" | "confident" | "shy";
@@ -788,41 +843,44 @@ export type CharacterAppearance = {
 };
 
 export const DEFAULT_APPEARANCE: CharacterAppearance = {
-  gender: "female",
-  bodyShape: "average",
+  gender: "male",
+  bodyShape: "athletic",
   height: "average",
-  skin: CLOTHING_PALETTE.bronze,
-  hair: "braids",
-  hairColor: CLOTHING_PALETTE.ink,
-  displayName: "Citizen",
+  skin: "#3d2314",
+  hair: "locs",
+  hairColor: "#1a0f0a",
+  displayName: "Mask Bearer",
   eyeShape: "almond",
-  eyeColor: CLOTHING_PALETTE.espresso,
-  noseShape: "soft",
+  eyeColor: "#c45c26",
+  noseShape: "strong",
   lipShape: "full",
-  faceMark: "none",
-  browStrength: 0.7,
+  faceMark: "paint-ritual-dots",
+  browStrength: 0.85,
   leftEarPiercing: true,
   rightEarPiercing: true,
   nosePiercing: false,
   gapTooth: false,
   nailColor: CLOTHING_PALETTE.slate50,
-  posture: "relaxed",
-  sleevePreference: "regular",
+  posture: "confident",
+  sleevePreference: "fitted",
   hemPreference: "regular",
-  detailSeed: 17,
+  detailSeed: 42,
   facePhoto: null,
   bodyPhoto: null,
   profileComplete: false,
 };
 
-const DEFAULT_EQUIPPED: EquippedLoadout = {
-  top: STARTER_TOP,
-  bottom: STARTER_BOTTOM,
-  outer: null,
-  shoes: STARTER_SHOES,
-  accessory: null,
-  hat: null,
+/** Full loadout matching the Mask Bearer concept art */
+export const MASK_BEARER_LOADOUT: EquippedLoadout = {
+  top: "top-mask-bearer",
+  bottom: "bottom-fringe-kilt",
+  outer: "outer-gold-pauldron",
+  shoes: "shoes-fur-greaves",
+  accessory: "acc-glasses",
+  hat: "hat-red-band",
 };
+
+const DEFAULT_EQUIPPED: EquippedLoadout = { ...MASK_BEARER_LOADOUT };
 
 const STARTER_OWNED = [STARTER_TOP, STARTER_BOTTOM, STARTER_SHOES];
 
