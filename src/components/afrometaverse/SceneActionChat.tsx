@@ -15,7 +15,7 @@ type DialogueResult = {
   speaker: string;
   mood: string;
   reply: string;
-  reputationHint?: string;
+  reputationHint: string | undefined;
 };
 
 type Props = {
