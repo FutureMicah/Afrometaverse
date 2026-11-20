@@ -2412,14 +2412,14 @@ export function StylizedCharacter({
           </mesh>
         </group>
       )}
-      {      {appearance.faceMark === "paint-ritual-dots" && (
+      {appearance.faceMark === "paint-ritual-dots" && (
         <group>
           {/* White ceremonial dots — forehead, under eyes, cheeks (concept art) */}
-          {[[-0.06, 1.72, 0.28], [0.06, 1.72, 0.28], [0, 1.74, 0.29],
+          {([[ -0.06, 1.72, 0.28], [0.06, 1.72, 0.28], [0, 1.74, 0.29],
             [-0.1, 1.62, 0.3], [0.1, 1.62, 0.3],
             [-0.12, 1.55, 0.28], [0.12, 1.55, 0.28],
             [-0.08, 1.5, 0.29], [0.08, 1.5, 0.29],
-            [0, 1.58, 0.31]].map(([x, y, z], i) => (
+            [0, 1.58, 0.31]] as [number, number, number][]).map(([x, y, z], i) => (
             <mesh key={`dot-${i}`} position={[x, y, z]}>
               <sphereGeometry args={[0.012 + (i % 3) * 0.003, 8, 6]} />
               <meshStandardMaterial color="#f8f5f0" roughness={0.55} />
@@ -2437,7 +2437,7 @@ export function StylizedCharacter({
         </group>
       )}
 
-appearance.faceMark === "scar-cheek" && (
+      {appearance.faceMark === "scar-cheek" && (
         <mesh position={[0.13, 1.54, 0.22]} rotation={[0, 0, 0.4]}>
           <boxGeometry args={[0.01, 0.1, 0.008]} />
           <meshStandardMaterial color="#4a2c1a" transparent opacity={0.75} />

@@ -44,9 +44,9 @@ function matrixToHead(data: Float32Array | number[]): Pick<FaceProxyLive, "headY
   const m = data.length >= 16 ? data : null;
   if (!m) return { headYaw: 0, headPitch: 0, headRoll: 0 };
   // Column-major: forward is -Z in MediaPipe camera space — approximate euler
-  const r00 = m[0], r01 = m[4], r02 = m[8];
-  const r10 = m[1], r11 = m[5], r12 = m[9];
-  const r20 = m[2], r21 = m[6], r22 = m[10];
+  const r00 = m[0] ?? 0, r01 = m[4] ?? 0, r02 = m[8] ?? 0;
+  const r10 = m[1] ?? 0, r11 = m[5] ?? 0, r12 = m[9] ?? 0;
+  const r20 = m[2] ?? 0, r21 = m[6] ?? 0, r22 = m[10] ?? 0;
   const pitch = Math.asin(Math.max(-1, Math.min(1, -r12)));
   const yaw = Math.atan2(r02, r22);
   const roll = Math.atan2(r10, r11);
@@ -88,10 +88,10 @@ export function useFaceTracker(active: boolean) {
     setError(null);
     try {
       // Dynamic ESM import from CDN
-      const vision = await import(
-        /* @vite-ignore */
-        "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.18/+esm"
+      const visionModuleUrl = new URL(
+        "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.18/+esm",
       );
+      const vision = await import(/* @vite-ignore */ visionModuleUrl.href);
       const { FaceLandmarker, FilesetResolver } = vision as {
         FaceLandmarker: {
           createFromOptions: (
